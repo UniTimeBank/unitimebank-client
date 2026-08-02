@@ -3,3 +3,7 @@ export * from './RegisterForm';
 export * from './VerifyOtpForm';
 export * from './AuthTabs';
 export * from './SetPasswordModal';
+export * from './ChangePasswordModal';
+export * from './ForgotPasswordForm';
+export * from './ForgotOtpForm';
+export * from './ResetPasswordForm';

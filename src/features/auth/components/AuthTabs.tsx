@@ -5,9 +5,12 @@ import { ROUTES } from '@/routes/paths';
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
 import { VerifyOtpForm } from './VerifyOtpForm';
+import { ForgotPasswordForm } from './ForgotPasswordForm';
+import { ForgotOtpForm } from './ForgotOtpForm';
+import { ResetPasswordForm } from './ResetPasswordForm';
 import { useAuth } from '../hooks';
 
-export type AuthView = 'login' | 'register' | 'verify-otp';
+export type AuthView = 'login' | 'register' | 'verify-otp' | 'forgot-password' | 'forgot-otp' | 'reset-password';
 
 interface AuthTabsProps {
   initialView?: AuthView;
@@ -21,7 +24,6 @@ const GoogleLoginButton = () => {
     if (!token) return;
     const result = await googleLogin(token);
     if (result.success && result.data) {
-      // Chỉ khi là Đăng ký tài khoản mới qua Google (isNewUser === true) mới gợi ý tạo mật khẩu!
       if (result.data.isNewUser) {
         sessionStorage.setItem('prompt_set_password', 'true');
       }
@@ -54,14 +56,16 @@ const GoogleLoginButton = () => {
 
 export const AuthTabsContent = ({ initialView = 'login' }: AuthTabsProps) => {
   const navigate = useNavigate();
-  const { pendingEmail } = useAuth();
+  const { pendingEmail, forgotPassword } = useAuth();
   const [view, setView] = useState<AuthView>(pendingEmail ? 'verify-otp' : initialView);
+  const [resetEmail, setResetEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
 
   useEffect(() => {
-    if (!pendingEmail) {
+    if (!pendingEmail && (view === 'verify-otp')) {
       setView(initialView);
     }
-  }, [initialView, pendingEmail]);
+  }, [initialView, pendingEmail, view]);
 
   const handleTabChange = (targetView: AuthView) => {
     setView(targetView);
@@ -72,81 +76,131 @@ export const AuthTabsContent = ({ initialView = 'login' }: AuthTabsProps) => {
     }
   };
 
+  // Hiển thị header cho từng view
+  const getHeadings = () => {
+    switch (view) {
+      case 'login':
+        return { title: 'Chào mừng trở lại', desc: 'Nhập thông tin tài khoản của bạn để truy cập sổ nợ thời gian.' };
+      case 'register':
+        return { title: 'Tạo tài khoản mới', desc: 'Nhập địa chỉ Gmail của bạn để tham gia ngân hàng thời gian.' };
+      case 'verify-otp':
+        return { title: 'Xác thực tài khoản', desc: 'Nhập mã OTP 6 chữ số đã được gửi đến Gmail của bạn.' };
+      case 'forgot-password':
+        return { title: 'Quên mật khẩu?', desc: '' };
+      case 'forgot-otp':
+        return { title: 'Xác thực OTP', desc: '' };
+      case 'reset-password':
+        return { title: 'Đặt mật khẩu mới', desc: '' };
+      default:
+        return { title: '', desc: '' };
+    }
+  };
+
+  const headings = getHeadings();
+
   return (
-    <div className="w-full h-full flex flex-col justify-between">
-      <div>
-        {/* Segmented Control Tab Bar */}
-        {view !== 'verify-otp' && (
-          <div className="flex bg-slate-100/90 p-1.5 rounded-2xl mb-4 shadow-inner">
-            <button
-              type="button"
-              onClick={() => handleTabChange('login')}
-              className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
-                view === 'login'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-gray-500 hover:text-slate-800 font-semibold'
-              }`}
-            >
-              Đăng nhập
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTabChange('register')}
-              className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
-                view === 'register'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-gray-500 hover:text-slate-800 font-semibold'
-              }`}
-            >
-              Đăng ký
-            </button>
-          </div>
-        )}
-
-        {/* Headings */}
-        <div className="mb-3 text-center sm:text-left">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
-            {view === 'login' && 'Chào mừng trở lại'}
-            {view === 'register' && 'Tạo tài khoản mới'}
-            {view === 'verify-otp' && 'Xác thực tài khoản'}
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-500 font-normal leading-relaxed">
-            {view === 'login' && 'Nhập thông tin tài khoản của bạn để truy cập sổ nợ thời gian.'}
-            {view === 'register' && 'Nhập địa chỉ Gmail của bạn để tham gia ngân hàng thời gian.'}
-            {view === 'verify-otp' && 'Nhập mã OTP 6 chữ số đã được gửi đến Gmail của bạn.'}
-          </p>
+    <div className="w-full flex flex-col justify-center space-y-4">
+      {/* Segmented Control Tab Bar - chỉ hiện ở login/register */}
+      {(view === 'login' || view === 'register') && (
+        <div className="flex bg-slate-100/90 p-1.5 rounded-2xl mb-1 shadow-inner">
+          <button
+            type="button"
+            onClick={() => handleTabChange('login')}
+            className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
+              view === 'login'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-gray-500 hover:text-slate-800 font-semibold'
+            }`}
+          >
+            Đăng nhập
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTabChange('register')}
+            className={`flex-1 py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
+              view === 'register'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-gray-500 hover:text-slate-800 font-semibold'
+            }`}
+          >
+            Đăng ký
+          </button>
         </div>
+      )}
 
-        {/* Active Form */}
-        {view === 'login' && (
-          <LoginForm
-            onSwitchToRegister={() => handleTabChange('register')}
-            onSwitchToVerifyOtp={() => setView('verify-otp')}
-          />
-        )}
-
-        {view === 'register' && (
-          <RegisterForm
-            onSwitchToLogin={() => handleTabChange('login')}
-            onRegisterSuccess={() => setView('verify-otp')}
-          />
-        )}
-
-        {view === 'verify-otp' && (
-          <VerifyOtpForm
-            email={pendingEmail || ''}
-            onBack={() => handleTabChange('login')}
-            onSuccess={() => {
-              window.location.href = '/';
-            }}
-          />
+      {/* Headings */}
+      <div className="text-center">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-1">
+          {headings.title}
+        </h1>
+        {headings.desc && (
+          <p className="text-xs sm:text-sm text-gray-500 font-normal leading-relaxed">
+            {headings.desc}
+          </p>
         )}
       </div>
 
-      {/* Social Login Section - Google Only */}
-      {view !== 'verify-otp' && (
+      {/* Active Form */}
+      {view === 'login' && (
+        <LoginForm
+          onSwitchToRegister={() => handleTabChange('register')}
+          onSwitchToVerifyOtp={() => setView('forgot-password')}
+        />
+      )}
+
+      {view === 'register' && (
+        <RegisterForm
+          onSwitchToLogin={() => handleTabChange('login')}
+          onRegisterSuccess={() => setView('verify-otp')}
+        />
+      )}
+
+      {view === 'verify-otp' && (
+        <VerifyOtpForm
+          email={pendingEmail || ''}
+          onBack={() => handleTabChange('login')}
+          onSuccess={() => { window.location.href = '/'; }}
+        />
+      )}
+
+      {view === 'forgot-password' && (
+        <ForgotPasswordForm
+          onBack={() => setView('login')}
+          onSuccess={(email) => {
+            setResetEmail(email);
+            setView('forgot-otp');
+          }}
+        />
+      )}
+
+      {view === 'forgot-otp' && (
+        <ForgotOtpForm
+          email={resetEmail}
+          onBack={() => setView('forgot-password')}
+          onResend={() => forgotPassword(resetEmail)}
+          onSuccess={(code) => {
+            setOtpCode(code);
+            setView('reset-password');
+          }}
+        />
+      )}
+
+      {view === 'reset-password' && (
+        <ResetPasswordForm
+          email={resetEmail}
+          code={otpCode}
+          onBack={() => setView('forgot-otp')}
+          onSuccess={() => {
+            setView('login');
+            navigate(ROUTES.AUTH.LOGIN);
+          }}
+        />
+      )}
+
+      {/* Social Login Section - chỉ hiện ở login/register */}
+      {(view === 'login' || view === 'register') && (
         <div className="pt-1">
-          <div className="relative my-2.5 flex items-center justify-center">
+          <div className="relative my-2 flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200" />
             </div>
@@ -154,7 +208,6 @@ export const AuthTabsContent = ({ initialView = 'login' }: AuthTabsProps) => {
               HOẶC ĐĂNG NHẬP VỚI
             </span>
           </div>
-
           <GoogleLoginButton />
         </div>
       )}
