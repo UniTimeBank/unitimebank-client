@@ -74,9 +74,9 @@ export const AuthLayout = ({ children }: AuthLayoutProps) => {
           </span>
         </div>
 
-        {/* Dynamic Form Content Wrapper - Stable Card Container */}
-        <div className="w-full max-w-md mx-auto my-auto">
-          <div className="w-full bg-white border border-slate-200/90 shadow-xl shadow-slate-900/5 rounded-3xl p-6 sm:p-7 min-h-[570px] sm:min-h-[580px] flex flex-col justify-between">
+        {/* Dynamic Form Content Wrapper - Perfectly Centered Card Container */}
+        <div className="w-full max-w-md mx-auto my-auto flex-1 flex flex-col justify-center py-4">
+          <div className="w-full bg-white border border-slate-200/90 shadow-xl shadow-slate-900/5 rounded-3xl p-6 sm:p-8">
             {children}
           </div>
         </div>

@@ -6,6 +6,7 @@ import {
   logout as logoutAction,
   setPendingEmail,
   setLoading,
+  setIdle,
   setError,
   selectAuthStatus,
   selectAuthError,
@@ -38,6 +39,9 @@ export const useAuth = () => {
   const [googleLoginMutation] = authApi.useGoogleLoginMutation();
   const [verifyOtpMutation] = authApi.useVerifyOtpMutation();
   const [setPasswordMutation] = authApi.useSetPasswordMutation();
+  const [changePasswordMutation] = authApi.useChangePasswordMutation();
+  const [forgotPasswordMutation] = authApi.useForgotPasswordMutation();
+  const [resetPasswordMutation] = authApi.useResetPasswordMutation();
   const [logoutMutation] = authApi.useLogoutMutation();
 
   // Register - Đăng ký tài khoản
@@ -145,6 +149,7 @@ export const useAuth = () => {
       dispatch(setLoading());
       try {
         const result = await setPasswordMutation({ userId, newPassword }).unwrap();
+        dispatch(setIdle());
         return { success: true, data: result };
       } catch (err: unknown) {
         const message = extractErrorMessage(err, 'Thiết lập mật khẩu thất bại');
@@ -153,6 +158,59 @@ export const useAuth = () => {
       }
     },
     [dispatch, setPasswordMutation]
+  );
+
+  // Change Password - Đổi mật khẩu khi đã đăng nhập (cần MK cũ)
+  const changePassword = useCallback(
+    async (userId: string, oldPassword: string, newPassword: string): Promise<AuthOperationResult<{ message: string }>> => {
+      dispatch(setLoading());
+      try {
+        const result = await changePasswordMutation({ userId, oldPassword, newPassword }).unwrap();
+        dispatch(setIdle());
+        return { success: true, data: result };
+      } catch (err: unknown) {
+        const message = extractErrorMessage(err, 'Đổi mật khẩu thất bại');
+        dispatch(setError(message));
+        return { success: false, error: message };
+      }
+    },
+    [dispatch, changePasswordMutation]
+  );
+
+  // Forgot Password - Gửi OTP đặt lại mật khẩu
+  const forgotPassword = useCallback(
+    async (email: string): Promise<AuthOperationResult<{ message: string }>> => {
+      dispatch(setLoading());
+      try {
+        const result = await forgotPasswordMutation({ email }).unwrap();
+        dispatch(setPendingEmail(email));
+        // setPendingEmail đã set idle, nên không cần setIdle ở đây
+        return { success: true, data: result };
+      } catch (err: unknown) {
+        const message = extractErrorMessage(err, 'Gửi yêu cầu thất bại');
+        dispatch(setError(message));
+        return { success: false, error: message };
+      }
+    },
+    [dispatch, forgotPasswordMutation]
+  );
+
+  // Reset Password - Đặt lại mật khẩu với OTP
+  const resetPassword = useCallback(
+    async (email: string, code: string, newPassword: string): Promise<AuthOperationResult<{ message: string }>> => {
+      dispatch(setLoading());
+      try {
+        const result = await resetPasswordMutation({ email, code, newPassword }).unwrap();
+        // Reset status về idle sau khi thành công để nút không bị loading
+        dispatch(setIdle());
+        return { success: true, data: result };
+      } catch (err: unknown) {
+        const message = extractErrorMessage(err, 'Đặt lại mật khẩu thất bại');
+        dispatch(setError(message));
+        return { success: false, error: message };
+      }
+    },
+    [dispatch, resetPasswordMutation]
   );
 
   // Logout - Đăng xuất
@@ -180,6 +238,9 @@ export const useAuth = () => {
     login,
     googleLogin,
     setPassword,
+    changePassword,
+    forgotPassword,
+    resetPassword,
     logout,
   };
 };

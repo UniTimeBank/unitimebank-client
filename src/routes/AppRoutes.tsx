@@ -1,11 +1,16 @@
+import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthPage } from '@/features/auth';
+import { AuthPage, ChangePasswordModal } from '@/features/auth';
+import { useAuth } from '@/features/auth/hooks';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 import { ROUTES } from './paths';
 
 // Component trang chủ tạm thời (Dashboard)
 const HomePage = () => {
+  const { logout } = useAuth();
+  const [showChangePassword, setShowChangePassword] = useState(false);
+
   return (
     <div className="bg-white rounded-2xl p-8 shadow-xs border border-gray-100 max-w-4xl mx-auto my-8">
       <h1 className="text-3xl font-extrabold text-slate-900 mb-3">
@@ -38,14 +43,31 @@ const HomePage = () => {
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex gap-3 flex-wrap">
         <button className="px-5 py-2.5 rounded-full bg-primary-500 hover:bg-primary-600 text-white font-medium text-sm transition-all shadow-xs cursor-pointer">
           + Đăng bài trao đổi
         </button>
         <button className="px-5 py-2.5 rounded-full border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium text-sm transition-all cursor-pointer">
           Khám phá lớp học
         </button>
+        <button
+          onClick={() => setShowChangePassword(true)}
+          className="px-5 py-2.5 rounded-full border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium text-sm transition-all cursor-pointer"
+        >
+          🔑 Đổi mật khẩu
+        </button>
+        <button
+          onClick={logout}
+          className="px-5 py-2.5 rounded-full border border-red-200 hover:bg-red-50 text-red-600 font-medium text-sm transition-all cursor-pointer"
+        >
+          Đăng xuất
+        </button>
       </div>
+
+      <ChangePasswordModal
+        open={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+      />
     </div>
   );
 };

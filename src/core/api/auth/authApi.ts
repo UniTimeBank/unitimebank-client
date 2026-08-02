@@ -83,6 +83,34 @@ export const authApi = baseApi.injectEndpoints({
       }),
     }),
 
+    // Đổi mật khẩu (khi đã đăng nhập)
+    changePassword: builder.mutation<{ message: string }, { userId: string; oldPassword: string; newPassword: string }>({
+      query: (body) => ({
+        url: '/auth/change-password',
+        method: 'POST',
+        body,
+      }),
+    }),
+
+    // ========== QUÊN MẬT KHẨU ==========
+    // Gửi OTP đặt lại mật khẩu
+    forgotPassword: builder.mutation<{ message: string; email?: string }, { email: string }>({
+      query: (body) => ({
+        url: '/auth/forgot-password',
+        method: 'POST',
+        body,
+      }),
+    }),
+
+    // Đặt lại mật khẩu với OTP
+    resetPassword: builder.mutation<{ message: string }, { email: string; code: string; newPassword: string }>({
+      query: (body) => ({
+        url: '/auth/reset-password',
+        method: 'POST',
+        body,
+      }),
+    }),
+
     // Làm mới token
     refreshToken: builder.mutation<Omit<AuthResponse, 'user'>, RefreshTokenDto>({
       query: (body) => ({
@@ -122,6 +150,9 @@ export const {
   useLoginMutation,
   useGoogleLoginMutation,
   useSetPasswordMutation,
+  useChangePasswordMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
   useRefreshTokenMutation,
   useLogoutMutation,
 } = authApi;
