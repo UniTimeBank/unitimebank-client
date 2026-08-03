@@ -1,20 +1,48 @@
 @import "tailwindcss";
-@config "../tailwind.config.js";
 
 @theme {
   --color-primary-50: #E6F2EF;
-  --color-primary-100: #CCE6DF;
-  --color-primary-200: #99CCC0;
-  --color-primary-300: #66B3A0;
-  --color-primary-400: #339980;
+  --color-primary-100: #CCE5DF;
+  --color-primary-200: #99CBBF;
+  --color-primary-300: #66B29F;
+  --color-primary-400: #33987F;
   --color-primary-500: #006B58;
-  --color-primary-600: #005545;
-  --color-primary-700: #004033;
-  --color-primary-800: #002B22;
+  --color-primary-600: #005F4F;
+  --color-primary-700: #004D40;
+  --color-primary-800: #00362D;
   --color-primary-900: #001511;
 }
 
-/* Base styles */
-body {
-  @apply font-sans antialiased;
+/* Global Modern Smooth Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
+
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+@layer base {
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: #F8FAFC;
+    color: #0F172A;
+    -webkit-font-smoothing: antialiased;
+  }
 }
