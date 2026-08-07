@@ -6,5 +6,8 @@ export const ROUTES = {
   },
   HOME: '/',
   DASHBOARD: '/dashboard',
+  PROFILE: '/profile',
+  USER_PROFILE: '/profile/:userId',
   NOT_FOUND: '*',
 } as const;
+

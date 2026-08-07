@@ -49,7 +49,7 @@ export const Modal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50  transition-opacity animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 transition-opacity animate-in fade-in duration-200">
       {/* Backdrop Click */}
       <div
         className="fixed inset-0"
@@ -61,7 +61,7 @@ export const Modal = ({
       <div
         className={`
           w-full ${sizeClasses[size]} bg-white border border-slate-200/90 shadow-2xl rounded-3xl p-6 sm:p-7 relative z-10
-          animate-in zoom-in-95 duration-200 overflow-hidden
+          animate-in zoom-in-95 duration-200
         `}
       >
         {showCloseButton && (

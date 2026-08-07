@@ -1,14 +1,19 @@
 import type { ReactNode } from 'react';
 import { useState } from 'react';
-import logoGreen from '@/assets/images/Logo.png';
+import { Header, Footer } from '@/shared/components';
 import { SetPasswordModal } from '@/features/auth/components';
+import { useAppSelector } from '@/shared/hooks';
+import { selectCurrentUser } from '@/core/store';
+import { useGetMeQuery } from '@/core/api/user';
 
 interface MainLayoutProps {
   children: ReactNode;
 }
 
 export const MainLayout = ({ children }: MainLayoutProps) => {
-  // Khởi tạo state trực tiếp từ sessionStorage để không bị reset khi component re-render/hydrate
+  const authUser = useAppSelector(selectCurrentUser);
+  const { data: userProfile } = useGetMeQuery(undefined, { skip: !authUser });
+
   const [isSetPasswordOpen, setIsSetPasswordOpen] = useState(() => {
     return sessionStorage.getItem('prompt_set_password') === 'true';
   });
@@ -18,49 +23,21 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     setIsSetPasswordOpen(false);
   };
 
+  const userName = userProfile?.displayName || authUser?.email?.split('@')[0] || 'Alex';
+  const avatarUrl = userProfile?.avatarUrl;
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
-      {/* Top Navbar */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={logoGreen} alt="UniTime Bank Logo" className="h-9 w-auto object-contain" />
-            <span className="text-lg font-bold text-slate-900 tracking-tight">
-              UniTime Bank
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-50 text-primary-500 border border-primary-200 text-xs font-semibold">
-              <span>⏱️ Số dư: 120 credits</span>
-            </div>
-
-            {/* Set Password Button */}
-            <button
-              onClick={() => setIsSetPasswordOpen(true)}
-              className="text-xs font-semibold text-primary-600 bg-primary-50 hover:bg-primary-100 px-3 py-1.5 rounded-lg border border-primary-200 transition-all cursor-pointer flex items-center gap-1.5"
-            >
-              <span>🔑</span>
-              <span className="hidden sm:inline">Đặt mật khẩu</span>
-            </button>
-
-            {/* Logout Button */}
-            <button
-              onClick={() => {
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.href = '/login';
-              }}
-              className="text-xs font-semibold text-gray-600 hover:text-red-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-red-200 hover:bg-red-50 transition-all cursor-pointer"
-            >
-              Đăng xuất
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans text-gray-800 antialiased">
+      {/* Single Shared Header */}
+      <Header
+        userCredits={120}
+        userName={userName}
+        avatarUrl={avatarUrl}
+        onOpenSetPassword={() => setIsSetPasswordOpen(true)}
+      />
 
       {/* Main Content Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
         {children}
       </main>
 
@@ -70,6 +47,9 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
         onClose={handleCloseModal}
         onSuccess={handleCloseModal}
       />
+
+      {/* Single Shared Footer */}
+      <Footer />
     </div>
   );
 };
