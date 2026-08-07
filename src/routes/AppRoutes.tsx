@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthPage } from '@/features/auth';
-import { UserProfilePage } from '@/features/user';
+import { AuthPage, ChangePasswordModal } from '@/features/auth';
+import { useAuth } from '@/features/auth/hooks';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 import { ROUTES } from './paths';
