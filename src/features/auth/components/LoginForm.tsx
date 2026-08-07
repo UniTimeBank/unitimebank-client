@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Input, PasswordInput, Button } from '@/shared/components/ui';
+import { Input, PasswordInput, Button, Checkbox } from '@/shared/components/ui';
 import { useAuth } from '../hooks';
 
 interface LoginFormProps {
@@ -91,17 +91,12 @@ export const LoginForm = ({ onSwitchToRegister: _onSwitchToRegister, onSwitchToV
         autoComplete="current-password"
       />
 
-      <div className="flex items-center gap-2 pt-1 pb-2">
-        <input
-          type="checkbox"
-          id="rememberMe"
+      <div className="pt-1 pb-2">
+        <Checkbox
+          label="Ghi nhớ đăng nhập trong 30 ngày"
           checked={rememberMe}
-          onChange={(e) => setRememberMe(e.target.checked)}
-          className="w-4 h-4 rounded border-gray-300 text-primary-500 focus:ring-primary-500 cursor-pointer accent-primary-500"
+          onChange={(val) => setRememberMe(val)}
         />
-        <label htmlFor="rememberMe" className="text-xs text-gray-600 cursor-pointer select-none">
-          Ghi nhớ đăng nhập trong 30 ngày
-        </label>
       </div>
 
       <Button type="submit" fullWidth isLoading={isLoading} size="md">

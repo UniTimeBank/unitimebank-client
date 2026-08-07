@@ -9,9 +9,14 @@ import type {
   FollowListResponse,
   CheckinResult,
   LoginStreakResponse,
+  RecurringSchedule,
+  CreateRecurringScheduleDto,
+  UpdateRecurringScheduleDto,
+  ScheduleException,
+  CreateScheduleExceptionDto,
+  DayAvailability,
+  GetAvailabilityParams,
 } from '@/features/user/types';
-
-
 
 export const userApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -124,6 +129,87 @@ export const userApi = baseApi.injectEndpoints({
     getOnlineStatus: builder.query<{ statuses: Record<string, 'ONLINE' | 'OFFLINE' | 'IN_ROOM'> }, string[]>({
       query: (userIds) => `/users/online-status?userIds=${userIds.join(',')}`,
     }),
+
+    // ==================== QUẢN LÝ LỊCH RẢNH (SCHEDULE) ====================
+
+    // 16. Lấy danh sách lịch lặp lại hàng tuần của tôi
+    getMyRecurringSchedules: builder.query<{ data: RecurringSchedule[] }, void>({
+      query: () => '/users/me/schedule/recurring',
+      providesTags: ['User'],
+    }),
+
+    // 17. Tạo lịch rảnh lặp lại hàng tuần mới
+    createRecurringSchedule: builder.mutation<RecurringSchedule, CreateRecurringScheduleDto>({
+      query: (body) => ({
+        url: '/users/me/schedule/recurring',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['User'],
+    }),
+
+    // 18. Cập nhật lịch rảnh lặp lại
+    updateRecurringSchedule: builder.mutation<
+      RecurringSchedule,
+      { scheduleId: string; data: UpdateRecurringScheduleDto }
+    >({
+      query: ({ scheduleId, data }) => ({
+        url: `/users/me/schedule/recurring/${scheduleId}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['User'],
+    }),
+
+    // 19. Xóa lịch rảnh lặp lại
+    deleteRecurringSchedule: builder.mutation<void, string>({
+      query: (scheduleId) => ({
+        url: `/users/me/schedule/recurring/${scheduleId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['User'],
+    }),
+
+    // 20. Lấy danh sách lịch đặc biệt (EXTRA / BLOCKED) của tôi
+    getMyScheduleExceptions: builder.query<
+      { data: ScheduleException[] },
+      { from?: string; to?: string } | void
+    >({
+      query: (params) => {
+        if (!params) return '/users/me/schedule/exceptions';
+        const queryParams = new URLSearchParams();
+        if (params.from) queryParams.append('from', params.from);
+        if (params.to) queryParams.append('to', params.to);
+        const q = queryParams.toString();
+        return `/users/me/schedule/exceptions${q ? `?${q}` : ''}`;
+      },
+      providesTags: ['User'],
+    }),
+
+    // 21. Tạo lịch đặc biệt (thêm giờ EXTRA hoặc chặn giờ BLOCKED)
+    createScheduleException: builder.mutation<ScheduleException, CreateScheduleExceptionDto>({
+      query: (body) => ({
+        url: '/users/me/schedule/exceptions',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['User'],
+    }),
+
+    // 22. Xóa lịch đặc biệt
+    deleteScheduleException: builder.mutation<void, string>({
+      query: (exceptionId) => ({
+        url: `/users/me/schedule/exceptions/${exceptionId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['User'],
+    }),
+
+    // 23. Lấy lịch rảnh khả dụng của Người dạy theo khoảng ngày (from -> to)
+    getAvailability: builder.query<{ data: DayAvailability[] }, GetAvailabilityParams>({
+      query: ({ userId, from, to }) =>
+        `/users/${userId}/schedule/availability?from=${from}&to=${to}`,
+    }),
   }),
 });
 
@@ -143,4 +229,12 @@ export const {
   useDailyCheckinMutation,
   useGetLoginStreakQuery,
   useGetOnlineStatusQuery,
+  useGetMyRecurringSchedulesQuery,
+  useCreateRecurringScheduleMutation,
+  useUpdateRecurringScheduleMutation,
+  useDeleteRecurringScheduleMutation,
+  useGetMyScheduleExceptionsQuery,
+  useCreateScheduleExceptionMutation,
+  useDeleteScheduleExceptionMutation,
+  useGetAvailabilityQuery,
 } = userApi;

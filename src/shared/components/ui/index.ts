@@ -3,3 +3,6 @@ export * from './Input';
 export * from './PasswordInput';
 export * from './Modal';
 export * from './Select';
+export * from './TimeInput';
+export * from './DateInput';
+export * from './Checkbox';

@@ -18,3 +18,5 @@ export const TRUST_SCORE_TIERS = {
   WARNING: { min: 20, label: 'CẢNH BÁO', color: 'orange' },
   LOCKED: { min: 0, label: 'BỊ KHÓA', color: 'red' },
 };
+
+export const WEEK_DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];

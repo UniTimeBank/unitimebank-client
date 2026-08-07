@@ -5,6 +5,7 @@ import { useAuth } from '@/features/auth/hooks';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 import { ROUTES } from './paths';
+import { UserProfilePage } from '@/features/user';
 
 export const AppRoutes = () => {
   return (

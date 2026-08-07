@@ -114,7 +114,7 @@ export const DashboardPage: React.FC = () => {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">
-            Chào buổi sáng, {userName} 👋
+            Chào buổi sáng, {userName} 
           </h1>
           <p className="text-xs md:text-sm font-medium text-gray-500 mt-1">
             Bạn có 2 buổi học được xếp lịch diễn ra trong ngày hôm nay.
