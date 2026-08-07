@@ -3,3 +3,7 @@ export * from './ScheduleExceptionsTab';
 export * from './MentorScheduleManager';
 export * from './MentorAvailabilityViewer';
 export * from './SidebarBookingCard';
+export * from './DaySelectorChips';
+export * from './CreateRecurringSlotForm';
+export * from './RecurringSlotCard';
+export * from './CopyScheduleModal';

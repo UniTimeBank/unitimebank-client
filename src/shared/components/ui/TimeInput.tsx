@@ -1,27 +1,45 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Clock, ChevronDown } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Clock } from 'lucide-react';
+
+export interface DisabledTimeInterval {
+  startTime: string; // "HH:mm"
+  endTime: string;   // "HH:mm"
+}
 
 export interface TimeInputProps {
   label?: string;
   value: string; // "HH:mm" format e.g. "19:00"
   onChange: (value: string) => void;
+  minTime?: string; // Giờ tối thiểu cho phép chọn (e.g. "08:00")
+  maxTime?: string; // Giờ tối đa cho phép chọn (e.g. "22:00")
+  disabledIntervals?: DisabledTimeInterval[]; // Danh sách các khung giờ bận/đã có lịch
   error?: string;
   className?: string;
 }
 
-const BASE_HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-const BASE_MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+const ALL_BASE_HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+const ALL_BASE_MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
-// Loop array 3 times for infinite scrolling effect
-const INFINITE_HOURS = [...BASE_HOURS, ...BASE_HOURS, ...BASE_HOURS];
-const INFINITE_MINUTES = [...BASE_MINUTES, ...BASE_MINUTES, ...BASE_MINUTES];
+const ITEM_HEIGHT = 40; // Đúng 40px mỗi mục
+const CONTAINER_HEIGHT = 200; // 5 * 40px = 200px (5 hàng hiển thị)
+const CENTER_OFFSET = 80; // Tâm ở 80px (2 * 40px)
 
-const ITEM_HEIGHT = 40; // 40px per item
+const format24Hour = (time24: string) => {
+  if (!time24) return '19:00';
+  const [hStr, mStr] = time24.split(':');
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  if (isNaN(h) || isNaN(m)) return time24;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+};
 
 export const TimeInput: React.FC<TimeInputProps> = ({
   label,
-  value,
+  value = '19:00',
   onChange,
+  minTime,
+  maxTime,
+  disabledIntervals = [],
   error,
   className = '',
 }) => {
@@ -29,10 +47,125 @@ export const TimeInput: React.FC<TimeInputProps> = ({
   const [openUpward, setOpenUpward] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [currentHour, currentMinute] = (value || '19:00').split(':');
+  const [propHour, propMinute] = (value || '19:00').split(':');
+  const [activeHour, setActiveHour] = useState(propHour || '19');
+  const [activeMinute, setActiveMinute] = useState(propMinute || '00');
+
+  // Dùng Ref để lưu giá trị mới nhất, tránh closure cũ khi cuộn nhanh
+  const latestHourRef = useRef(activeHour);
+  const latestMinRef = useRef(activeMinute);
+
+  useEffect(() => {
+    latestHourRef.current = activeHour;
+  }, [activeHour]);
+
+  useEffect(() => {
+    latestMinRef.current = activeMinute;
+  }, [activeMinute]);
 
   const hourListRef = useRef<HTMLDivElement>(null);
   const minuteListRef = useRef<HTMLDivElement>(null);
+
+  // Kiểm tra riêng cho GIỜ: Giờ chỉ bị khóa nếu toàn bộ các phút trong giờ đó không thể chọn
+  const isHourBlocked = useCallback(
+    (hStr: string) => {
+      const h = parseInt(hStr, 10);
+
+      if (minTime) {
+        const [minHStr, minMStr] = minTime.split(':');
+        const minH = parseInt(minHStr, 10);
+        const minM = parseInt(minMStr, 10);
+        // Nếu giờ nhỏ hơn giờ bắt đầu -> Khóa
+        if (h < minH) return true;
+        // Nếu giờ bằng giờ bắt đầu nhưng phút bắt đầu là 59 -> Khóa
+        if (h === minH && minM >= 59) return true;
+      }
+
+      if (maxTime) {
+        const [maxHStr, maxMStr] = maxTime.split(':');
+        const maxH = parseInt(maxHStr, 10);
+        const maxM = parseInt(maxMStr, 10);
+        // Nếu giờ lớn hơn giờ kết thúc tối đa -> Khóa
+        if (h > maxH) return true;
+        // Nếu giờ bằng giờ tối đa nhưng phút tối đa là 00 -> Khóa
+        if (h === maxH && maxM === 0) return true;
+      }
+
+      // Nếu toàn bộ 60 phút trong giờ này bị bao trọn bởi lịch bận -> Khóa
+      if (disabledIntervals && disabledIntervals.length > 0) {
+        const allMinutesBlocked = disabledIntervals.some(
+          (inv) => inv.startTime <= `${hStr}:00` && `${hStr}:59` < inv.endTime,
+        );
+        if (allMinutesBlocked) return true;
+      }
+
+      return false;
+    },
+    [minTime, maxTime, disabledIntervals],
+  );
+
+  // Kiểm tra riêng cho PHÚT: Kết hợp với activeHour hiện tại
+  const isMinuteBlocked = useCallback(
+    (mStr: string) => {
+      const timeStr = `${activeHour}:${mStr}`;
+
+      if (minTime && timeStr <= minTime) return true;
+      if (maxTime && timeStr >= maxTime) return true;
+
+      if (disabledIntervals && disabledIntervals.length > 0) {
+        return disabledIntervals.some(
+          (inv) => inv.startTime <= timeStr && timeStr < inv.endTime,
+        );
+      }
+
+      return false;
+    },
+    [activeHour, minTime, maxTime, disabledIntervals],
+  );
+
+  // Kiểm tra xem giá trị hiện tại có bị trùng/bận không
+  const isCurrentValueBlocked = useCallback(
+    (val: string) => {
+      if (minTime && val <= minTime) return true;
+      if (maxTime && val >= maxTime) return true;
+      if (disabledIntervals && disabledIntervals.length > 0) {
+        return disabledIntervals.some(
+          (inv) => inv.startTime <= val && val < inv.endTime,
+        );
+      }
+      return false;
+    },
+    [minTime, maxTime, disabledIntervals],
+  );
+
+  // Luôn luôn hiển thị đầy đủ 24 giờ (00 -> 23) và 60 phút (00 -> 59), không bao giờ ẩn số nào
+  const availableHours = ALL_BASE_HOURS;
+  const availableMinutes = ALL_BASE_MINUTES;
+
+  // Tạo mảng lặp vô tận (7 chu kỳ)
+  const infiniteHours = useMemo(() => {
+    return [
+      ...availableHours,
+      ...availableHours,
+      ...availableHours,
+      ...availableHours,
+      ...availableHours,
+      ...availableHours,
+      ...availableHours,
+    ];
+  }, [availableHours]);
+
+  const infiniteMinutes = useMemo(() => {
+    return [
+      ...availableMinutes,
+      ...availableMinutes,
+      ...availableMinutes,
+      ...availableMinutes,
+      ...availableMinutes,
+      ...availableMinutes,
+      ...availableMinutes,
+    ];
+  }, [availableMinutes]);
 
   // Mouse Drag state
   const isDraggingHour = useRef(false);
@@ -42,6 +175,19 @@ export const TimeInput: React.FC<TimeInputProps> = ({
   const isDraggingMin = useRef(false);
   const startYMin = useRef(0);
   const startScrollMin = useRef(0);
+
+  // Đồng bộ giá trị prop từ ngoài vào state nội bộ
+  useEffect(() => {
+    const [h, m] = (value || '19:00').split(':');
+    if (h) {
+      setActiveHour(h);
+      latestHourRef.current = h;
+    }
+    if (m) {
+      setActiveMinute(m);
+      latestMinRef.current = m;
+    }
+  }, [value]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -57,105 +203,166 @@ export const TimeInput: React.FC<TimeInputProps> = ({
     if (!isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
-      setOpenUpward(spaceBelow < 260);
+      setOpenUpward(spaceBelow < 300);
     }
     setIsOpen(!isOpen);
   };
 
-  // Cuộn tới vị trí đúng trong tập dữ liệu giữa (Middle Set)
-  const scrollToHourValue = (hVal: string, smooth = true) => {
-    if (!hourListRef.current) return;
-    const baseIndex = BASE_HOURS.indexOf(hVal);
-    if (baseIndex >= 0) {
-      const targetIndex = 24 + baseIndex; // Middle set offset
-      hourListRef.current.scrollTo({
-        top: targetIndex * ITEM_HEIGHT,
-        behavior: smooth ? 'smooth' : 'auto',
-      });
-    }
-  };
+  // Định vị chu kỳ giữa (3 chu kỳ)
+  const jumpToHour = useCallback(
+    (hVal: string) => {
+      if (!hourListRef.current) return;
+      let baseIndex = availableHours.indexOf(hVal);
+      if (baseIndex < 0) baseIndex = 0;
+      const targetIndex = availableHours.length * 3 + baseIndex;
+      hourListRef.current.scrollTop = targetIndex * ITEM_HEIGHT;
+    },
+    [availableHours],
+  );
 
-  const scrollToMinuteValue = (mVal: string, smooth = true) => {
-    if (!minuteListRef.current) return;
-    const baseIndex = BASE_MINUTES.indexOf(mVal);
-    if (baseIndex >= 0) {
-      const targetIndex = 60 + baseIndex; // Middle set offset
-      minuteListRef.current.scrollTo({
-        top: targetIndex * ITEM_HEIGHT,
-        behavior: smooth ? 'smooth' : 'auto',
-      });
-    }
-  };
+  const jumpToMinute = useCallback(
+    (mVal: string) => {
+      if (!minuteListRef.current) return;
+      let baseIndex = availableMinutes.indexOf(mVal);
+      if (baseIndex < 0) baseIndex = 0;
+      const targetIndex = availableMinutes.length * 3 + baseIndex;
+      minuteListRef.current.scrollTop = targetIndex * ITEM_HEIGHT;
+    },
+    [availableMinutes],
+  );
 
-  // When opened, scroll to middle set value
+  // Chỉ định vị 1 lần duy nhất khi vừa mở popup
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => {
-        scrollToHourValue(currentHour, false);
-        scrollToMinuteValue(currentMinute, false);
-      }, 50);
+      const [h, m] = (value || '19:00').split(':');
+      requestAnimationFrame(() => {
+        jumpToHour(h || availableHours[0]);
+        jumpToMinute(m || availableMinutes[0]);
+      });
     }
-  }, [isOpen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, availableHours, availableMinutes]);
 
-  // Infinite Scroll Repositioning for Hours
+  // Cuộn Giờ: Vòng lặp vô tận
   const handleHourScroll = () => {
     if (!hourListRef.current) return;
-    const scrollTop = hourListRef.current.scrollTop;
-    const totalItems = INFINITE_HOURS.length;
-    const singleSetHeight = 24 * ITEM_HEIGHT;
+    const top = hourListRef.current.scrollTop;
+    const cycleHeight = availableHours.length * ITEM_HEIGHT;
 
-    // Reset position if reaching boundaries
-    if (scrollTop < ITEM_HEIGHT * 2) {
-      hourListRef.current.scrollTop += singleSetHeight;
-    } else if (scrollTop > ITEM_HEIGHT * (totalItems - 5)) {
-      hourListRef.current.scrollTop -= singleSetHeight;
+    if (top < cycleHeight * 1.5) {
+      const remainder = top % cycleHeight;
+      hourListRef.current.scrollTop = cycleHeight * 3 + remainder;
+      return;
+    } else if (top > cycleHeight * 5) {
+      const remainder = top % cycleHeight;
+      hourListRef.current.scrollTop = cycleHeight * 3 + remainder;
+      return;
     }
 
-    const index = Math.min(
-      totalItems - 1,
-      Math.max(0, Math.round(hourListRef.current.scrollTop / ITEM_HEIGHT)),
-    );
-    const newHour = BASE_HOURS[index % 24];
-    if (newHour && newHour !== currentHour) {
-      onChange(`${newHour}:${currentMinute || '00'}`);
+    const rawIndex = Math.round(top / ITEM_HEIGHT);
+    const selectedH = infiniteHours[rawIndex] || availableHours[rawIndex % availableHours.length];
+    if (selectedH && selectedH !== latestHourRef.current) {
+      setActiveHour(selectedH);
+      latestHourRef.current = selectedH;
+      onChange(`${selectedH}:${latestMinRef.current || '00'}`);
     }
   };
 
-  // Infinite Scroll Repositioning for Minutes
+  // Cuộn Phút: Vòng lặp vô tận
   const handleMinuteScroll = () => {
     if (!minuteListRef.current) return;
-    const scrollTop = minuteListRef.current.scrollTop;
-    const totalItems = INFINITE_MINUTES.length;
-    const singleSetHeight = 60 * ITEM_HEIGHT;
+    const top = minuteListRef.current.scrollTop;
+    const cycleHeight = availableMinutes.length * ITEM_HEIGHT;
 
-    // Reset position if reaching boundaries
-    if (scrollTop < ITEM_HEIGHT * 2) {
-      minuteListRef.current.scrollTop += singleSetHeight;
-    } else if (scrollTop > ITEM_HEIGHT * (totalItems - 5)) {
-      minuteListRef.current.scrollTop -= singleSetHeight;
+    if (top < cycleHeight * 1.5) {
+      const remainder = top % cycleHeight;
+      minuteListRef.current.scrollTop = cycleHeight * 3 + remainder;
+      return;
+    } else if (top > cycleHeight * 5) {
+      const remainder = top % cycleHeight;
+      minuteListRef.current.scrollTop = cycleHeight * 3 + remainder;
+      return;
     }
 
-    const index = Math.min(
-      totalItems - 1,
-      Math.max(0, Math.round(minuteListRef.current.scrollTop / ITEM_HEIGHT)),
-    );
-    const newMinute = BASE_MINUTES[index % 60];
-    if (newMinute && newMinute !== currentMinute) {
-      onChange(`${currentHour || '09'}:${newMinute}`);
+    const rawIndex = Math.round(top / ITEM_HEIGHT);
+    const selectedM =
+      infiniteMinutes[rawIndex] || availableMinutes[rawIndex % availableMinutes.length];
+    if (selectedM && selectedM !== latestMinRef.current) {
+      setActiveMinute(selectedM);
+      latestMinRef.current = selectedM;
+      onChange(`${latestHourRef.current || '19'}:${selectedM}`);
     }
   };
 
-  const handleSelectHour = (hVal: string) => {
-    onChange(`${hVal}:${currentMinute || '00'}`);
-    scrollToHourValue(hVal, true);
+  // BẮT CHÍNH XÁC SỰ KIỆN LĂN CHUỘT THẬT (Non-passive DOM Event Listener): Khóa cứng đúng 40.0px mỗi nấc
+  useEffect(() => {
+    if (!isOpen) return;
+    const hourEl = hourListRef.current;
+    const minEl = minuteListRef.current;
+    if (!hourEl || !minEl) return;
+
+    const onHourWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const step = e.deltaY > 0 ? 1 : -1;
+      const current = hourEl.scrollTop;
+      const currentIdx = Math.round(current / ITEM_HEIGHT);
+      const nextIdx = currentIdx + step;
+      hourEl.scrollTop = nextIdx * ITEM_HEIGHT;
+
+      const selectedH = infiniteHours[nextIdx] || availableHours[nextIdx % availableHours.length];
+      if (selectedH) {
+        setActiveHour(selectedH);
+        latestHourRef.current = selectedH;
+        onChange(`${selectedH}:${latestMinRef.current || '00'}`);
+      }
+    };
+
+    const onMinWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const step = e.deltaY > 0 ? 1 : -1;
+      const current = minEl.scrollTop;
+      const currentIdx = Math.round(current / ITEM_HEIGHT);
+      const nextIdx = currentIdx + step;
+      minEl.scrollTop = nextIdx * ITEM_HEIGHT;
+
+      const selectedM =
+        infiniteMinutes[nextIdx] || availableMinutes[nextIdx % availableMinutes.length];
+      if (selectedM) {
+        setActiveMinute(selectedM);
+        latestMinRef.current = selectedM;
+        onChange(`${latestHourRef.current || '19'}:${selectedM}`);
+      }
+    };
+
+    hourEl.addEventListener('wheel', onHourWheel, { passive: false });
+    minEl.addEventListener('wheel', onMinWheel, { passive: false });
+
+    return () => {
+      hourEl.removeEventListener('wheel', onHourWheel);
+      minEl.removeEventListener('wheel', onMinWheel);
+    };
+  }, [isOpen, onChange, infiniteHours, infiniteMinutes, availableHours, availableMinutes]);
+
+  // Bấm chọn trực tiếp số: Khóa ngay vị trí tâm và gọi onChange đồng bộ cả giờ và phút
+  const handleSelectHour = (h: string, idx: number) => {
+    setActiveHour(h);
+    latestHourRef.current = h;
+    onChange(`${h}:${latestMinRef.current || '00'}`);
+    if (hourListRef.current) {
+      hourListRef.current.scrollTop = idx * ITEM_HEIGHT;
+    }
   };
 
-  const handleSelectMinute = (mVal: string) => {
-    onChange(`${currentHour || '09'}:${mVal}`);
-    scrollToMinuteValue(mVal, true);
+  const handleSelectMinute = (m: string, idx: number) => {
+    setActiveMinute(m);
+    latestMinRef.current = m;
+    onChange(`${latestHourRef.current || '19'}:${m}`);
+    if (minuteListRef.current) {
+      minuteListRef.current.scrollTop = idx * ITEM_HEIGHT;
+    }
   };
 
-  // Drag handlers for Hours column
+  // Drag handlers cho chuột Giờ
   const handleHourMouseDown = (e: React.MouseEvent) => {
     isDraggingHour.current = true;
     startYHour.current = e.pageY;
@@ -172,13 +379,21 @@ export const TimeInput: React.FC<TimeInputProps> = ({
   };
 
   const handleHourMouseUp = () => {
-    if (isDraggingHour.current) {
+    if (isDraggingHour.current && hourListRef.current) {
       isDraggingHour.current = false;
-      handleHourScroll();
+      const top = hourListRef.current.scrollTop;
+      const snappedIndex = Math.round(top / ITEM_HEIGHT);
+      hourListRef.current.scrollTop = snappedIndex * ITEM_HEIGHT;
+      const selectedH = infiniteHours[snappedIndex];
+      if (selectedH) {
+        setActiveHour(selectedH);
+        latestHourRef.current = selectedH;
+        onChange(`${selectedH}:${latestMinRef.current || '00'}`);
+      }
     }
   };
 
-  // Drag handlers for Minutes column
+  // Drag handlers cho chuột Phút
   const handleMinMouseDown = (e: React.MouseEvent) => {
     isDraggingMin.current = true;
     startYMin.current = e.pageY;
@@ -195,67 +410,84 @@ export const TimeInput: React.FC<TimeInputProps> = ({
   };
 
   const handleMinMouseUp = () => {
-    if (isDraggingMin.current) {
+    if (isDraggingMin.current && minuteListRef.current) {
       isDraggingMin.current = false;
-      handleMinuteScroll();
+      const top = minuteListRef.current.scrollTop;
+      const snappedIndex = Math.round(top / ITEM_HEIGHT);
+      minuteListRef.current.scrollTop = snappedIndex * ITEM_HEIGHT;
+      const selectedM = infiniteMinutes[snappedIndex];
+      if (selectedM) {
+        setActiveMinute(selectedM);
+        latestMinRef.current = selectedM;
+        onChange(`${latestHourRef.current || '19'}:${selectedM}`);
+      }
     }
   };
+
+  const isBlockedValue = isCurrentValueBlocked(value);
 
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       {label && (
-        <label className="block text-[11px] font-semibold text-gray-700 uppercase tracking-wider mb-1">
+        <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-2">
           {label}
         </label>
       )}
 
-      {/* Input Display Box */}
+      {/* Input Display Box (Chỉ đổi màu chữ số và icon sang đỏ khi giờ đang chọn bị bận) */}
       <button
         type="button"
         onClick={handleToggleOpen}
-        className={`w-full px-3.5 py-2.5 rounded-xl border text-sm flex items-center justify-between bg-white transition-all duration-200 outline-none cursor-pointer ${
+        className={`w-full px-3.5 py-2.5 rounded-xl border text-sm flex items-center justify-between bg-white transition-all duration-150 outline-none cursor-pointer ${
           isOpen
-            ? 'border-primary-500 ring-2 ring-primary-100'
-            : 'border-gray-200 hover:border-gray-300'
+            ? 'border-primary-600 ring-2 ring-primary-600/20 shadow-xs'
+            : 'border-slate-200 hover:border-slate-300'
         } ${error ? 'border-red-500 ring-2 ring-red-100' : ''}`}
       >
-        <div className="flex items-center gap-2.5">
-          <Clock className="w-4 h-4 text-primary-500 shrink-0" />
-          <span className="font-semibold text-slate-800 text-sm tracking-wide">
-            {value || '19:00'}
-          </span>
-        </div>
+        <span
+          className={`text-sm tracking-wide ${
+            isBlockedValue ? 'text-red-500 font-semibold' : 'font-medium text-slate-800'
+          }`}
+        >
+          {format24Hour(value)}
+        </span>
 
-        <ChevronDown
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-primary-500' : ''
+        <Clock
+          className={`w-4 h-4 shrink-0 ${
+            isBlockedValue ? 'text-red-500' : 'text-slate-700'
           }`}
         />
       </button>
 
-      {/* iOS Infinite Drum Wheel Selector Popup */}
+      {/* Bảng con lăn Vòng lặp vô tận (5 hàng chuẩn iOS Drum Wheel - Tâm ở 80px) */}
       {isOpen && (
         <div
-          className={`absolute z-50 left-0 right-0 bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-2xl p-4 animate-in zoom-in-95 duration-150 min-w-[240px] ${
+          className={`absolute z-50 left-0 right-0 bg-white text-slate-900 rounded-2xl border border-slate-200 shadow-2xl p-4 min-w-[220px] ${
             openUpward ? 'bottom-full mb-2 origin-bottom' : 'top-full mt-2 origin-top'
           }`}
         >
-          {/* Header Column Titles */}
-          <div className="grid grid-cols-2 text-center pb-2 mb-2 border-b border-slate-100">
-            <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider">
-              GIỜ
-            </span>
-            <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider border-l border-slate-100">
-              PHÚT
-            </span>
+          {/* Header Tiêu Đề Cột */}
+          <div className="grid grid-cols-2 text-center pb-2 mb-2 border-b border-slate-100 font-medium text-[11px] text-slate-500 uppercase tracking-wider">
+            <span>GIỜ</span>
+            <span className="border-l border-slate-100">PHÚT</span>
           </div>
 
-          {/* iOS Drum Wheel Container */}
-          <div className="relative grid grid-cols-2 gap-2 h-[160px] select-none overflow-hidden">
-            {/* Center Drum Highlight Bar */}
-            <div className="absolute top-[60px] left-0 right-0 h-10 bg-primary-50/90 border-2 border-primary-500/80 pointer-events-none rounded-xl" />
+          {/* Drum Wheel Container (Cao 200px hiển thị 5 hàng hoàn hảo) */}
+          <div
+            style={{ height: `${CONTAINER_HEIGHT}px` }}
+            className="relative grid grid-cols-2 gap-2 select-none overflow-hidden"
+          >
+            {/* Khung Highlight cố định ở giữa (Tâm y=80px, Cao 40px) */}
+            <div
+              style={{ top: `${CENTER_OFFSET}px`, height: `${ITEM_HEIGHT}px` }}
+              className="absolute left-0 right-0 bg-primary-50/60 border border-primary-600/60 pointer-events-none rounded-xl z-0"
+            />
 
-            {/* Hours Column (Infinite Loop) */}
+            {/* Lớp phủ Gradient 3D mềm mại (phủ nhẹ viền trên và dưới, giữ số rõ ràng dễ đọc) */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white/70 via-white/30 to-transparent z-20" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white/70 via-white/30 to-transparent z-20" />
+
+            {/* Cột GIỜ (Hiển thị trọn vẹn 24H từ 00 -> 23, chỉ gạch đỏ các giờ không thể chọn) */}
             <div
               ref={hourListRef}
               onScroll={handleHourScroll}
@@ -263,28 +495,60 @@ export const TimeInput: React.FC<TimeInputProps> = ({
               onMouseMove={handleHourMouseMove}
               onMouseUp={handleHourMouseUp}
               onMouseLeave={handleHourMouseUp}
-              className="overflow-y-auto py-[60px] space-y-0 text-center snap-y snap-mandatory scroll-smooth cursor-grab active:cursor-grabbing [::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              className="relative z-10 overflow-y-auto space-y-0 text-center cursor-grab active:cursor-grabbing [overscroll-behavior:contain] [::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
             >
-              {INFINITE_HOURS.map((h, idx) => {
-                const isSelected = h === currentHour;
+              {/* Spacer trên đúng 80.0px để item 0 rơi đúng vào tâm y=80px */}
+              <div
+                style={{
+                  height: `${CENTER_OFFSET}px`,
+                  minHeight: `${CENTER_OFFSET}px`,
+                  maxHeight: `${CENTER_OFFSET}px`,
+                }}
+                className="shrink-0 pointer-events-none"
+              />
+
+              {infiniteHours.map((h, idx) => {
+                const isCenter = h === activeHour;
+                const isBlocked = isHourBlocked(h);
+
                 return (
                   <button
                     key={`h-${idx}`}
                     type="button"
-                    onClick={() => handleSelectHour(h)}
-                    className={`w-full h-10 snap-center flex items-center justify-center rounded-lg transition-all duration-150 cursor-pointer ${
-                      isSelected
-                        ? 'text-primary-700 font-black text-base scale-110 opacity-100'
-                        : 'text-slate-400 font-semibold text-xs opacity-40 hover:opacity-80 hover:text-slate-800'
+                    disabled={isBlocked}
+                    onClick={() => !isBlocked && handleSelectHour(h, idx)}
+                    style={{
+                      height: `${ITEM_HEIGHT}px`,
+                      minHeight: `${ITEM_HEIGHT}px`,
+                      maxHeight: `${ITEM_HEIGHT}px`,
+                      lineHeight: `${ITEM_HEIGHT}px`,
+                      boxSizing: 'border-box',
+                    }}
+                    className={`w-full flex items-center justify-center rounded-lg transition-colors duration-75 text-sm font-normal ${
+                      isBlocked
+                        ? 'text-red-400 line-through decoration-red-300 cursor-not-allowed pointer-events-none select-none'
+                        : isCenter
+                        ? 'text-slate-950 font-medium'
+                        : 'text-slate-500 hover:text-slate-700 cursor-pointer'
                     }`}
                   >
-                    {h}
+                    <span>{h}</span>
                   </button>
                 );
               })}
+
+              {/* Spacer dưới đúng 80.0px */}
+              <div
+                style={{
+                  height: `${CENTER_OFFSET}px`,
+                  minHeight: `${CENTER_OFFSET}px`,
+                  maxHeight: `${CENTER_OFFSET}px`,
+                }}
+                className="shrink-0 pointer-events-none"
+              />
             </div>
 
-            {/* Minutes Column (Infinite Loop) */}
+            {/* Cột PHÚT (Hiển thị trọn vẹn 60 phút từ 00 -> 59, chỉ gạch đỏ các phút không thể chọn) */}
             <div
               ref={minuteListRef}
               onScroll={handleMinuteScroll}
@@ -292,25 +556,57 @@ export const TimeInput: React.FC<TimeInputProps> = ({
               onMouseMove={handleMinMouseMove}
               onMouseUp={handleMinMouseUp}
               onMouseLeave={handleMinMouseUp}
-              className="overflow-y-auto py-[60px] space-y-0 text-center border-l border-slate-100 snap-y snap-mandatory scroll-smooth cursor-grab active:cursor-grabbing [::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              className="relative z-10 overflow-y-auto space-y-0 text-center border-l border-slate-100 cursor-grab active:cursor-grabbing [overscroll-behavior:contain] [::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
             >
-              {INFINITE_MINUTES.map((m, idx) => {
-                const isSelected = m === currentMinute;
+              {/* Spacer trên đúng 80.0px */}
+              <div
+                style={{
+                  height: `${CENTER_OFFSET}px`,
+                  minHeight: `${CENTER_OFFSET}px`,
+                  maxHeight: `${CENTER_OFFSET}px`,
+                }}
+                className="shrink-0 pointer-events-none"
+              />
+
+              {infiniteMinutes.map((m, idx) => {
+                const isCenter = m === activeMinute;
+                const isBlocked = isMinuteBlocked(m);
+
                 return (
                   <button
                     key={`m-${idx}`}
                     type="button"
-                    onClick={() => handleSelectMinute(m)}
-                    className={`w-full h-10 snap-center flex items-center justify-center rounded-lg transition-all duration-150 cursor-pointer ${
-                      isSelected
-                        ? 'text-primary-700 font-black text-base scale-110 opacity-100'
-                        : 'text-slate-400 font-semibold text-xs opacity-40 hover:opacity-80 hover:text-slate-800'
+                    disabled={isBlocked}
+                    onClick={() => !isBlocked && handleSelectMinute(m, idx)}
+                    style={{
+                      height: `${ITEM_HEIGHT}px`,
+                      minHeight: `${ITEM_HEIGHT}px`,
+                      maxHeight: `${ITEM_HEIGHT}px`,
+                      lineHeight: `${ITEM_HEIGHT}px`,
+                      boxSizing: 'border-box',
+                    }}
+                    className={`w-full flex items-center justify-center rounded-lg transition-colors duration-75 text-sm font-normal ${
+                      isBlocked
+                        ? 'text-red-400 line-through decoration-red-300 cursor-not-allowed pointer-events-none select-none'
+                        : isCenter
+                        ? 'text-slate-950 font-medium'
+                        : 'text-slate-500 hover:text-slate-700 cursor-pointer'
                     }`}
                   >
-                    {m}
+                    <span>{m}</span>
                   </button>
                 );
               })}
+
+              {/* Spacer dưới đúng 80.0px */}
+              <div
+                style={{
+                  height: `${CENTER_OFFSET}px`,
+                  minHeight: `${CENTER_OFFSET}px`,
+                  maxHeight: `${CENTER_OFFSET}px`,
+                }}
+                className="shrink-0 pointer-events-none"
+              />
             </div>
           </div>
         </div>

@@ -5,9 +5,9 @@ export interface DateInputProps {
   label?: string;
   value: string; // YYYY-MM-DD format
   onChange: (value: string) => void;
+  min?: string; // Ngày tối thiểu cho phép chọn (e.g. YYYY-MM-DD)
   error?: string;
   className?: string;
-  min?: string;
   required?: boolean;
 }
 
@@ -32,12 +32,24 @@ export const DateInput: React.FC<DateInputProps> = ({
   label,
   value,
   onChange,
+  min,
   error,
   className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const getTodayLocalDate = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStr = getTodayLocalDate();
+  const effectiveMin = min !== undefined ? min : todayStr;
 
   const initialDate = value ? new Date(value) : new Date();
   const [viewYear, setViewYear] = useState(initialDate.getFullYear() || new Date().getFullYear());
@@ -69,7 +81,17 @@ export const DateInput: React.FC<DateInputProps> = ({
     return `Ngày ${d} thg ${m}, ${y}`;
   };
 
+  // Kiểm tra nút lùi tháng có bị chặn không
+  const canGoPrevMonth = () => {
+    if (!effectiveMin) return true;
+    const [minY, minM] = effectiveMin.split('-').map(Number);
+    if (viewYear < minY) return false;
+    if (viewYear === minY && viewMonth <= minM - 1) return false;
+    return true;
+  };
+
   const handlePrevMonth = () => {
+    if (!canGoPrevMonth()) return;
     if (viewMonth === 0) {
       setViewMonth(11);
       setViewYear(viewYear - 1);
@@ -99,7 +121,8 @@ export const DateInput: React.FC<DateInputProps> = ({
   const daysInMonth = getDaysInMonth(viewYear, viewMonth);
   const firstDayOfWeek = getFirstDayOfWeek(viewYear, viewMonth);
 
-  const handleSelectDay = (dayNum: number) => {
+  const handleSelectDay = (dayNum: number, isBlocked: boolean) => {
+    if (isBlocked) return;
     const mStr = String(viewMonth + 1).padStart(2, '0');
     const dStr = String(dayNum).padStart(2, '0');
     const formatted = `${viewYear}-${mStr}-${dStr}`;
@@ -107,12 +130,10 @@ export const DateInput: React.FC<DateInputProps> = ({
     setIsOpen(false);
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
-
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       {label && (
-        <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+        <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-2">
           {label}
         </label>
       )}
@@ -121,22 +142,22 @@ export const DateInput: React.FC<DateInputProps> = ({
       <button
         type="button"
         onClick={handleToggleOpen}
-        className={`w-full px-3.5 py-2.5 rounded-xl border text-sm flex items-center justify-between bg-white transition-all duration-200 outline-none cursor-pointer ${
+        className={`w-full px-3.5 py-2.5 rounded-xl border text-sm flex items-center justify-between bg-white transition-all duration-150 outline-none cursor-pointer ${
           isOpen
-            ? 'border-primary-500 ring-2 ring-primary-100'
-            : 'border-gray-200 hover:border-gray-300'
+            ? 'border-primary-600 ring-2 ring-primary-600/20 shadow-xs'
+            : 'border-slate-200 hover:border-slate-300'
         } ${error ? 'border-red-500 ring-2 ring-red-100' : ''}`}
       >
         <div className="flex items-center gap-2.5">
-          <CalendarIcon className="w-4 h-4 text-primary-500 shrink-0" />
-          <span className={`text-sm ${value ? 'font-semibold text-slate-900' : 'font-normal text-gray-400'}`}>
+          <CalendarIcon className="w-4 h-4 text-slate-700 shrink-0" />
+          <span className={`text-sm ${value ? 'font-medium text-slate-800' : 'font-normal text-slate-400'}`}>
             {formatDateDisplay(value)}
           </span>
         </div>
 
         <ChevronDown
-          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-            isOpen ? 'rotate-180 text-primary-500' : ''
+          className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+            isOpen ? 'rotate-180 text-primary-600' : ''
           }`}
         />
       </button>
@@ -144,7 +165,7 @@ export const DateInput: React.FC<DateInputProps> = ({
       {/* Calendar Popup (Smart Drop-Up / Drop-Down) */}
       {isOpen && (
         <div
-          className={`absolute z-50 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 animate-in zoom-in-95 duration-150 min-w-[280px] ${
+          className={`absolute z-50 left-0 right-0 bg-white rounded-2xl border border-slate-200 shadow-2xl p-4 min-w-[280px] ${
             openUpward ? 'bottom-full mb-2 origin-bottom' : 'top-full mt-2 origin-top'
           }`}
         >
@@ -152,8 +173,9 @@ export const DateInput: React.FC<DateInputProps> = ({
           <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
             <button
               type="button"
+              disabled={!canGoPrevMonth()}
               onClick={handlePrevMonth}
-              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -191,18 +213,24 @@ export const DateInput: React.FC<DateInputProps> = ({
               const currentDateStr = `${viewYear}-${mStr}-${dStr}`;
               const isSelected = value === currentDateStr;
               const isToday = todayStr === currentDateStr;
+              
+              // Khóa toàn bộ các ngày trước ngày hiện tại (Quá khứ)
+              const isPast = effectiveMin ? currentDateStr < effectiveMin : false;
 
               return (
                 <button
                   key={dayNum}
                   type="button"
-                  onClick={() => handleSelectDay(dayNum)}
-                  className={`h-8 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
-                    isSelected
-                      ? 'bg-primary-600 text-white shadow-md'
+                  disabled={isPast}
+                  onClick={() => handleSelectDay(dayNum, isPast)}
+                  className={`h-8 rounded-xl text-xs transition-all flex items-center justify-center ${
+                    isPast
+                      ? 'text-slate-400/80 font-normal cursor-not-allowed pointer-events-none select-none'
+                      : isSelected
+                      ? 'bg-primary-600 text-white font-bold shadow-xs'
                       : isToday
-                      ? 'bg-primary-50 text-primary-600 border border-primary-200'
-                      : 'text-slate-700 hover:bg-slate-100'
+                      ? 'bg-primary-50 text-primary-700 font-bold border border-primary-300/80 cursor-pointer'
+                      : 'text-slate-700 font-bold hover:bg-slate-100 cursor-pointer'
                   }`}
                 >
                   {dayNum}

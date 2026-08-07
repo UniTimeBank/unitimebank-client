@@ -2,6 +2,12 @@ export type DayOfWeek = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
 
 export type ExceptionType = 'EXTRA' | 'BLOCKED';
 
+export interface DayOption {
+  value: DayOfWeek;
+  shortLabel: string;
+  label: string;
+}
+
 export interface CreateRecurringScheduleDto {
   dayOfWeek: DayOfWeek;
   startTime: string;
@@ -24,6 +30,12 @@ export interface RecurringSchedule {
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface CopyScheduleSource {
+  day: DayOfWeek;
+  label: string;
+  slots: RecurringSchedule[];
 }
 
 export interface CreateScheduleExceptionDto {

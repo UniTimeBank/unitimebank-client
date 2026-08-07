@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 import { useMentorSchedule } from '../hooks/useMentorSchedule';
-import { getEndDate } from '../utils';
+import { formatLocalDate, getEndDate } from '../utils';
 
 interface MentorAvailabilityViewerProps {
   mentorId: string;
@@ -14,7 +14,7 @@ export const MentorAvailabilityViewer: React.FC<MentorAvailabilityViewerProps> =
   mentorName,
   onSelectSlot,
 }) => {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = formatLocalDate(new Date());
   const [fromDate, setFromDate] = useState(todayStr);
 
   const toDate = getEndDate(fromDate, 6);
@@ -33,18 +33,18 @@ export const MentorAvailabilityViewer: React.FC<MentorAvailabilityViewerProps> =
   const dayList = availability || [];
 
   const handleNextWeek = () => {
-    const next = new Date(fromDate);
+    const next = new Date(fromDate + 'T00:00:00');
     next.setDate(next.getDate() + 7);
-    setFromDate(next.toISOString().split('T')[0]);
+    setFromDate(formatLocalDate(next));
   };
 
   const handlePrevWeek = () => {
-    const prev = new Date(fromDate);
+    const prev = new Date(fromDate + 'T00:00:00');
     prev.setDate(prev.getDate() - 7);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (prev >= today) {
-      setFromDate(prev.toISOString().split('T')[0]);
+      setFromDate(formatLocalDate(prev));
     } else {
       setFromDate(todayStr);
     }
@@ -111,11 +111,10 @@ export const MentorAvailabilityViewer: React.FC<MentorAvailabilityViewerProps> =
               return (
                 <div
                   key={day.date}
-                  className={`p-3 rounded-2xl border transition-all ${
-                    hasSlots
+                  className={`p-3 rounded-2xl border transition-all ${hasSlots
                       ? 'bg-slate-50/70 border-slate-200/90'
                       : 'bg-slate-50/30 border-slate-100 opacity-50'
-                  }`}
+                    }`}
                 >
                   <div className="text-center pb-2 mb-2 border-b border-slate-200/60">
                     <span className="block text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
@@ -149,11 +148,10 @@ export const MentorAvailabilityViewer: React.FC<MentorAvailabilityViewerProps> =
                                 onSelectSlot(day.date, slot.startTime, slot.endTime);
                               }
                             }}
-                            className={`w-full py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex flex-col items-center justify-center ${
-                              isSelected
+                            className={`w-full py-1.5 px-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex flex-col items-center justify-center ${isSelected
                                 ? 'bg-primary-600 text-white shadow-md ring-2 ring-primary-400/40'
                                 : 'bg-white text-slate-800 hover:bg-primary-50 border border-slate-200'
-                            }`}
+                              }`}
                           >
                             <span>{slot.startTime}</span>
                             <span className="text-[9px] opacity-80">- {slot.endTime}</span>
