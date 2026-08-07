@@ -72,7 +72,7 @@ export const MentorScheduleManager: React.FC = () => {
             }`}
           >
             <CalendarOff className="w-3.5 h-3.5" />
-            <span>Ngày Bận / Ngoại Lệ</span>
+            <span>Ngày Bận / Đặc Biệt</span>
           </button>
         </div>
       </div>

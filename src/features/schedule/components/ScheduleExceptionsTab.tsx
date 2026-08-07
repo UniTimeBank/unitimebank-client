@@ -100,7 +100,7 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
     setSuccessMsg('');
 
     if (!date) {
-      setError('Vui lòng chọn ngày ngoại lệ');
+      setError('Vui lòng chọn ngày đặc biệt');
       return;
     }
 
@@ -116,7 +116,7 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
     });
 
     if (isOverlap) {
-      setError(`Khung giờ [${startTime} - ${endTime}] trên ngày này bị trùng với lịch ngoại lệ đã có!`);
+      setError(`Khung giờ [${startTime} - ${endTime}] trên ngày này bị trùng với lịch đặc biệt đã có!`);
       return;
     }
 
@@ -129,10 +129,10 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
         reason: reason.trim() || undefined,
       });
       setReason('');
-      setSuccessMsg('Đã lưu lịch ngoại lệ thành công!');
+      setSuccessMsg('Đã lưu lịch đặc biệt thành công!');
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err: any) {
-      setError(err?.data?.message || err?.message || 'Không thể tạo lịch ngoại lệ');
+      setError(err?.data?.message || err?.message || 'Không thể tạo lịch đặc biệt');
     }
   };
 
@@ -155,7 +155,7 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
         <div>
           {/* Tiêu đề Form */}
           <h3 className="text-base font-bold text-slate-900 mb-5">
-            Thêm Ngoại Lệ Mới
+            Thêm Ngày Đặc Biệt
           </h3>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -188,7 +188,7 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
             {/* Loại Ngoại Lệ (Nút BẬN và RẢNH THÊM) */}
             <div>
               <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                LOẠI NGOẠI LỆ
+                LOẠI NGÀY ĐẶC BIỆT
               </label>
               <div className="grid grid-cols-2 gap-3">
                 {/* Nút BẬN */}
@@ -269,7 +269,7 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
               disabled={isCreating}
               className="w-full mt-2 py-3 px-4 rounded-xl bg-[#044e3a] hover:bg-[#033c2d] text-white font-medium text-sm flex items-center justify-center shadow-xs transition-all select-none text-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span>{isCreating ? 'Đang lưu...' : 'Lưu Ngoại Lệ'}</span>
+              <span>{isCreating ? 'Đang lưu...' : 'Lưu Ngày Đặc Biệt'}</span>
             </button>
           </form>
         </div>
@@ -280,7 +280,7 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
         {/* Header danh sách */}
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-bold text-slate-900">
-            Lịch Ngoại Lệ Sắp Tới
+            Lịch Đặc Biệt Sắp Tới
           </h3>
           <button
             type="button"
@@ -292,11 +292,11 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
         </div>
 
         {isLoading ? (
-          <div className="p-8 text-center text-slate-400 text-xs">Đang tải lịch ngoại lệ...</div>
+          <div className="p-8 text-center text-slate-400 text-xs">Đang tải lịch đặc biệt...</div>
         ) : exceptionsList.length === 0 ? (
           <div className="h-full min-h-[220px] flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
             <CalendarIcon className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <h4 className="text-sm font-bold text-slate-700 mb-1">Chưa có lịch ngoại lệ nào</h4>
+            <h4 className="text-sm font-bold text-slate-700 mb-1">Chưa có lịch đặc biệt nào</h4>
             <p className="text-xs text-slate-400 max-w-sm mx-auto">
               Thêm các ngày bạn bận đột xuất hoặc rảnh thêm ở bên trái để hệ thống cập nhật lịch chính xác.
             </p>
@@ -353,7 +353,7 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
                         type="button"
                         onClick={() => onDelete(slot.id)}
                         className="text-slate-400 hover:text-red-600 p-1 rounded-lg transition-colors cursor-pointer"
-                        title="Xóa ngoại lệ này"
+                        title="Xóa ngày đặc biệt này"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
