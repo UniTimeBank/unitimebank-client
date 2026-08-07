@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CalendarX, Plus, Trash2, Calendar, AlertCircle } from 'lucide-react';
-import { Button, Input, Select, TimeInput } from '@/shared/components/ui';
+import { Button, Input, Select, TimeInput, DateInput } from '@/shared/components/ui';
 import type { ExceptionType, ScheduleException } from '../types';
 
 const EXCEPTION_TYPES: { value: ExceptionType; label: string }[] = [
@@ -84,12 +84,10 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
               </div>
             )}
 
-            <Input
-              type="date"
+            <DateInput
               label="CHỌN NGÀY CỤ THỂ"
               value={date}
-              min={todayStr}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(val) => setDate(val)}
             />
 
             <Select

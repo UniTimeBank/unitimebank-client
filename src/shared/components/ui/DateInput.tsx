@@ -129,7 +129,7 @@ export const DateInput: React.FC<DateInputProps> = ({
       >
         <div className="flex items-center gap-2.5">
           <CalendarIcon className="w-4 h-4 text-primary-500 shrink-0" />
-          <span className={`text-sm ${value ? 'font-extrabold text-slate-900' : 'font-normal text-gray-400'}`}>
+          <span className={`text-sm ${value ? 'font-semibold text-slate-900' : 'font-normal text-gray-400'}`}>
             {formatDateDisplay(value)}
           </span>
         </div>

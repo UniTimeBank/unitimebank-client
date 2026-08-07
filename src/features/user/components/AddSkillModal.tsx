@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { SkillCategoryEnum } from '../types';
 import { SKILL_CATEGORIES } from '../constants';
-import { Modal, Input, Select, Button } from '@/shared/components/ui';
+import { Modal, Input, Select, Button, Checkbox } from '@/shared/components/ui';
 
 interface AddSkillModalProps {
   isOpen: boolean;
@@ -56,17 +56,13 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
         />
 
         {/* Is Strong Checkbox */}
-        <div className="flex items-center gap-2 pt-1">
-          <input
-            type="checkbox"
+        <div className="pt-1">
+          <Checkbox
             id="isStrong"
             checked={isStrong}
-            onChange={(e) => setIsStrong(e.target.checked)}
-            className="w-4 h-4 text-primary-500 rounded-sm border-gray-300 focus:ring-primary-500 cursor-pointer"
+            onChange={(checked) => setIsStrong(checked)}
+            label={<span className="text-xs font-semibold text-gray-700">Đặt làm Kỹ năng cốt lõi / Thế mạnh nhất của tôi</span>}
           />
-          <label htmlFor="isStrong" className="text-xs font-semibold text-gray-700 cursor-pointer">
-            Đặt làm Kỹ năng cốt lõi / Thế mạnh nhất của tôi
-          </label>
         </div>
 
         {/* Actions */}

@@ -204,7 +204,7 @@ export const TimeInput: React.FC<TimeInputProps> = ({
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       {label && (
-        <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+        <label className="block text-[11px] font-semibold text-gray-700 uppercase tracking-wider mb-1">
           {label}
         </label>
       )}
@@ -221,7 +221,7 @@ export const TimeInput: React.FC<TimeInputProps> = ({
       >
         <div className="flex items-center gap-2.5">
           <Clock className="w-4 h-4 text-primary-500 shrink-0" />
-          <span className="font-extrabold text-slate-800 text-sm tracking-wide">
+          <span className="font-semibold text-slate-800 text-sm tracking-wide">
             {value || '19:00'}
           </span>
         </div>

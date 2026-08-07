@@ -31,7 +31,7 @@ export const MentorScheduleManager: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-3xl border border-gray-100 shadow-xs overflow-hidden p-6 sm:p-8">
+    <div className="bg-white rounded-3xl border border-gray-100 shadow-xs p-6 sm:p-8 relative">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-100">
         <div>
           <div className="flex items-center gap-2 mb-1">
