@@ -4,7 +4,8 @@ export interface NavLinkItem {
 }
 
 export const NAV_LINKS: NavLinkItem[] = [
-  { label: 'Sàn giao dịch', path: '/marketplace' },
-  { label: 'Lớp học', path: '/classes' },
-  { label: 'Sổ cái Credit', path: '/ledger' },
+  { label: 'Khám phá', path: '/explore' },
+  { label: 'Yêu cầu học', path: '/requests' },
+  { label: 'Sổ cái Credit', path: '/profile' },
+  { label: 'Cộng đồng', path: '/community' },
 ];

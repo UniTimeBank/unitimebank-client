@@ -1,16 +1,15 @@
-import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AuthPage, ChangePasswordModal } from '@/features/auth';
-import { useAuth } from '@/features/auth/hooks';
+import { AuthPage } from '@/features/auth';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 import { ROUTES } from './paths';
 import { UserProfilePage } from '@/features/user';
+import { PostExplorePage, OpenRequestsPage, CommunityPage } from '@/features/post';
 
 export const AppRoutes = () => {
   return (
     <Routes>
-      {/* Route công khai - Auth (Chỉ dùng /login và /register) */}
+      {/* Route công khai - Auth */}
       <Route
         path={ROUTES.AUTH.LOGIN}
         element={
@@ -29,9 +28,35 @@ export const AppRoutes = () => {
       />
       <Route path="/auth" element={<Navigate to={ROUTES.AUTH.LOGIN} replace />} />
 
-      {/* Redirect Home và Dashboard trực tiếp về Profile */}
-      <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.PROFILE} replace />} />
-      <Route path={ROUTES.DASHBOARD} element={<Navigate to={ROUTES.PROFILE} replace />} />
+      {/* Redirect Home về Explore */}
+      <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.EXPLORE} replace />} />
+      <Route path={ROUTES.DASHBOARD} element={<Navigate to={ROUTES.EXPLORE} replace />} />
+
+      {/* Route bảo vệ - Explore & Requests & Community */}
+      <Route
+        path={ROUTES.EXPLORE}
+        element={
+          <ProtectedRoute>
+            <PostExplorePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.COMMUNITY}
+        element={
+          <ProtectedRoute>
+            <CommunityPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.REQUESTS}
+        element={
+          <ProtectedRoute>
+            <OpenRequestsPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Route bảo vệ - Profile */}
       <Route
@@ -52,7 +77,7 @@ export const AppRoutes = () => {
       />
 
       {/* Wildcard 404 Route */}
-      <Route path={ROUTES.NOT_FOUND} element={<Navigate to={ROUTES.PROFILE} replace />} />
+      <Route path={ROUTES.NOT_FOUND} element={<Navigate to={ROUTES.EXPLORE} replace />} />
     </Routes>
   );
 };
