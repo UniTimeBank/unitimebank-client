@@ -1,7 +1,7 @@
 import React from 'react';
 import { Zap, ShieldCheck, Clock } from 'lucide-react';
-import type { LearnerRequest } from '../types';
-import { getCategoryBadge } from '../utils';
+import type { LearnerRequest } from '../../types';
+import { getCategoryBadge } from '../../utils';
 
 interface LearnerRequestCardProps {
   request: LearnerRequest;

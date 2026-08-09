@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, Pencil, Share2, Plus, TrendingUp, Sprout, X, ArrowLeft } from 'lucide-react';
 
 import { TrustScoreGauge } from '@/shared/components';
@@ -16,10 +16,10 @@ import {
   PeerReviewsSection,
   ExpertiseTrackCard,
 } from '../components';
-import { CreateMentorPostModal } from '@/features/post';
 import { useUserProfile, useUserSkills, useDailyCheckin } from '../hooks';
 
 export const UserProfilePage: React.FC = () => {
+  const navigate = useNavigate();
   const { profile, updateProfile, uploadAvatar } = useUserProfile();
   const { addSkill, deleteSkill } = useUserSkills();
   const { currentStreak, hasCheckedInToday, rewardMessage, checkin, isCheckinLoading } = useDailyCheckin();
@@ -29,7 +29,6 @@ export const UserProfilePage: React.FC = () => {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddSkillModalOpen, setIsAddSkillModalOpen] = useState(false);
-  const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
 
   const userName = profile?.displayName || 'Nguyễn Hoàng Sang';
@@ -230,15 +229,14 @@ export const UserProfilePage: React.FC = () => {
 
               {/* Right: Sleek Compact Icon Actions at the top right */}
               <div className="flex items-center gap-2 shrink-0 self-start">
-                <button
-                  type="button"
-                  onClick={() => setIsCreatePostModalOpen(true)}
+                <Link
+                  to="/requests"
                   className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 rounded-xl shadow-xs transition-all cursor-pointer"
                   title="Đăng bài dạy mới"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span className="hidden sm:inline">Đăng bài</span>
-                </button>
+                </Link>
 
                 <button
                   type="button"
@@ -501,12 +499,6 @@ export const UserProfilePage: React.FC = () => {
         isOpen={isAddSkillModalOpen}
         onClose={() => setIsAddSkillModalOpen(false)}
         onAddSkill={handleAddSkillSuccess}
-      />
-
-      {/* Create Mentor Post Modal */}
-      <CreateMentorPostModal
-        isOpen={isCreatePostModalOpen}
-        onClose={() => setIsCreatePostModalOpen(false)}
       />
     </div>
   );

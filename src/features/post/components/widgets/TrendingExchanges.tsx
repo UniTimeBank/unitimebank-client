@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingUp, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { DEFAULT_TRENDING } from '../constants';
+import { DEFAULT_TRENDING } from '../../constants';
 
 export const TrendingExchanges: React.FC = () => {
   return (

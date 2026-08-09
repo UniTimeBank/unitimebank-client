@@ -1,7 +1,7 @@
 import React from 'react';
 import { ShieldCheck, Video, Clock, Plus, Minus, ArrowUpRight, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { SAMPLE_ACTIVE_SESSIONS, SAMPLE_LEDGER_TRANSACTIONS } from '../constants';
+import { SAMPLE_ACTIVE_SESSIONS, SAMPLE_LEDGER_TRANSACTIONS } from '../../constants';
 
 interface SidebarWidgetsProps {
   trustScore?: number;
