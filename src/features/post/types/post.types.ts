@@ -17,6 +17,11 @@ export enum LearnerRequestStatus {
   CANCELLED = 'CANCELLED',
 }
 
+export enum PostScheduleType {
+  ALWAYS_OPEN = 'ALWAYS_OPEN',       // Dạy kèm thường xuyên (Luôn mở)
+  LIMITED_TIME = 'LIMITED_TIME',     // Lớp học / Ôn thi cấp tốc (Có thời hạn)
+}
+
 export interface PostTag {
   skillName: string;
   category?: string;
@@ -36,6 +41,9 @@ export interface MentorPost {
   title: string;
   description?: string;
   sessionType: SessionType;
+  scheduleType?: PostScheduleType;
+  startDate?: string;
+  endDate?: string;
   tags: PostTag[];
   availableSlots: TimeSlot[];
   trustScoreSnapshot: number;
@@ -102,6 +110,9 @@ export interface CreateMentorPostDto {
   title: string;
   description?: string;
   sessionType?: SessionType;
+  scheduleType?: PostScheduleType;
+  startDate?: string;
+  endDate?: string;
   tags: PostTag[];
   availableSlots?: TimeSlot[];
 }
@@ -110,6 +121,9 @@ export interface UpdateMentorPostDto {
   title?: string;
   description?: string;
   sessionType?: SessionType;
+  scheduleType?: PostScheduleType;
+  startDate?: string;
+  endDate?: string;
   tags?: PostTag[];
   availableSlots?: TimeSlot[];
   status?: PostStatus;

@@ -21,8 +21,11 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
   const [isStrong, setIsStrong] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!skillName.trim()) return;
     setIsSubmitting(true);
     try {
@@ -34,9 +37,18 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.stopPropagation();
+      handleSave();
+    }
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="md">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Use div instead of form to avoid DOM form nesting inside parent forms */}
+      <div className="space-y-4" onKeyDown={handleKeyDown}>
         {/* Skill Name */}
         <Input
           label="Tên kỹ năng"
@@ -45,9 +57,10 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
           onChange={(e) => setSkillName(e.target.value)}
           placeholder="VD: Python, Thuyết trình đám đông, Figma, Tiếng Nhật"
           required
+          autoFocus
         />
 
-        {/* Skill Category - Modern Custom Select Component */}
+        {/* Skill Category */}
         <Select
           label="Danh mục kỹ năng"
           options={SKILL_CATEGORIES}
@@ -70,11 +83,18 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
           <Button type="button" variant="outline" size="sm" onClick={onClose}>
             Hủy
           </Button>
-          <Button type="submit" variant="primary" size="sm" isLoading={isSubmitting}>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            isLoading={isSubmitting}
+            onClick={() => handleSave()}
+            disabled={!skillName.trim() || isSubmitting}
+          >
             Thêm kỹ năng
           </Button>
         </div>
-      </form>
+      </div>
     </Modal>
   );
 };

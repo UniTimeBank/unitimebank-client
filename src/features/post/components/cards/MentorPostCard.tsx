@@ -1,4 +1,6 @@
 import React from 'react';
+import { Clock, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import type { MentorPost } from '../../types';
 
 interface MentorPostCardProps {
@@ -6,6 +8,33 @@ interface MentorPostCardProps {
   onSelect?: (post: MentorPost) => void;
   variant?: 'vertical' | 'horizontal' | 'compact' | 'preview';
 }
+
+const DAY_SHORT_LABELS: Record<string, string> = {
+  MONDAY: 'T2',
+  TUESDAY: 'T3',
+  WEDNESDAY: 'T4',
+  THURSDAY: 'T5',
+  FRIDAY: 'T6',
+  SATURDAY: 'T7',
+  SUNDAY: 'CN',
+  MON: 'T2',
+  TUE: 'T3',
+  WED: 'T4',
+  THU: 'T5',
+  FRI: 'T6',
+  SAT: 'T7',
+  SUN: 'CN',
+};
+
+const formatDateVN = (dateStr?: string): string => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    const [year, month, day] = parts;
+    return `${day}/${month}/${year}`;
+  }
+  return dateStr;
+};
 
 export const MentorPostCard: React.FC<MentorPostCardProps> = ({
   post,
@@ -17,7 +46,21 @@ export const MentorPostCard: React.FC<MentorPostCardProps> = ({
 
   const categoryName = post.tags?.[0]?.category || 'STEM';
 
-  // Variant Vertical / Preview / Compact (The requested card design in screenshot)
+  // Format các slot rảnh hoặc khoảng thời gian đợt học hiển thị ngắn gọn
+  const formatSlotsSummary = () => {
+    if (post.scheduleType === 'LIMITED_TIME' && (post.startDate || post.endDate)) {
+      return `Đợt học: ${formatDateVN(post.startDate)} - ${formatDateVN(post.endDate)}`;
+    }
+    if (!post.availableSlots || post.availableSlots.length === 0) {
+      return 'Lịch rảnh: Hẹn trước';
+    }
+    const days = post.availableSlots
+      .map((s) => DAY_SHORT_LABELS[s.dayOfWeek] || s.dayOfWeek)
+      .filter((v, i, a) => a.indexOf(v) === i);
+    return `Lịch tuần: ${days.join(', ')}`;
+  };
+
+  // Variant Vertical / Preview / Compact
   if (variant === 'vertical' || variant === 'preview' || variant === 'compact') {
     return (
       <div className="bg-white rounded-3xl overflow-hidden border border-gray-200/80 shadow-2xs hover:shadow-md transition-all duration-300 group flex flex-col justify-between">
@@ -40,28 +83,60 @@ export const MentorPostCard: React.FC<MentorPostCardProps> = ({
           </div>
 
           {/* Body Content */}
-          <div className="p-5 space-y-2">
+          <div className="p-5 space-y-2.5">
+            {/* Mentor Info Header */}
+            {post.mentorName && (
+              <div className="flex items-center gap-2">
+                {post.mentorAvatar ? (
+                  <img
+                    src={post.mentorAvatar}
+                    alt={post.mentorName}
+                    className="w-5 h-5 rounded-full object-cover border border-gray-200"
+                  />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-teal-50 text-teal-700 flex items-center justify-center text-[10px] font-bold">
+                    <User className="w-3 h-3" />
+                  </div>
+                )}
+                <span className="text-xs font-bold text-gray-700">{post.mentorName}</span>
+                {post.trustScoreSnapshot && (
+                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200">
+                    ★ {post.trustScoreSnapshot}
+                  </span>
+                )}
+              </div>
+            )}
+
             <h3 className="text-base sm:text-lg font-extrabold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2 leading-snug">
               {post.title}
             </h3>
 
             <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
-              {post.description || 'Nắm bắt chuyên sâu các kỹ thuật xử lý dữ liệu với Pandas, NumPy...'}
+              {post.description || 'Nắm bắt chuyên sâu các kỹ thuật xử lý dữ liệu và kiến thức thực chiến.'}
             </p>
           </div>
         </div>
 
         {/* Footer */}
         <div className="p-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-gray-500">
-          <div>Lịch gần nhất: 3 Th9</div>
-          <button
-            type="button"
-            onClick={() => onSelect?.(post)}
-            className="text-teal-800 hover:text-teal-900 font-extrabold flex items-center gap-1 transition-colors cursor-pointer"
+          <div className="flex items-center gap-1.5 text-slate-600 text-xs font-medium truncate max-w-[65%]">
+            <Clock className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+            <span className="truncate">{formatSlotsSummary()}</span>
+          </div>
+
+          <Link
+            to={`/posts/${post._id}`}
+            onClick={(e) => {
+              if (onSelect) {
+                e.preventDefault();
+                onSelect(post);
+              }
+            }}
+            className="text-teal-800 hover:text-teal-900 font-extrabold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
           >
-            <span>XEM CHI TIẾT</span>
+            <span>ĐẶT LỊCH</span>
             <span>&rarr;</span>
-          </button>
+          </Link>
         </div>
       </div>
     );
@@ -86,7 +161,9 @@ export const MentorPostCard: React.FC<MentorPostCardProps> = ({
             <span className="text-3xs font-black uppercase tracking-wider text-primary-600 bg-primary-50 px-2.5 py-0.5 rounded-md">
               {categoryName}
             </span>
-            <span className="text-3xs text-gray-400 font-semibold">• 2 giờ trước</span>
+            {post.mentorName && (
+              <span className="text-3xs text-gray-500 font-bold">• {post.mentorName}</span>
+            )}
           </div>
 
           <h3 className="text-base font-extrabold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-1">
@@ -96,6 +173,11 @@ export const MentorPostCard: React.FC<MentorPostCardProps> = ({
           <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
             {post.description || 'Khóa hướng dẫn 1 giờ kèm cặp chi tiết giúp sinh viên nắm vững kiến thức cốt lõi.'}
           </p>
+
+          <div className="flex items-center gap-1.5 text-slate-500 text-xs pt-1 font-medium">
+            <Clock className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+            <span>{formatSlotsSummary()}</span>
+          </div>
         </div>
       </div>
 
@@ -104,13 +186,18 @@ export const MentorPostCard: React.FC<MentorPostCardProps> = ({
         <span className="px-3.5 py-1.5 rounded-xl bg-[#005F4F] text-white font-extrabold text-xs">
           60 credit/giờ
         </span>
-        <button
-          type="button"
-          onClick={() => onSelect?.(post)}
+        <Link
+          to={`/posts/${post._id}`}
+          onClick={(e) => {
+            if (onSelect) {
+              e.preventDefault();
+              onSelect(post);
+            }
+          }}
           className="px-4 py-2 rounded-xl bg-gray-900 hover:bg-primary-600 text-white font-bold text-xs transition-colors cursor-pointer"
         >
-          XEM CHI TIẾT &rarr;
-        </button>
+          ĐẶT LỊCH &rarr;
+        </Link>
       </div>
     </div>
   );

@@ -7,3 +7,4 @@ export * from './DaySelectorChips';
 export * from './CreateRecurringSlotForm';
 export * from './RecurringSlotCard';
 export * from './CopyScheduleModal';
+export * from './QuickAddScheduleModal';

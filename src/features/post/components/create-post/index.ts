@@ -3,3 +3,4 @@ export * from './MentorOfferForm';
 export * from './MentorPostPreview';
 export * from './LearnerRequestForm';
 export * from './LearnerRequestSidebar';
+export * from './SkillMultiSelectCombobox';

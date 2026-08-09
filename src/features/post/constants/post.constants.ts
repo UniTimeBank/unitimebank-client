@@ -6,11 +6,12 @@ export const POST_CATEGORIES = [
   { label: 'Kinh tế & Quản trị', value: 'ECONOMICS' },
 ];
 
-export const DIFFICULTY_LEVELS = [
-  { label: 'Cơ bản', value: 'Intro' },
-  { label: 'Trung bình', value: 'Mid' },
-  { label: 'Nâng cao', value: 'Expert' },
-] as const;
+export const PRESET_COVER_IMAGES = [
+  'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600',
+  'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600',
+  'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&q=80&w=600',
+  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=600',
+];
 
 export const POST_SORT_OPTIONS = [
   { label: 'Credit: Cao đến thấp', value: 'High to Low' },

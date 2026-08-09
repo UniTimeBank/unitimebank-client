@@ -3,7 +3,6 @@ import React from 'react';
 interface LearnerRequestSidebarProps {
   subject: string;
   coverImage?: string;
-  level: string;
   goals: string;
   durationMinutes: number;
   timeline: string;
@@ -14,7 +13,6 @@ interface LearnerRequestSidebarProps {
 export const LearnerRequestSidebar: React.FC<LearnerRequestSidebarProps> = ({
   subject,
   coverImage,
-  level,
   goals,
   durationMinutes,
   timeline,
@@ -43,9 +41,9 @@ export const LearnerRequestSidebar: React.FC<LearnerRequestSidebarProps> = ({
                 alt="Preview"
                 className="w-full h-full object-cover"
               />
-              {/* Category / Level Badge */}
+              {/* Category Badge */}
               <span className="absolute top-3 left-3 px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wide bg-white/95 text-gray-900 shadow-2xs">
-                YÊU CẦU HỌC • {level.toUpperCase()}
+                YÊU CẦU HỌC 1:1
               </span>
               {/* Credit Badge */}
               <div className="absolute bottom-3 right-3 px-3.5 py-1.5 rounded-xl bg-[#005F4F] text-white font-extrabold text-xs shadow-md">
@@ -59,51 +57,39 @@ export const LearnerRequestSidebar: React.FC<LearnerRequestSidebarProps> = ({
                 {subject || 'Tên môn học / Kỹ năng cần tìm Mentor'}
               </h4>
 
-              <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
-                {goals || 'Mô tả cụ thể những thắc mắc hoặc bài tập bạn cần người hướng dẫn giải đáp...'}
+              <p className="text-xs text-gray-500 font-medium line-clamp-3 leading-relaxed">
+                {goals || 'Mô tả cụ thể những kiến thức hoặc bài tập bạn muốn được hỗ trợ giải đáp...'}
               </p>
             </div>
           </div>
 
-          {/* Footer */}
+          {/* Footer Info */}
           <div className="p-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-gray-500">
-            <div>Thời hạn: {timeline || 'Trong 3 ngày'}</div>
-            <div className="text-teal-800 font-extrabold flex items-center gap-1">
-              <span>XEM CHI TIẾT</span>
-              <span>&rarr;</span>
-            </div>
+            <span>Thời hạn: {timeline || 'Trong 3 ngày'}</span>
+            <span className="text-teal-700 font-extrabold">{durationMinutes || 60} phút học</span>
           </div>
         </div>
       </div>
 
-      {/* Card 1: Wallet Balance */}
-      <div className="bg-[#1b2a3a] text-white rounded-3xl p-6 shadow-md space-y-3">
-        <div className="text-xs font-extrabold uppercase tracking-widest text-gray-400">
-          SỐ DƯ VÍ THỜI GIAN
+      {/* Credit Overview Wallet Widget */}
+      <div className="bg-gradient-to-br from-teal-900 via-teal-800 to-slate-900 rounded-3xl p-6 text-white space-y-4 shadow-md">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-teal-200 uppercase tracking-wider">
+            SỐ DƯ VÍ CREDIT HIỆN CÓ
+          </span>
+          <span className="px-2.5 py-1 rounded-lg bg-teal-700/60 text-[11px] font-extrabold text-teal-100 border border-teal-500/30">
+            Tài khoản Sinh viên
+          </span>
         </div>
+
         <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-black">{userCredits}</span>
-          <span className="text-xs font-bold text-teal-400 uppercase">CREDIT</span>
+          <span className="text-3xl font-black tracking-tight">{userCredits}</span>
+          <span className="text-xs font-bold text-teal-300">Credit khả dụng</span>
         </div>
-        <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
-          <div className="w-4/5 h-full bg-teal-400 rounded-full" />
-        </div>
-        <p className="text-xs text-gray-400 font-medium">Đủ ngân sách cho ~7 giờ học tập 1-1</p>
-      </div>
 
-      {/* Card 2: Trust Score */}
-      <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs space-y-3">
-        <div className="text-xs font-extrabold uppercase tracking-wider text-gray-500">
-          ĐIỂM UY TÍN CỦA BẠN
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full border-4 border-emerald-500 flex items-center justify-center font-black text-sm text-emerald-700 shrink-0">
-            {trustScore.toFixed(1)}
-          </div>
-          <div>
-            <h4 className="text-sm font-bold text-gray-900">Xuất Sắc</h4>
-            <p className="text-xs text-gray-500">Top 5% Người học tích cực</p>
-          </div>
+        <div className="pt-3 border-t border-teal-700/60 flex items-center justify-between text-xs text-teal-200 font-medium">
+          <span>Điểm uy tín của bạn:</span>
+          <span className="font-extrabold text-white">★ {trustScore.toFixed(1)}/10</span>
         </div>
       </div>
     </div>

@@ -1,22 +1,13 @@
 import React from 'react';
 import { Upload, ImageIcon } from 'lucide-react';
-import { Button } from '@/shared/components/ui';
-import { TIMELINE_OPTIONS } from '../../constants';
-
-export const PRESET_COVER_IMAGES = [
-  'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=600',
-];
+import { Button, Input, Select } from '@/shared/components/ui';
+import { TIMELINE_OPTIONS, PRESET_COVER_IMAGES } from '../../constants';
 
 interface LearnerRequestFormProps {
   subject: string;
   onSubjectChange: (val: string) => void;
   coverImage: string;
   onCoverImageChange: (val: string) => void;
-  level: 'Người mới' | 'Trung bình' | 'Chuyên sâu';
-  onLevelChange: (val: 'Người mới' | 'Trung bình' | 'Chuyên sâu') => void;
   goals: string;
   onGoalsChange: (val: string) => void;
   durationMinutes: number;
@@ -32,8 +23,6 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
   onSubjectChange,
   coverImage,
   onCoverImageChange,
-  level,
-  onLevelChange,
   goals,
   onGoalsChange,
   durationMinutes,
@@ -51,6 +40,11 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
     }
   };
 
+  const timelineOptions = TIMELINE_OPTIONS.map((opt) => ({
+    value: opt.label,
+    label: opt.label,
+  }));
+
   return (
     <form onSubmit={onSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
       <div className="border-b border-gray-100 pb-4">
@@ -62,24 +56,18 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
         </p>
       </div>
 
-      {/* Subject Name */}
-      <div>
-        <label className="block text-xs font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
-          TÊN MÔN HỌC / KỸ NĂNG CẦN HỌC <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          required
-          value={subject}
-          onChange={(e) => onSubjectChange(e.target.value)}
-          placeholder="Ví dụ: Giải tích 1, Thiết kế UI/UX, Guitar cơ bản"
-          className="w-full px-4 py-3 text-xs bg-gray-50/70 border border-gray-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-teal-500 transition-all font-semibold"
-        />
-      </div>
+      {/* Subject Name - Dùng Input Shared Component */}
+      <Input
+        label="TÊN MÔN HỌC / KỸ NĂNG CẦN HỌC *"
+        required
+        value={subject}
+        onChange={(e) => onSubjectChange(e.target.value)}
+        placeholder="Ví dụ: Giải tích 1, Thiết kế UI/UX, Guitar cơ bản"
+      />
 
       {/* Cover Image Selector */}
       <div>
-        <label className="block text-xs font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+        <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-700 mb-1.5">
           ẢNH BÌA BÀI ĐĂNG
         </label>
         <div className="space-y-3">
@@ -141,32 +129,9 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
         </div>
       </div>
 
-      {/* Level Selector */}
-      <div>
-        <label className="block text-xs font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
-          TRÌNH ĐỘ BẢN THÂN MONG MUỐN
-        </label>
-        <div className="grid grid-cols-3 gap-3">
-          {(['Người mới', 'Trung bình', 'Chuyên sâu'] as const).map((lvl) => (
-            <button
-              key={lvl}
-              type="button"
-              onClick={() => onLevelChange(lvl)}
-              className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
-                level === lvl
-                  ? 'border-teal-500 bg-teal-50 text-teal-900 shadow-2xs ring-1 ring-teal-300 font-extrabold'
-                  : 'border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              {lvl}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Learning Goals */}
       <div>
-        <label className="block text-xs font-extrabold uppercase tracking-wider text-gray-700 mb-1.5">
+        <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-700 mb-1">
           BẠN MUỐN ĐẠT ĐƯỢC KẾT QUẢ GÌ SAU BUỔI HỌC?
         </label>
         <textarea
@@ -174,7 +139,7 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
           value={goals}
           onChange={(e) => onGoalsChange(e.target.value)}
           placeholder="Mô tả cụ thể những bài tập vướng mắc hoặc kỹ năng bạn cần người hướng dẫn giải đáp..."
-          className="w-full px-4 py-3 text-xs bg-gray-50/70 border border-gray-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-teal-500 transition-all resize-none font-medium"
+          className="w-full px-3.5 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all resize-none font-normal outline-none placeholder:text-gray-400"
         />
       </div>
 
@@ -195,20 +160,14 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
           <p className="text-[11px] text-gray-400 italic">1 Credit = 1 Phút học 1-1</p>
         </div>
 
-        {/* Timeline */}
-        <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-200 space-y-2">
-          <h4 className="text-xs font-extrabold text-gray-900">Thời hạn cần học</h4>
-          <select
+        {/* Timeline - Dùng Select Shared Component */}
+        <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-200 space-y-1">
+          <Select
+            label="THỜI HẠN CẦN HỌC"
+            options={timelineOptions}
             value={timeline}
-            onChange={(e) => onTimelineChange(e.target.value)}
-            className="w-full px-3.5 py-2.5 text-xs font-bold border border-gray-300 rounded-xl bg-white focus:outline-hidden cursor-pointer"
-          >
-            {TIMELINE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.label}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            onChange={onTimelineChange}
+          />
         </div>
       </div>
 
@@ -220,7 +179,7 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
         </p>
       </div>
 
-      {/* Submit CTA */}
+      {/* Submit CTA - Dùng Button Shared Component */}
       <div className="pt-4 border-t border-gray-100">
         <Button
           type="submit"
@@ -228,7 +187,6 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
           fullWidth
           size="md"
           isLoading={isLoading}
-          className="bg-teal-600 hover:bg-teal-700"
         >
           <span>{isLoading ? 'Đang phát sóng...' : 'Phát Sóng Yêu Cầu Học'}</span>
         </Button>

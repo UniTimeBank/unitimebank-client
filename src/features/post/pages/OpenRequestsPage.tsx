@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import {
   useCreateMentorPostMutation,
   useCreateLearnerRequestMutation,
 } from '@/core/api/post/postApi';
-import { SessionType } from '../types';
+import { SessionType, PostScheduleType } from '../types';
+import { useMentorSchedule } from '@/features/schedule';
+import { useUserSkills } from '@/features/user';
 import {
   CreatePostHeader,
   MentorOfferForm,
@@ -13,6 +15,16 @@ import {
   LearnerRequestForm,
   LearnerRequestSidebar,
 } from '../components';
+
+const DAY_MAP_TO_BACKEND: Record<string, string> = {
+  MON: 'MONDAY',
+  TUE: 'TUESDAY',
+  WED: 'WEDNESDAY',
+  THU: 'THURSDAY',
+  FRI: 'FRIDAY',
+  SAT: 'SATURDAY',
+  SUN: 'SUNDAY',
+};
 
 export const OpenRequestsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -23,68 +35,110 @@ export const OpenRequestsPage: React.FC = () => {
   const [createMentorPost, { isLoading: isCreatingMentor }] = useCreateMentorPostMutation();
   const [createLearnerRequest, { isLoading: isCreatingLearner }] = useCreateLearnerRequestMutation();
 
+  const { recurringSchedules } = useMentorSchedule();
+  const { skills: profileSkills } = useUserSkills();
+
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // --- 1. Mentor Post Form State ---
   const [mentorTitle, setMentorTitle] = useState('');
-  const [mentorCoverImage, setMentorCoverImage] = useState('https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600');
-  const [mentorCategory, setMentorCategory] = useState('STEM');
-  const [mentorDifficulty, setMentorDifficulty] = useState<string>('Intro');
-  const [mentorSkillsText, setMentorSkillsText] = useState('Python, Đại số cơ bản, Pandas');
+  const [mentorCoverImage, setMentorCoverImage] = useState(
+    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600'
+  );
+  const [mentorSkillsText, setMentorSkillsText] = useState('');
   const [mentorDescription, setMentorDescription] = useState('');
-  const [selectedDates, setSelectedDates] = useState<number[]>([3, 5, 9]);
+  const [mentorScheduleType, setMentorScheduleType] = useState<'ALWAYS_OPEN' | 'LIMITED_TIME'>('ALWAYS_OPEN');
+  const [mentorStartDate, setMentorStartDate] = useState('');
+  const [mentorEndDate, setMentorEndDate] = useState('');
+  const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
 
   // --- 2. Learner Request Form State ---
   const [learnerSubject, setLearnerSubject] = useState('');
-  const [learnerCoverImage, setLearnerCoverImage] = useState('https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600');
-  const [learnerLevel, setLearnerLevel] = useState<'Người mới' | 'Trung bình' | 'Chuyên sâu'>('Trung bình');
+  const [learnerCoverImage, setLearnerCoverImage] = useState(
+    'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600'
+  );
   const [learnerGoals, setLearnerGoals] = useState('');
   const [learnerDurationMinutes, setLearnerDurationMinutes] = useState(60);
   const [learnerTimeline, setLearnerTimeline] = useState('Trong 3 ngày');
 
-  const toggleDate = (d: number) => {
-    if (selectedDates.includes(d)) {
-      setSelectedDates(selectedDates.filter((item) => item !== d));
-    } else {
-      setSelectedDates([...selectedDates, d]);
-    }
+  const toggleSlotId = (slotId: string) => {
+    setSelectedSlotIds((prev) =>
+      prev.includes(slotId) ? prev.filter((id) => id !== slotId) : [...prev, slotId]
+    );
+  };
+
+  const handleSelectAllSlots = (allIds: string[]) => {
+    setSelectedSlotIds(allIds);
   };
 
   // Submit Mentor Post
   const handleSubmitMentor = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mentorTitle.trim()) return;
+    setErrorMessage(null);
+
+    if (!mentorTitle.trim()) {
+      setErrorMessage('Vui lòng nhập tiêu đề bài dạy.');
+      return;
+    }
+
+    if (mentorScheduleType === 'LIMITED_TIME') {
+      if (!mentorStartDate || !mentorEndDate) {
+        setErrorMessage('Vui lòng chọn đầy đủ Ngày bắt đầu và Ngày kết thúc cho khóa học có thời hạn.');
+        return;
+      }
+      if (mentorStartDate > mentorEndDate) {
+        setErrorMessage('Ngày kết thúc phải sau Ngày bắt đầu.');
+        return;
+      }
+    }
 
     const tags = mentorSkillsText
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean)
-      .map((skillName) => ({ skillName, category: mentorCategory }));
+      .map((skillName) => {
+        const matched = profileSkills?.find(
+          (ps) => ps.skillName.toLowerCase() === skillName.toLowerCase()
+        );
+        return { skillName, category: matched?.category || 'ACADEMIC' };
+      });
+
+    // Map các slot đã chọn từ hồ sơ sang DTO gửi lên Post Service
+    const selectedSchedules = recurringSchedules.filter((s) => selectedSlotIds.includes(s.id));
+    const availableSlots = selectedSchedules.map((s) => ({
+      dayOfWeek: DAY_MAP_TO_BACKEND[s.dayOfWeek] || s.dayOfWeek,
+      startTime: s.startTime,
+      endTime: s.endTime,
+    }));
 
     try {
       await createMentorPost({
         title: mentorTitle,
         description: mentorDescription,
         sessionType: SessionType.BOTH,
+        scheduleType: mentorScheduleType as PostScheduleType,
+        startDate: mentorScheduleType === 'LIMITED_TIME' ? mentorStartDate : undefined,
+        endDate: mentorScheduleType === 'LIMITED_TIME' ? mentorEndDate : undefined,
         tags,
-        availableSlots: [
-          { dayOfWeek: 'THỨ HAI', startTime: '18:00', endTime: '20:00' },
-          { dayOfWeek: 'THỨ TƯ', startTime: '19:00', endTime: '21:00' },
-        ],
+        availableSlots,
       }).unwrap();
 
       setSuccessMessage('🎉 Đã đăng bài dạy thành công! Bài viết của bạn đã hiển thị trên trang Khám phá.');
       setTimeout(() => {
         navigate('/explore');
       }, 1500);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to create mentor post:', err);
+      setErrorMessage(err?.data?.message || 'Có lỗi xảy ra khi tạo bài đăng.');
     }
   };
 
   // Submit Learner Request
   const handleSubmitLearner = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
+
     if (!learnerSubject.trim()) return;
 
     try {
@@ -100,8 +154,9 @@ export const OpenRequestsPage: React.FC = () => {
       setTimeout(() => {
         navigate('/explore');
       }, 1500);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to broadcast learner request:', err);
+      setErrorMessage(err?.data?.message || 'Có lỗi xảy ra khi phát sóng yêu cầu.');
     }
   };
 
@@ -122,6 +177,14 @@ export const OpenRequestsPage: React.FC = () => {
           </div>
         )}
 
+        {/* Error Toast Banner */}
+        {errorMessage && (
+          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-sm font-bold flex items-center gap-3 animate-in fade-in duration-200 shadow-xs">
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
         {/* FORM TYPE 1: ĐĂNG BÀI DẠY (MENTOR OFFER) */}
         {postType === 'MENTOR_OFFER' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">
@@ -131,27 +194,35 @@ export const OpenRequestsPage: React.FC = () => {
                 onTitleChange={setMentorTitle}
                 coverImage={mentorCoverImage}
                 onCoverImageChange={setMentorCoverImage}
-                category={mentorCategory}
-                onCategoryChange={setMentorCategory}
-                difficulty={mentorDifficulty}
-                onDifficultyChange={setMentorDifficulty}
                 skillsText={mentorSkillsText}
                 onSkillsTextChange={setMentorSkillsText}
                 description={mentorDescription}
                 onDescriptionChange={setMentorDescription}
-                selectedDates={selectedDates}
-                onToggleDate={toggleDate}
+                scheduleType={mentorScheduleType}
+                onScheduleTypeChange={setMentorScheduleType}
+                startDate={mentorStartDate}
+                onStartDateChange={setMentorStartDate}
+                endDate={mentorEndDate}
+                onEndDateChange={setMentorEndDate}
+                selectedSlotIds={selectedSlotIds}
+                onToggleSlotId={toggleSlotId}
+                onSelectAllSlots={handleSelectAllSlots}
                 onSubmit={handleSubmitMentor}
                 isLoading={isCreatingMentor}
               />
             </div>
 
-            <div className="lg:col-span-5">
+            {/* Sticky Preview Sidebar */}
+            <div className="lg:col-span-5 sticky top-24 self-start">
               <MentorPostPreview
-                category={mentorCategory}
                 title={mentorTitle}
                 description={mentorDescription}
                 coverImage={mentorCoverImage}
+                skillsText={mentorSkillsText}
+                scheduleType={mentorScheduleType}
+                startDate={mentorStartDate}
+                endDate={mentorEndDate}
+                selectedSlotCount={selectedSlotIds.length}
               />
             </div>
           </div>
@@ -166,8 +237,6 @@ export const OpenRequestsPage: React.FC = () => {
                 onSubjectChange={setLearnerSubject}
                 coverImage={learnerCoverImage}
                 onCoverImageChange={setLearnerCoverImage}
-                level={learnerLevel}
-                onLevelChange={setLearnerLevel}
                 goals={learnerGoals}
                 onGoalsChange={setLearnerGoals}
                 durationMinutes={learnerDurationMinutes}
@@ -179,11 +248,11 @@ export const OpenRequestsPage: React.FC = () => {
               />
             </div>
 
-            <div className="lg:col-span-5">
+            {/* Sticky Preview Sidebar */}
+            <div className="lg:col-span-5 sticky top-24 self-start">
               <LearnerRequestSidebar
                 subject={learnerSubject}
                 coverImage={learnerCoverImage}
-                level={learnerLevel}
                 goals={learnerGoals}
                 durationMinutes={learnerDurationMinutes}
                 timeline={learnerTimeline}

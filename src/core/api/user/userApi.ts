@@ -113,7 +113,7 @@ export const userApi = baseApi.injectEndpoints({
     // 13. Điểm danh 7 ngày tích lũy
     dailyCheckin: builder.mutation<CheckinResult, void>({
       query: () => ({
-        url: '/users/me/checkin',
+        url: '/users/me/check-in',
         method: 'POST',
       }),
       invalidatesTags: ['User', 'Wallet'],
@@ -121,7 +121,7 @@ export const userApi = baseApi.injectEndpoints({
 
     // 14. Thông tin chuỗi điểm danh
     getLoginStreak: builder.query<LoginStreakResponse, void>({
-      query: () => '/users/me/streak',
+      query: () => '/users/me/check-in',
       providesTags: ['User'],
     }),
 
