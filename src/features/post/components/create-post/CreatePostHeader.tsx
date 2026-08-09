@@ -1,4 +1,5 @@
 import React from 'react';
+import { Tabs, TabOption } from '@/shared/components/ui';
 
 interface CreatePostHeaderProps {
   postType: 'MENTOR_OFFER' | 'LEARNER_REQUEST';
@@ -9,10 +10,23 @@ export const CreatePostHeader: React.FC<CreatePostHeaderProps> = ({
   postType,
   onPostTypeChange,
 }) => {
+  const tabOptions: TabOption<'MENTOR_OFFER' | 'LEARNER_REQUEST'>[] = [
+    {
+      value: 'MENTOR_OFFER',
+      label: 'Đăng bài dạy',
+      subLabel: '(Tích lũy Credit)',
+    },
+    {
+      value: 'LEARNER_REQUEST',
+      label: 'Đăng yêu cầu học',
+      subLabel: '(Sử dụng Credit)',
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Hero Header Banner */}
-      <div className="bg-[#1b2a3a] text-white rounded-3xl p-8 md:p-10 shadow-sm border border-slate-800">
+      <div className="bg-[#1b2a3a] text-white rounded-3xl p-8 md:p-10 shadow-xs border border-slate-800">
         <div className="max-w-2xl space-y-2">
           <span className="px-3 py-1 bg-primary-500/20 text-primary-300 border border-primary-400/30 rounded-full text-xs font-bold uppercase tracking-wider inline-block">
             TRANG ĐĂNG BÀI UNITIMEBANK
@@ -26,39 +40,20 @@ export const CreatePostHeader: React.FC<CreatePostHeaderProps> = ({
         </div>
       </div>
 
-      {/* POST TYPE SWITCHER (Nút chuyển loại bài đăng) */}
-      <div className="bg-white p-2.5 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="text-xs font-extrabold text-gray-500 uppercase tracking-wider px-3">
-          CHỌN LOẠI BÀI ĐĂNG:
-        </div>
+      {/* POST TYPE SWITCHER (Clean Single Color Tabs) */}
+      <div className="bg-white p-2.5 sm:p-3 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider px-2">
+          LOẠI BÀI ĐĂNG
+        </span>
 
-        <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
-          {/* Button 1: Bài Dạy */}
-          <button
-            type="button"
-            onClick={() => onPostTypeChange('MENTOR_OFFER')}
-            className={`px-5 py-3 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center ${
-              postType === 'MENTOR_OFFER'
-                ? 'bg-primary-600 text-white shadow-sm ring-2 ring-primary-200'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
-            }`}
-          >
-            ĐĂNG BÀI DẠY (Tích lũy Credit)
-          </button>
-
-          {/* Button 2: Yêu Cầu Học */}
-          <button
-            type="button"
-            onClick={() => onPostTypeChange('LEARNER_REQUEST')}
-            className={`px-5 py-3 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center ${
-              postType === 'LEARNER_REQUEST'
-                ? 'bg-teal-600 text-white shadow-sm ring-2 ring-teal-200'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900'
-            }`}
-          >
-            ĐĂNG YÊU CẦU HỌC (Sử dụng Credit)
-          </button>
-        </div>
+        <Tabs<'MENTOR_OFFER' | 'LEARNER_REQUEST'>
+          options={tabOptions}
+          value={postType}
+          onChange={onPostTypeChange}
+          variant="segmented"
+          size="md"
+          className="w-full sm:w-auto"
+        />
       </div>
     </div>
   );

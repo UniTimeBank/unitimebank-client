@@ -1,8 +1,10 @@
 import React from 'react';
+import { RichTextViewer } from './RichTextEditor';
 
 interface LearnerRequestSidebarProps {
   subject: string;
   coverImage?: string;
+  shortDescription?: string;
   goals: string;
   durationMinutes: number;
   timeline: string;
@@ -13,54 +15,57 @@ interface LearnerRequestSidebarProps {
 export const LearnerRequestSidebar: React.FC<LearnerRequestSidebarProps> = ({
   subject,
   coverImage,
+  shortDescription,
   goals,
   durationMinutes,
   timeline,
-  userCredits = 420,
-  trustScore = 9.0,
+  userCredits = 120,
+  trustScore = 100,
 }) => {
-  const defaultThumbnail =
-    'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600';
-
   return (
-    <div className="space-y-6">
-      {/* Live Preview Section */}
+    <div className="space-y-6 sticky top-24">
+      {/* Live Preview Card */}
       <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs space-y-4">
-        <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center justify-between">
-          <span>XEM TRƯỚC BÀI ĐĂNG TRÊN SÀN</span>
-          <span className="text-[10px] text-teal-600 font-extrabold uppercase">• TRỰC TIẾP</span>
+        <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 border-b border-gray-100 pb-3">
+          XEM TRƯỚC BÀI TÌM MENTOR
         </h3>
 
-        {/* Vertical Card Preview */}
-        <div className="bg-white rounded-3xl overflow-hidden border border-gray-200 shadow-sm flex flex-col justify-between">
-          <div>
-            {/* Cover Image */}
-            <div className="relative h-44 overflow-hidden bg-gray-100">
+        <div className="rounded-2xl border border-gray-200/90 overflow-hidden bg-white shadow-xs group hover:shadow-md transition-all">
+          {/* Card Header Media */}
+          <div className="relative h-44 overflow-hidden bg-gray-100">
+            {coverImage ? (
               <img
-                src={coverImage || defaultThumbnail}
-                alt="Preview"
-                className="w-full h-full object-cover"
+                src={coverImage}
+                alt={subject || 'Subject'}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              {/* Category Badge */}
-              <span className="absolute top-3 left-3 px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wide bg-white/95 text-gray-900 shadow-2xs">
-                YÊU CẦU HỌC 1:1
-              </span>
-              {/* Credit Badge */}
-              <div className="absolute bottom-3 right-3 px-3.5 py-1.5 rounded-xl bg-[#005F4F] text-white font-extrabold text-xs shadow-md">
-                {durationMinutes || 60} credit
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white font-black text-xl">
+                {subject ? subject.slice(0, 2).toUpperCase() : 'HỌC'}
               </div>
+            )}
+            <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white font-extrabold text-xs">
+              {durationMinutes || 60} credit
             </div>
+          </div>
 
-            {/* Body Content */}
-            <div className="p-5 space-y-2">
-              <h4 className="text-base font-extrabold text-gray-900 line-clamp-2 leading-snug">
-                {subject || 'Tên môn học / Kỹ năng cần tìm Mentor'}
-              </h4>
+          {/* Body Content */}
+          <div className="p-5 space-y-2">
+            <h4 className="text-base font-extrabold text-gray-900 line-clamp-2 leading-snug">
+              {subject || 'Tên môn học / Kỹ năng cần tìm Mentor'}
+            </h4>
 
-              <p className="text-xs text-gray-500 font-medium line-clamp-3 leading-relaxed">
-                {goals || 'Mô tả cụ thể những kiến thức hoặc bài tập bạn muốn được hỗ trợ giải đáp...'}
+            {shortDescription ? (
+              <p className="text-xs text-gray-600 font-medium line-clamp-2 leading-relaxed">
+                {shortDescription}
               </p>
-            </div>
+            ) : goals ? (
+              <RichTextViewer content={goals} className="line-clamp-3" />
+            ) : (
+              <p className="text-xs text-gray-400 font-medium italic">
+                Mô tả cụ thể những kiến thức hoặc bài tập bạn muốn được hỗ trợ giải đáp...
+              </p>
+            )}
           </div>
 
           {/* Footer Info */}

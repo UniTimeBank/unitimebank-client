@@ -17,6 +17,17 @@ export enum LearnerRequestStatus {
   CANCELLED = 'CANCELLED',
 }
 
+export enum SkillCategoryName {
+  PROGRAMMING = 'PROGRAMMING',
+  LANGUAGE = 'LANGUAGE',
+  DESIGN = 'DESIGN',
+  SOFT_SKILLS = 'SOFT_SKILLS',
+  MUSIC = 'MUSIC',
+  SPORTS = 'SPORTS',
+  BUSINESS = 'BUSINESS',
+  OTHER = 'OTHER',
+}
+
 export enum PostScheduleType {
   ALWAYS_OPEN = 'ALWAYS_OPEN',       // Dạy kèm thường xuyên (Luôn mở)
   LIMITED_TIME = 'LIMITED_TIME',     // Lớp học / Ôn thi cấp tốc (Có thời hạn)
@@ -40,6 +51,7 @@ export interface MentorPost {
   mentorAvatar?: string;
   title: string;
   description?: string;
+  shortDescription?: string;
   sessionType: SessionType;
   scheduleType?: PostScheduleType;
   startDate?: string;
@@ -60,6 +72,7 @@ export interface LearnerRequest {
   skillNeeded: string;
   category: string;
   description?: string;
+  shortDescription?: string;
   sessionType: SessionType;
   expectedDurationMinutes: number;
   expectedCreditAmount: number;
@@ -109,6 +122,7 @@ export interface GetLearnerRequestsResponse {
 export interface CreateMentorPostDto {
   title: string;
   description?: string;
+  shortDescription?: string;
   sessionType?: SessionType;
   scheduleType?: PostScheduleType;
   startDate?: string;
@@ -120,6 +134,7 @@ export interface CreateMentorPostDto {
 export interface UpdateMentorPostDto {
   title?: string;
   description?: string;
+  shortDescription?: string;
   sessionType?: SessionType;
   scheduleType?: PostScheduleType;
   startDate?: string;
@@ -133,6 +148,7 @@ export interface CreateLearnerRequestDto {
   skillNeeded: string;
   category: string;
   description?: string;
+  shortDescription?: string;
   sessionType?: SessionType;
   expectedDurationMinutes: number;
   desiredSlots?: TimeSlot[];
@@ -142,6 +158,7 @@ export interface UpdateLearnerRequestDto {
   skillNeeded?: string;
   category?: string;
   description?: string;
+  shortDescription?: string;
   sessionType?: SessionType;
   expectedDurationMinutes?: number;
   desiredSlots?: TimeSlot[];

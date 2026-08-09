@@ -2,6 +2,7 @@ import React from 'react';
 import { Zap, ShieldCheck, Clock } from 'lucide-react';
 import type { LearnerRequest } from '../../types';
 import { getCategoryBadge } from '../../utils';
+import { RichTextViewer } from '../create-post/RichTextEditor';
 
 interface LearnerRequestCardProps {
   request: LearnerRequest;
@@ -20,20 +21,22 @@ export const LearnerRequestCard: React.FC<LearnerRequestCardProps> = ({
 
   return (
     <div
-      className={`relative bg-white rounded-2xl p-6 transition-all duration-300 border ${
-        featured
-          ? 'border-primary-200 shadow-md ring-1 ring-primary-100'
-          : 'border-gray-100/90 shadow-2xs hover:shadow-md hover:border-gray-200'
-      } flex flex-col justify-between h-full group`}
+      className={`bg-white rounded-3xl p-6 border shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group relative overflow-hidden ${
+        featured ? 'border-amber-300/80 bg-gradient-to-b from-amber-50/20 to-white' : 'border-gray-200/80'
+      }`}
     >
+      {/* Top Banner Accent */}
+      {isUrgent && (
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 to-amber-500" />
+      )}
+
       <div>
-        {/* Top Badges & Credits */}
+        {/* Header Badges */}
         <div className="flex items-center justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
             {isUrgent && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-extrabold bg-red-50 text-red-600 border border-red-200 uppercase tracking-wider">
-                <Zap className="w-3 h-3 fill-red-500 text-red-500" />
-                CẦN GẤP
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-2xs font-extrabold bg-red-100 text-red-700 animate-pulse">
+                <Zap className="w-3 h-3" /> CẦN GẤP
               </span>
             )}
             <span
@@ -57,10 +60,17 @@ export const LearnerRequestCard: React.FC<LearnerRequestCardProps> = ({
         </h3>
 
         {/* Description */}
-        <p className="text-xs text-gray-600 line-clamp-3 mb-5 leading-relaxed">
-          {request.description ||
-            `Cần tìm người hướng dẫn kiến thức môn ${request.skillNeeded}, giải đáp bài tập và củng cố phương pháp.`}
-        </p>
+        {request.shortDescription ? (
+          <p className="text-xs text-gray-600 font-medium line-clamp-3 mb-5 leading-relaxed">
+            {request.shortDescription}
+          </p>
+        ) : request.description ? (
+          <RichTextViewer content={request.description} className="line-clamp-3 mb-5" />
+        ) : (
+          <p className="text-xs text-gray-600 line-clamp-3 mb-5 leading-relaxed">
+            Cần tìm người hướng dẫn kiến thức môn {request.skillNeeded}, giải đáp bài tập và củng cố phương pháp.
+          </p>
+        )}
       </div>
 
       <div>

@@ -230,7 +230,7 @@ export const useAuth = () => {
     error,
     pendingEmail,
     isLoading: status === 'loading',
-    isAuthenticated: status === 'succeeded',
+    isAuthenticated: status === 'succeeded' || Boolean(localStorage.getItem('accessToken')),
 
     // Actions
     register,

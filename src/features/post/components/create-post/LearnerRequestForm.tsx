@@ -1,42 +1,74 @@
-import React from 'react';
-import { Upload, ImageIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Upload, ImageIcon, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button, Input, Select } from '@/shared/components/ui';
+import { useCreateLearnerRequestMutation } from '@/core/api/post/postApi';
+import { SessionType, SkillCategoryName } from '../../types';
 import { TIMELINE_OPTIONS, PRESET_COVER_IMAGES } from '../../constants';
+import { RichTextEditor } from './RichTextEditor';
 
-interface LearnerRequestFormProps {
+export interface LearnerRequestFormState {
   subject: string;
-  onSubjectChange: (val: string) => void;
   coverImage: string;
-  onCoverImageChange: (val: string) => void;
+  shortDescription: string;
   goals: string;
-  onGoalsChange: (val: string) => void;
   durationMinutes: number;
-  onDurationMinutesChange: (val: number) => void;
   timeline: string;
-  onTimelineChange: (val: string) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  isLoading: boolean;
 }
 
-export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
-  subject,
-  onSubjectChange,
-  coverImage,
-  onCoverImageChange,
-  goals,
-  onGoalsChange,
-  durationMinutes,
-  onDurationMinutesChange,
-  timeline,
-  onTimelineChange,
-  onSubmit,
-  isLoading,
-}) => {
+interface LearnerRequestFormProps {
+  onPreviewChange?: (state: LearnerRequestFormState) => void;
+}
+
+export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPreviewChange }) => {
+  const navigate = useNavigate();
+  const [createLearnerRequest, { isLoading }] = useCreateLearnerRequestMutation();
+
+  // Internal Form State
+  const [subject, setSubject] = useState('');
+  const [coverImage, setCoverImage] = useState(
+    'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600'
+  );
+  const [shortDescription, setShortDescription] = useState('');
+  const [goals, setGoals] = useState('');
+  const [durationMinutes, setDurationMinutes] = useState(60);
+  const [timeline, setTimeline] = useState('Trong 3 ngày');
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Sync preview data to parent sidebar
+  useEffect(() => {
+    onPreviewChange?.({
+      subject,
+      coverImage,
+      shortDescription,
+      goals,
+      durationMinutes,
+      timeline,
+    });
+  }, [subject, coverImage, shortDescription, goals, durationMinutes, timeline, onPreviewChange]);
+
+  const handleSubjectChange = (val: string) => {
+    setSubject(val);
+    if (val.trim()) {
+      setErrors((prev) => ({ ...prev, subject: '' }));
+    }
+  };
+
+  const handleGoalsChange = (val: string) => {
+    setGoals(val);
+    if (val.replace(/<[^>]*>/g, '').trim()) {
+      setErrors((prev) => ({ ...prev, goals: '' }));
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
-      onCoverImageChange(url);
+      setCoverImage(url);
     }
   };
 
@@ -45,8 +77,79 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
     label: opt.label,
   }));
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    const newErrors: Record<string, string> = {};
+
+    if (!subject.trim()) {
+      newErrors.subject = 'Vui lòng nhập tên môn học hoặc kỹ năng cần học.';
+    }
+
+    const cleanGoals = goals.replace(/<[^>]*>/g, '').trim();
+    if (!cleanGoals) {
+      newErrors.goals = 'Vui lòng nhập chi tiết nội dung hoặc bài tập cần giải đáp.';
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      const firstErrorKey = ['subject', 'goals'].find((key) => newErrors[key]);
+      if (firstErrorKey) {
+        const el = document.getElementById(`field-learner-${firstErrorKey}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const inputEl = el.querySelector('input') || el;
+          (inputEl as HTMLElement).focus?.();
+        }
+      }
+      return;
+    }
+
+    try {
+      await createLearnerRequest({
+        skillNeeded: subject,
+        category: SkillCategoryName.OTHER,
+        shortDescription,
+        description: goals,
+        sessionType: SessionType.ONE_ON_ONE,
+        expectedDurationMinutes: Number(durationMinutes) || 60,
+      }).unwrap();
+
+      setSuccessMessage('🚀 Đã phát sóng yêu cầu học thành công! Các Mentor sẽ sớm phản hồi yêu cầu của bạn.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => {
+        navigate('/explore');
+      }, 1500);
+    } catch (err: any) {
+      console.error('Failed to broadcast learner request:', err);
+      const msg = Array.isArray(err?.data?.message)
+        ? err.data.message.join('. ')
+        : err?.data?.message || err?.message || 'Có lỗi xảy ra khi phát sóng yêu cầu.';
+      setErrorMessage(msg);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
-    <form onSubmit={onSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
+    <form noValidate onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
+      {/* Success Toast Banner */}
+      {successMessage && (
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-bold flex items-center gap-3 animate-in fade-in duration-200 shadow-xs">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+          <span>{successMessage}</span>
+        </div>
+      )}
+
+      {/* Error Toast Banner */}
+      {errorMessage && (
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-sm font-bold flex items-center gap-3 animate-in fade-in duration-200 shadow-xs">
+          <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+          <span>{errorMessage}</span>
+        </div>
+      )}
+
       <div className="border-b border-gray-100 pb-4">
         <h2 className="text-lg font-black text-gray-900">
           Thông Tin Yêu Cầu Tìm Mentor
@@ -57,13 +160,15 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
       </div>
 
       {/* Subject Name - Dùng Input Shared Component */}
-      <Input
-        label="TÊN MÔN HỌC / KỸ NĂNG CẦN HỌC *"
-        required
-        value={subject}
-        onChange={(e) => onSubjectChange(e.target.value)}
-        placeholder="Ví dụ: Giải tích 1, Thiết kế UI/UX, Guitar cơ bản"
-      />
+      <div id="field-learner-subject">
+        <Input
+          label="TÊN MÔN HỌC / KỸ NĂNG CẦN HỌC *"
+          value={subject}
+          onChange={(e) => handleSubjectChange(e.target.value)}
+          placeholder="Ví dụ: Giải tích 1, Thiết kế UI/UX, Guitar cơ bản"
+          error={errors.subject}
+        />
+      </div>
 
       {/* Cover Image Selector */}
       <div>
@@ -114,10 +219,10 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
                 <button
                   key={idx}
                   type="button"
-                  onClick={() => onCoverImageChange(imgUrl)}
+                  onClick={() => setCoverImage(imgUrl)}
                   className={`relative h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
                     coverImage === imgUrl
-                      ? 'border-teal-500 ring-2 ring-teal-200 scale-102'
+                      ? 'border-primary-500 ring-2 ring-primary-200 scale-102'
                       : 'border-transparent hover:opacity-80'
                   }`}
                 >
@@ -129,18 +234,29 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
         </div>
       </div>
 
-      {/* Learning Goals */}
-      <div>
-        <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-700 mb-1">
-          BẠN MUỐN ĐẠT ĐƯỢC KẾT QUẢ GÌ SAU BUỔI HỌC?
-        </label>
-        <textarea
-          rows={4}
+      {/* Short Summary Description for Card Feed */}
+      <Input
+        label="MÔ TẢ TÓM TẮT"
+        value={shortDescription}
+        onChange={(e) => setShortDescription(e.target.value)}
+        placeholder="Tóm tắt ngắn 1-2 câu vướng mắc hoặc nhu cầu cần hỗ trợ (tối đa 150 ký tự)..."
+      />
+
+      {/* Learning Goals Rich Text Editor */}
+      <div id="field-learner-goals">
+        <RichTextEditor
+          label="NỘI DUNG CHI TIẾT & BÀI TẬP CẦN GIẢI ĐÁP *"
           value={goals}
-          onChange={(e) => onGoalsChange(e.target.value)}
+          onChange={handleGoalsChange}
           placeholder="Mô tả cụ thể những bài tập vướng mắc hoặc kỹ năng bạn cần người hướng dẫn giải đáp..."
-          className="w-full px-3.5 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all resize-none font-normal outline-none placeholder:text-gray-400"
+          minHeight="140px"
         />
+        {errors.goals && (
+          <p className="mt-1.5 text-xs text-red-500 font-semibold flex items-center gap-1 animate-in fade-in">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
+            <span>{errors.goals}</span>
+          </p>
+        )}
       </div>
 
       {/* Budget & Timeline */}
@@ -152,7 +268,7 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
             <input
               type="number"
               value={durationMinutes}
-              onChange={(e) => onDurationMinutesChange(Number(e.target.value))}
+              onChange={(e) => setDurationMinutes(Number(e.target.value))}
               className="w-20 font-black text-sm bg-transparent focus:outline-hidden text-gray-900"
             />
             <span className="text-xs font-extrabold text-emerald-700">CREDIT</span>
@@ -166,7 +282,7 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({
             label="THỜI HẠN CẦN HỌC"
             options={timelineOptions}
             value={timeline}
-            onChange={onTimelineChange}
+            onChange={setTimeline}
           />
         </div>
       </div>

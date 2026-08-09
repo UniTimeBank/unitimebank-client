@@ -1,7 +1,10 @@
 import React from 'react';
-import { Clock, User } from 'lucide-react';
+import { Clock, User, Tag, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { MentorPost } from '../../types';
+
+import { SKILL_CATEGORY_LABELS } from '../../constants';
+import { RichTextViewer } from '../create-post/RichTextEditor';
 
 interface MentorPostCardProps {
   post: MentorPost;
@@ -44,7 +47,17 @@ export const MentorPostCard: React.FC<MentorPostCardProps> = ({
   const defaultThumbnail =
     'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600';
 
-  const categoryName = post.tags?.[0]?.category || 'STEM';
+  const rawCategory = post.tags?.[0]?.category || 'PROGRAMMING';
+  const categoryName = SKILL_CATEGORY_LABELS[rawCategory] || rawCategory;
+
+  const topBadge =
+    post.tags?.[0]?.skillName
+      ? post.tags[0].skillName.toUpperCase()
+      : post.sessionType === 'GROUP'
+      ? 'LỚP HỌC NHÓM'
+      : post.sessionType === 'BOTH'
+      ? 'LỚP 1:1 & NHÓM'
+      : 'LỚP HỌC 1:1';
 
   // Format các slot rảnh hoặc khoảng thời gian đợt học hiển thị ngắn gọn
   const formatSlotsSummary = () => {
@@ -52,12 +65,12 @@ export const MentorPostCard: React.FC<MentorPostCardProps> = ({
       return `Đợt học: ${formatDateVN(post.startDate)} - ${formatDateVN(post.endDate)}`;
     }
     if (!post.availableSlots || post.availableSlots.length === 0) {
-      return 'Lịch rảnh: Hẹn trước';
+      return 'Chưa chọn lịch rảnh';
     }
     const days = post.availableSlots
       .map((s) => DAY_SHORT_LABELS[s.dayOfWeek] || s.dayOfWeek)
       .filter((v, i, a) => a.indexOf(v) === i);
-    return `Lịch tuần: ${days.join(', ')}`;
+    return `Lịch tuần (${days.length} khung giờ)`;
   };
 
   // Variant Vertical / Preview / Compact
@@ -72,9 +85,9 @@ export const MentorPostCard: React.FC<MentorPostCardProps> = ({
               alt={post.title}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            {/* Category Tag */}
+            {/* Top Left Badge */}
             <span className="absolute top-3 left-3 px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wide bg-white/95 text-gray-900 shadow-2xs">
-              {categoryName}
+              {topBadge}
             </span>
             {/* Credit Tag */}
             <div className="absolute bottom-3 right-3 px-3.5 py-1.5 rounded-xl bg-[#005F4F] text-white font-extrabold text-xs shadow-md">
@@ -111,16 +124,39 @@ export const MentorPostCard: React.FC<MentorPostCardProps> = ({
               {post.title}
             </h3>
 
-            <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
-              {post.description || 'Nắm bắt chuyên sâu các kỹ thuật xử lý dữ liệu và kiến thức thực chiến.'}
-            </p>
+            {/* Skill Tags */}
+            {post.tags && post.tags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                {post.tags.map((tag, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-teal-50 text-teal-800 text-[11px] font-bold border border-teal-200/80"
+                  >
+                    <Tag className="w-3 h-3 text-teal-600 shrink-0" />
+                    <span>{tag.skillName}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {post.shortDescription ? (
+              <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
+                {post.shortDescription}
+              </p>
+            ) : post.description ? (
+              <RichTextViewer content={post.description} className="line-clamp-2" />
+            ) : (
+              <p className="text-xs text-gray-400 font-medium italic">
+                Mô tả lộ trình học và nội dung truyền đạt sẽ hiển thị tại đây...
+              </p>
+            )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-gray-500">
-          <div className="flex items-center gap-1.5 text-slate-600 text-xs font-medium truncate max-w-[65%]">
-            <Clock className="w-3.5 h-3.5 text-teal-700 shrink-0" />
+        <div className="p-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-gray-600">
+          <div className="flex items-center gap-1.5 text-gray-700 text-xs font-bold truncate max-w-[65%]">
+            <Clock className="w-3.5 h-3.5 text-teal-600 shrink-0" />
             <span className="truncate">{formatSlotsSummary()}</span>
           </div>
 
@@ -134,8 +170,8 @@ export const MentorPostCard: React.FC<MentorPostCardProps> = ({
             }}
             className="text-teal-800 hover:text-teal-900 font-extrabold flex items-center gap-1 transition-colors cursor-pointer shrink-0"
           >
-            <span>ĐẶT LỊCH</span>
-            <span>&rarr;</span>
+            <span>XEM CHI TIẾT</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
       </div>
@@ -170,9 +206,17 @@ export const MentorPostCard: React.FC<MentorPostCardProps> = ({
             {post.title}
           </h3>
 
-          <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
-            {post.description || 'Khóa hướng dẫn 1 giờ kèm cặp chi tiết giúp sinh viên nắm vững kiến thức cốt lõi.'}
-          </p>
+          {post.shortDescription ? (
+            <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
+              {post.shortDescription}
+            </p>
+          ) : post.description ? (
+            <RichTextViewer content={post.description} className="line-clamp-2" />
+          ) : (
+            <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
+              Khóa hướng dẫn 1 giờ kèm cặp chi tiết giúp sinh viên nắm vững kiến thức cốt lõi.
+            </p>
+          )}
 
           <div className="flex items-center gap-1.5 text-slate-500 text-xs pt-1 font-medium">
             <Clock className="w-3.5 h-3.5 text-teal-700 shrink-0" />

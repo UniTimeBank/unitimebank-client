@@ -1,8 +1,9 @@
-import React from 'react';
 import { Clock, Calendar, ArrowRight, Tag } from 'lucide-react';
+import { RichTextViewer } from './RichTextEditor';
 
 interface MentorPostPreviewProps {
   title: string;
+  shortDescription?: string;
   description: string;
   coverImage?: string;
   skillsText?: string;
@@ -24,6 +25,7 @@ const formatDateVN = (dateStr?: string): string => {
 
 export const MentorPostPreview: React.FC<MentorPostPreviewProps> = ({
   title,
+  shortDescription,
   description,
   coverImage,
   skillsText = '',
@@ -47,7 +49,7 @@ export const MentorPostPreview: React.FC<MentorPostPreviewProps> = ({
       <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs space-y-4">
         <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center justify-between">
           <span>XEM TRƯỚC BÀI ĐĂNG TRÊN SÀN</span>
-          <span className="text-[10px] text-emerald-600 font-extrabold uppercase">• TRỰC TIẾP</span>
+          <span className="text-[10px] text-emerald-600 font-extrabold uppercase"></span>
         </h3>
 
         <div className="bg-white rounded-3xl overflow-hidden border border-gray-200 shadow-sm flex flex-col justify-between">
@@ -92,9 +94,17 @@ export const MentorPostPreview: React.FC<MentorPostPreviewProps> = ({
                 </div>
               )}
 
-              <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
-                {description || 'Mô tả lộ trình học và nội dung truyền đạt sẽ hiển thị tại đây...'}
-              </p>
+              {shortDescription ? (
+                <p className="text-xs text-gray-600 font-medium line-clamp-2 leading-relaxed">
+                  {shortDescription}
+                </p>
+              ) : description ? (
+                <RichTextViewer content={description} className="line-clamp-2" />
+              ) : (
+                <p className="text-xs text-gray-400 font-medium italic">
+                  Mô tả lộ trình học và nội dung truyền đạt sẽ hiển thị tại đây...
+                </p>
+              )}
             </div>
           </div>
 

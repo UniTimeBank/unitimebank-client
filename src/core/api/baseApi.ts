@@ -3,17 +3,19 @@ import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolk
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-// Base query with auth handling
 const baseQuery = fetchBaseQuery({
   baseUrl: BASE_URL,
   prepareHeaders: (headers, { endpoint }) => {
-    // Skip auth header for public endpoints
+    if (headers.has('skip-auth')) {
+      headers.delete('skip-auth');
+      return headers;
+    }
+
     const publicEndpoints = ['register', 'login', 'verifyOtp', 'refresh', 'forgotPassword', 'resetPassword'];
     if (publicEndpoints.includes(endpoint)) {
       return headers;
     }
 
-    // Get token from localStorage
     const token = localStorage.getItem('accessToken');
     if (token) {
       headers.set('authorization', `Bearer ${token}`);
@@ -36,32 +38,43 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
     const refreshToken = localStorage.getItem('refreshToken');
 
     if (refreshToken) {
+      const headers = new Headers();
+      headers.set('skip-auth', 'true');
+
       // Try to refresh token
       const refreshResult = await baseQuery(
         {
           url: '/auth/refresh',
           method: 'POST',
           body: { refreshToken },
+          headers,
         },
         api,
         extraOptions,
       );
 
       if (refreshResult.data) {
-        // Save new tokens
-        const { accessToken, refreshToken: newRefreshToken } = refreshResult.data as {
-          accessToken: string;
-          refreshToken: string;
-        };
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', newRefreshToken);
+        const resData = (refreshResult.data as any)?.data || refreshResult.data;
+        const accessToken = resData?.accessToken;
+        const newRefreshToken = resData?.refreshToken;
 
-        // Retry original request
-        result = await baseQuery(args, api, extraOptions);
+        if (accessToken) {
+          localStorage.setItem('accessToken', accessToken);
+          if (newRefreshToken) {
+            localStorage.setItem('refreshToken', newRefreshToken);
+          }
+          // Retry original request
+          result = await baseQuery(args, api, extraOptions);
+        } else {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
+        }
       } else {
-        // Refresh failed - logout
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
         window.location.href = '/login';
       }
     }

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Clock,
   Plus,
@@ -10,13 +11,17 @@ import {
   Trash2,
   Repeat,
   CalendarRange,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button, Input, DateInput } from '@/shared/components/ui';
 import { useMentorSchedule, QuickAddScheduleModal, ALL_DAYS } from '@/features/schedule';
 import { useUserSkills } from '@/features/user';
+import { useCreateMentorPostMutation } from '@/core/api/post/postApi';
+import { SessionType, PostScheduleType, SkillCategoryName } from '../../types';
 import { SkillMultiSelectCombobox } from './SkillMultiSelectCombobox';
+import { RichTextEditor } from './RichTextEditor';
 import type { SkillCategoryEnum } from '@/features/user/types';
-
 import { PRESET_COVER_IMAGES } from '../../constants';
 
 const DAY_ORDER: Record<string, number> = {
@@ -29,49 +34,36 @@ const DAY_ORDER: Record<string, number> = {
   SUN: 7,
 };
 
-interface MentorOfferFormProps {
+const DAY_MAP_TO_BACKEND: Record<string, string> = {
+  MON: 'MONDAY',
+  TUE: 'TUESDAY',
+  WED: 'WEDNESDAY',
+  THU: 'THURSDAY',
+  FRI: 'FRIDAY',
+  SAT: 'SATURDAY',
+  SUN: 'SUNDAY',
+};
+
+export interface MentorOfferFormState {
   title: string;
-  onTitleChange: (val: string) => void;
   coverImage: string;
-  onCoverImageChange: (val: string) => void;
   skillsText: string;
-  onSkillsTextChange: (val: string) => void;
+  shortDescription: string;
   description: string;
-  onDescriptionChange: (val: string) => void;
   scheduleType: 'ALWAYS_OPEN' | 'LIMITED_TIME';
-  onScheduleTypeChange: (type: 'ALWAYS_OPEN' | 'LIMITED_TIME') => void;
   startDate: string;
-  onStartDateChange: (date: string) => void;
   endDate: string;
-  onEndDateChange: (date: string) => void;
-  selectedSlotIds: string[];
-  onToggleSlotId: (slotId: string) => void;
-  onSelectAllSlots: (allIds: string[]) => void;
-  onSubmit: (e: React.FormEvent) => void;
-  isLoading: boolean;
+  selectedSlotCount: number;
 }
 
-export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
-  title,
-  onTitleChange,
-  coverImage,
-  onCoverImageChange,
-  skillsText,
-  onSkillsTextChange,
-  description,
-  onDescriptionChange,
-  scheduleType,
-  onScheduleTypeChange,
-  startDate,
-  onStartDateChange,
-  endDate,
-  onEndDateChange,
-  selectedSlotIds,
-  onToggleSlotId,
-  onSelectAllSlots,
-  onSubmit,
-  isLoading,
-}) => {
+interface MentorOfferFormProps {
+  onPreviewChange?: (state: MentorOfferFormState) => void;
+}
+
+export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChange }) => {
+  const navigate = useNavigate();
+  const [createMentorPost, { isLoading }] = useCreateMentorPostMutation();
+
   const {
     recurringSchedules,
     isRecurringLoading,
@@ -82,9 +74,102 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
 
   const { skills: profileSkills, addSkill } = useUserSkills();
 
+  // Internal Form State
+  const [title, setTitle] = useState('');
+  const [coverImage, setCoverImage] = useState(
+    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600'
+  );
+  const [skillsText, setSkillsText] = useState('');
+  const [shortDescription, setShortDescription] = useState('');
+  const [description, setDescription] = useState('');
+  const [scheduleType, setScheduleType] = useState<'ALWAYS_OPEN' | 'LIMITED_TIME'>('ALWAYS_OPEN');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
   const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
 
-  // Danh sách kỹ năng đang được chọn cho bài dạy này
+  // Sync preview data to parent sidebar
+  useEffect(() => {
+    onPreviewChange?.({
+      title,
+      coverImage,
+      skillsText,
+      shortDescription,
+      description,
+      scheduleType,
+      startDate,
+      endDate,
+      selectedSlotCount: selectedSlotIds.length,
+    });
+  }, [
+    title,
+    coverImage,
+    skillsText,
+    shortDescription,
+    description,
+    scheduleType,
+    startDate,
+    endDate,
+    selectedSlotIds,
+    onPreviewChange,
+  ]);
+
+  // Field change handlers that clear errors dynamically
+  const handleTitleChange = (val: string) => {
+    setTitle(val);
+    if (val.trim()) {
+      setErrors((prev) => ({ ...prev, title: '' }));
+    }
+  };
+
+  const handleSkillsTextChange = (val: string) => {
+    setSkillsText(val);
+    const skillsList = val
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (skillsList.length > 0) {
+      setErrors((prev) => ({ ...prev, skills: '' }));
+    }
+  };
+
+  const handleStartDateChange = (val: string) => {
+    setStartDate(val);
+    if (val) {
+      setErrors((prev) => ({ ...prev, dates: '' }));
+    }
+  };
+
+  const handleEndDateChange = (val: string) => {
+    setEndDate(val);
+    if (val) {
+      setErrors((prev) => ({ ...prev, dates: '' }));
+    }
+  };
+
+  const toggleSlotId = (slotId: string) => {
+    setSelectedSlotIds((prev) => {
+      const next = prev.includes(slotId) ? prev.filter((id) => id !== slotId) : [...prev, slotId];
+      if (next.length > 0) {
+        setErrors((errs) => ({ ...errs, slots: '' }));
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAllSlots = (allIds: string[]) => {
+    setSelectedSlotIds(allIds);
+    if (allIds.length > 0) {
+      setErrors((errs) => ({ ...errs, slots: '' }));
+    }
+  };
+
+  // Selected skills memo
   const selectedSkills = useMemo(() => {
     return skillsText
       .split(',')
@@ -98,22 +183,22 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
     const exists = selectedSkills.some(
       (s) => s.toLowerCase() === trimmed.toLowerCase()
     );
+    let updated: string[];
     if (exists) {
-      const updated = selectedSkills.filter(
+      updated = selectedSkills.filter(
         (s) => s.toLowerCase() !== trimmed.toLowerCase()
       );
-      onSkillsTextChange(updated.join(', '));
     } else {
-      const updated = [...selectedSkills, trimmed];
-      onSkillsTextChange(updated.join(', '));
+      updated = [...selectedSkills, trimmed];
     }
+    handleSkillsTextChange(updated.join(', '));
   };
 
   const handleRemoveSkill = (skillToRemove: string) => {
     const updated = selectedSkills.filter(
       (s) => s.toLowerCase() !== skillToRemove.toLowerCase()
     );
-    onSkillsTextChange(updated.join(', '));
+    handleSkillsTextChange(updated.join(', '));
   };
 
   const handleAddNewSkillToProfile = async (
@@ -128,7 +213,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
     });
   };
 
-  // Sắp xếp danh sách lịch rảnh chuẩn xác: Thứ 2 -> Chủ Nhật, và tăng dần theo giờ bắt đầu
+  // Sort active schedules
   const sortedActiveSchedules = useMemo(() => {
     return [...recurringSchedules]
       .filter((s) => s.isActive)
@@ -140,7 +225,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
       });
   }, [recurringSchedules]);
 
-  // Gom nhóm danh sách lịch rảnh theo từng ngày trong tuần (Thứ 2 -> Chủ Nhật)
+  // Group schedules by day
   const groupedSchedulesByDay = useMemo(() => {
     const groups: { dayOfWeek: string; dayLabel: string; slots: typeof recurringSchedules }[] = [];
 
@@ -158,19 +243,11 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
     return groups;
   }, [sortedActiveSchedules]);
 
-  // Mặc định chọn tất cả các slot rảnh đang hoạt động khi danh sách tải xong lần đầu
-  useEffect(() => {
-    if (sortedActiveSchedules.length > 0 && selectedSlotIds.length === 0) {
-      const activeIds = sortedActiveSchedules.map((s) => s.id);
-      onSelectAllSlots(activeIds);
-    }
-  }, [sortedActiveSchedules]);
-
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
-      onCoverImageChange(url);
+      setCoverImage(url);
     }
   };
 
@@ -180,9 +257,9 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
 
   const handleToggleSelectAll = () => {
     if (isAllSelected) {
-      onSelectAllSlots([]);
+      handleSelectAllSlots([]);
     } else {
-      onSelectAllSlots(sortedActiveSchedules.map((s) => s.id));
+      handleSelectAllSlots(sortedActiveSchedules.map((s) => s.id));
     }
   };
 
@@ -190,7 +267,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
     e.stopPropagation();
     try {
       if (selectedSlotIds.includes(slotId)) {
-        onToggleSlotId(slotId);
+        toggleSlotId(slotId);
       }
       await deleteRecurring(slotId);
       await refetchRecurring();
@@ -199,9 +276,127 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
     }
   };
 
+  // Form Submission & Validation
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    const newErrors: Record<string, string> = {};
+
+    if (!title.trim()) {
+      newErrors.title = 'Vui lòng nhập tiêu đề bài dạy.';
+    }
+
+    const skillsList = skillsText
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (skillsList.length === 0) {
+      newErrors.skills = 'Vui lòng chọn ít nhất 1 kỹ năng truyền đạt.';
+    }
+
+    if (scheduleType === 'LIMITED_TIME') {
+      if (!startDate || !endDate) {
+        newErrors.dates = 'Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc đợt học.';
+      } else if (startDate > endDate) {
+        newErrors.dates = 'Ngày kết thúc phải sau ngày bắt đầu.';
+      }
+    }
+
+    if (selectedSlotIds.length === 0) {
+      newErrors.slots = 'Vui lòng chọn ít nhất 1 khung giờ rảnh từ danh sách bên dưới.';
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      const firstErrorKey = ['title', 'skills', 'dates', 'slots'].find((key) => newErrors[key]);
+      if (firstErrorKey) {
+        const el = document.getElementById(`field-mentor-${firstErrorKey}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const inputEl = el.querySelector('input') || el;
+          (inputEl as HTMLElement).focus?.();
+        }
+      }
+      return;
+    }
+
+    let tags = skillsList.map((skillName) => {
+      const matched = profileSkills?.find(
+        (ps) => ps.skillName.toLowerCase() === skillName.toLowerCase()
+      );
+      const cat = (matched?.category as SkillCategoryName) || SkillCategoryName.PROGRAMMING;
+      return {
+        skillName,
+        category: cat,
+      };
+    });
+
+    if (tags.length === 0) {
+      tags = [
+        {
+          skillName: title.trim().slice(0, 30),
+          category: SkillCategoryName.PROGRAMMING,
+        },
+      ];
+    }
+
+    const selectedSchedules = recurringSchedules.filter((s) => selectedSlotIds.includes(s.id));
+    const availableSlots = selectedSchedules.map((s) => ({
+      dayOfWeek: DAY_MAP_TO_BACKEND[s.dayOfWeek] || s.dayOfWeek,
+      startTime: s.startTime,
+      endTime: s.endTime,
+    }));
+
+    try {
+      await createMentorPost({
+        title,
+        shortDescription,
+        description,
+        sessionType: SessionType.BOTH,
+        scheduleType: scheduleType as PostScheduleType,
+        startDate: scheduleType === 'LIMITED_TIME' ? startDate : undefined,
+        endDate: scheduleType === 'LIMITED_TIME' ? endDate : undefined,
+        tags,
+        availableSlots,
+      }).unwrap();
+
+      setSuccessMessage('🎉 Đã đăng bài dạy thành công! Bài viết của bạn đã hiển thị trên trang Khám phá.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => {
+        navigate('/explore');
+      }, 1500);
+    } catch (err: any) {
+      console.error('Failed to create mentor post:', err);
+      const msg = Array.isArray(err?.data?.message)
+        ? err.data.message.join('. ')
+        : err?.data?.message || err?.message || 'Có lỗi xảy ra khi tạo bài đăng.';
+      setErrorMessage(msg);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
     <>
-      <form onSubmit={onSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
+      <form noValidate onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
+        {/* Success Toast Banner */}
+        {successMessage && (
+          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-bold flex items-center gap-3 animate-in fade-in duration-200 shadow-xs">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span>{successMessage}</span>
+          </div>
+        )}
+
+        {/* Error Toast Banner */}
+        {errorMessage && (
+          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-sm font-bold flex items-center gap-3 animate-in fade-in duration-200 shadow-xs">
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
         <div className="border-b border-gray-100 pb-4">
           <h2 className="text-lg font-black text-gray-900">
             Thông Tin Bài Dạy Mới
@@ -212,13 +407,15 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
         </div>
 
         {/* Class Title - Dùng Input Shared Component */}
-        <Input
-          label="TIÊU ĐỀ BÀI DẠY *"
-          required
-          value={title}
-          onChange={(e) => onTitleChange(e.target.value)}
-          placeholder="Ví dụ: Hướng dẫn Lập trình Python & Phân tích Dữ liệu Thực chiến"
-        />
+        <div id="field-mentor-title">
+          <Input
+            label="TIÊU ĐỀ BÀI DẠY *"
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            placeholder="Ví dụ: Hướng dẫn Lập trình Python & Phân tích Dữ liệu Thực chiến"
+            error={errors.title}
+          />
+        </div>
 
         {/* Cover Image Selector */}
         <div>
@@ -269,7 +466,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => onCoverImageChange(imgUrl)}
+                    onClick={() => setCoverImage(imgUrl)}
                     className={`relative h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${coverImage === imgUrl
                       ? 'border-primary-600 ring-2 ring-primary-200 scale-102'
                       : 'border-transparent hover:opacity-80'
@@ -286,7 +483,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
         {/* ------------------------------------------------------------- */}
         {/* COMBOBOX CHỌN NHIỀU KỸ NĂNG + ĐỒNG BỘ TRỰC TIẾP VỚI PROFILE */}
         {/* ------------------------------------------------------------- */}
-        <div>
+        <div id="field-mentor-skills">
           <SkillMultiSelectCombobox
             label="KỸ NĂNG TRUYỀN ĐẠT CỦA BÀI DẠY *"
             placeholder="Nhấp để chọn kỹ năng từ hồ sơ hoặc thêm mới..."
@@ -296,21 +493,30 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
             onRemoveSkill={handleRemoveSkill}
             onAddNewSkillToProfile={handleAddNewSkillToProfile}
           />
+          {errors.skills && (
+            <p className="mt-1.5 text-xs text-red-500 font-semibold flex items-center gap-1 animate-in fade-in">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
+              <span>{errors.skills}</span>
+            </p>
+          )}
         </div>
 
-        {/* Description */}
-        <div>
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-700 mb-1">
-            MÔ TẢ LỘ TRÌNH & NỘI DUNG BUỔI HỌC
-          </label>
-          <textarea
-            rows={4}
-            value={description}
-            onChange={(e) => onDescriptionChange(e.target.value)}
-            placeholder="Mô tả cụ thể những kiến thức học viên sẽ đạt được sau buổi học..."
-            className="w-full px-3.5 py-2.5 text-sm bg-white border border-gray-200 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all resize-none font-normal outline-none placeholder:text-gray-400"
-          />
-        </div>
+        {/* Short Summary Description for Card Feed */}
+        <Input
+          label="MÔ TẢ TÓM TẮT"
+          value={shortDescription}
+          onChange={(e) => setShortDescription(e.target.value)}
+          placeholder="Tóm tắt ngắn 1-2 câu điểm nổi bật của bài dạy (tối đa 150 ký tự)..."
+        />
+
+        {/* Description Rich Text Editor */}
+        <RichTextEditor
+          label="MÔ TẢ LỘ TRÌNH & NỘI DUNG BUỔI HỌC CHI TIẾT"
+          value={description}
+          onChange={setDescription}
+          placeholder="Mô tả cụ thể những kiến thức học viên sẽ đạt được sau buổi học..."
+          minHeight="150px"
+        />
 
         {/* Credit Cost Box */}
         <div className="p-4 rounded-2xl bg-primary-50/60 border border-primary-200/80 flex items-center justify-between">
@@ -340,7 +546,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 p-1.5 bg-gray-100/80 rounded-2xl border border-gray-200/80">
             <button
               type="button"
-              onClick={() => onScheduleTypeChange('ALWAYS_OPEN')}
+              onClick={() => setScheduleType('ALWAYS_OPEN')}
               className={`py-3 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${scheduleType === 'ALWAYS_OPEN'
                 ? 'bg-white text-primary-800 shadow-xs border border-primary-200/70 ring-2 ring-primary-100/60'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
@@ -352,7 +558,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
 
             <button
               type="button"
-              onClick={() => onScheduleTypeChange('LIMITED_TIME')}
+              onClick={() => setScheduleType('LIMITED_TIME')}
               className={`py-3 px-4 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer ${scheduleType === 'LIMITED_TIME'
                 ? 'bg-white text-primary-800 shadow-xs border border-primary-200/70 ring-2 ring-primary-100/60'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
@@ -365,7 +571,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
 
           {/* Context Banner For Limited Time Mode */}
           {scheduleType === 'LIMITED_TIME' && (
-            <div className="p-4 bg-primary-50/70 border border-primary-200/80 rounded-2xl space-y-3 animate-in fade-in duration-200">
+            <div id="field-mentor-dates" className="p-4 bg-primary-50/70 border border-primary-200/80 rounded-2xl space-y-3 animate-in fade-in duration-200">
               <div className="flex items-center gap-2 text-primary-900 font-extrabold text-xs">
                 <CalendarRange className="w-4 h-4 text-primary-600" />
                 <span>Thiết lập khoảng thời gian mở lớp:</span>
@@ -375,15 +581,35 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
                 <DateInput
                   label="NGÀY BẮT ĐẦU *"
                   value={startDate}
-                  onChange={onStartDateChange}
+                  onChange={(dateStr) => {
+                    handleStartDateChange(dateStr);
+                    if (dateStr) {
+                      const [y, m, d] = dateStr.split('-').map(Number);
+                      if (y && m && d) {
+                        const date = new Date(y, m - 1, d);
+                        date.setDate(date.getDate() + 1);
+                        const nextYear = date.getFullYear();
+                        const nextMonth = String(date.getMonth() + 1).padStart(2, '0');
+                        const nextDay = String(date.getDate()).padStart(2, '0');
+                        handleEndDateChange(`${nextYear}-${nextMonth}-${nextDay}`);
+                      }
+                    }
+                  }}
                 />
                 <DateInput
                   label="NGÀY KẾT THÚC *"
                   value={endDate}
                   min={startDate}
-                  onChange={onEndDateChange}
+                  onChange={handleEndDateChange}
                 />
               </div>
+
+              {errors.dates && (
+                <p className="mt-1 text-xs text-red-500 font-semibold flex items-center gap-1 animate-in fade-in">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
+                  <span>{errors.dates}</span>
+                </p>
+              )}
 
               <p className="text-[11px] text-amber-700 leading-relaxed font-semibold">
                 Khóa học sẽ tự động hiển thị nhận đăng ký trong khoảng ngày này và tự động đóng sau khi kết thúc.
@@ -392,7 +618,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
           )}
 
           {/* Availability Schedule Slots Picker */}
-          <div className="space-y-3 pt-1">
+          <div id="field-mentor-slots" className="space-y-3 pt-1">
             <div className="flex items-center justify-between">
               <div>
                 <label className="block text-xs font-extrabold uppercase tracking-wider text-gray-900">
@@ -472,7 +698,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
                           return (
                             <div
                               key={slot.id}
-                              onClick={() => onToggleSlotId(slot.id)}
+                              onClick={() => toggleSlotId(slot.id)}
                               className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between group ${isSelected
                                 ? 'border-primary-500 bg-primary-50/40 ring-1 ring-primary-500/80 shadow-xs'
                                 : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50'
@@ -547,6 +773,13 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
                 </Button>
               </div>
             )}
+
+            {errors.slots && (
+              <p className="mt-1.5 text-xs text-red-500 font-semibold flex items-center gap-1 animate-in fade-in">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
+                <span>{errors.slots}</span>
+              </p>
+            )}
           </div>
         </div>
 
@@ -560,7 +793,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({
             isLoading={isLoading}
             disabled={isLoading || (sortedActiveSchedules.length > 0 && selectedSlotIds.length === 0)}
           >
-            <span>{isLoading ? 'Đang xuất bản bài dạy...' : 'Xuất Bản Bài Dạy Mới'}</span>
+            <span>{isLoading ? 'Đang đăng bài mới...' : 'Đăng bài mới'}</span>
           </Button>
           {sortedActiveSchedules.length > 0 && selectedSlotIds.length === 0 && (
             <p className="text-center text-xs text-red-500 font-semibold mt-2">

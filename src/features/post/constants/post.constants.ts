@@ -1,10 +1,30 @@
 export const POST_CATEGORIES = [
   { label: 'Tất cả danh mục', value: 'All' },
-  { label: 'Lập trình & CNTT', value: 'STEM' },
-  { label: 'Thiết kế & Đồ họa', value: 'ARTS' },
-  { label: 'Ngoại ngữ & Xã hội', value: 'HUMANITIES' },
-  { label: 'Kinh tế & Quản trị', value: 'ECONOMICS' },
+  { label: 'Lập trình & CNTT', value: 'PROGRAMMING' },
+  { label: 'Ngoại ngữ', value: 'LANGUAGE' },
+  { label: 'Thiết kế & Đồ họa', value: 'DESIGN' },
+  { label: 'Kỹ năng mềm', value: 'SOFT_SKILLS' },
+  { label: 'Âm nhạc & Xử lý âm thanh', value: 'MUSIC' },
+  { label: 'Thể thao & Sức khỏe', value: 'SPORTS' },
+  { label: 'Kinh doanh & Tài chính', value: 'BUSINESS' },
+  { label: 'Học thuật / Khác', value: 'OTHER' },
 ];
+
+export const SKILL_CATEGORY_LABELS: Record<string, string> = {
+  PROGRAMMING: 'Lập trình & CNTT',
+  LANGUAGE: 'Ngoại ngữ',
+  DESIGN: 'Thiết kế & Đồ họa',
+  SOFT_SKILLS: 'Kỹ năng mềm',
+  MUSIC: 'Âm nhạc & Xử lý âm thanh',
+  SPORTS: 'Thể thao & Sức khỏe',
+  BUSINESS: 'Kinh doanh & Tài chính',
+  OTHER: 'Học thuật / Khác',
+  // Legacy / fallback mappings
+  STEM: 'Lập trình & CNTT',
+  ARTS: 'Thiết kế & Đồ họa',
+  HUMANITIES: 'Ngoại ngữ',
+  ECONOMICS: 'Kinh doanh',
+};
 
 export const PRESET_COVER_IMAGES = [
   'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600',
