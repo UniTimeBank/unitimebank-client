@@ -154,8 +154,14 @@ export const DateInput: React.FC<DateInputProps> = ({
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       {label && (
-        <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-2">
-          {label}
+        <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-2">
+          {typeof label === 'string' && label.includes('*') ? (
+            <>
+              {label.replace(/\s*\*/, '')} <span className="text-red-500">*</span>
+            </>
+          ) : (
+            label
+          )}
         </label>
       )}
 

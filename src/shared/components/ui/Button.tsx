@@ -23,14 +23,15 @@ export const Button = ({
   ...rest
 }: ButtonProps) => {
   const baseStyles =
-    'font-bold rounded-xl transition-all duration-200 inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.99]';
+    'font-bold rounded-xl transition-all duration-200 inline-flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 disabled:shadow-none disabled:transform-none disabled:active:transform-none';
 
   const variants = {
     primary:
-      'bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700 shadow-md shadow-primary-500/20 hover:shadow-lg hover:shadow-primary-500/30',
-    secondary: 'bg-primary-50 text-primary-500 hover:bg-primary-100',
+      'bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700 shadow-md shadow-primary-500/20 hover:shadow-lg hover:shadow-primary-500/30 disabled:hover:bg-primary-500 disabled:active:bg-primary-500 disabled:shadow-none',
+    secondary:
+      'bg-primary-50 text-primary-500 hover:bg-primary-100 disabled:hover:bg-primary-50 disabled:active:bg-primary-50',
     outline:
-      'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 shadow-xs',
+      'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-300 shadow-xs disabled:hover:bg-white disabled:hover:border-gray-200 disabled:shadow-none',
   };
 
   const sizes = {

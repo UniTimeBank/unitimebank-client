@@ -16,7 +16,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <div className="flex justify-between items-center mb-1">
             {label && (
               <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
-                {label}
+                {typeof label === 'string' && label.includes('*') ? (
+                  <>
+                    {label.replace(/\s*\*/, '')} <span className="text-red-500">*</span>
+                  </>
+                ) : (
+                  label
+                )}
               </label>
             )}
             {labelRight}

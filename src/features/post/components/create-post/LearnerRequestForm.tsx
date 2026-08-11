@@ -99,9 +99,13 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
       if (firstErrorKey) {
         const el = document.getElementById(`field-learner-${firstErrorKey}`);
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          const inputEl = el.querySelector('input') || el;
-          (inputEl as HTMLElement).focus?.();
+          const yOffset = -120;
+          const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+          setTimeout(() => {
+            const inputEl = el.querySelector('input, textarea') || el;
+            (inputEl as HTMLElement).focus?.({ preventScroll: true });
+          }, 350);
         }
       }
       return;
@@ -117,39 +121,49 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
         expectedDurationMinutes: Number(durationMinutes) || 60,
       }).unwrap();
 
-      setSuccessMessage('🚀 Đã phát sóng yêu cầu học thành công! Các Mentor sẽ sớm phản hồi yêu cầu của bạn.');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setSuccessMessage('Đã phát sóng yêu cầu học thành công! Đang chuyển hướng...');
       setTimeout(() => {
         navigate('/explore');
       }, 1500);
     } catch (err: any) {
       console.error('Failed to broadcast learner request:', err);
-      const msg = Array.isArray(err?.data?.message)
-        ? err.data.message.join('. ')
-        : err?.data?.message || err?.message || 'Có lỗi xảy ra khi phát sóng yêu cầu.';
-      setErrorMessage(msg);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const rawMessages: string[] = Array.isArray(err?.data?.message)
+        ? err.data.message
+        : [err?.data?.message || err?.message || ''];
+
+      const fieldErrors: Record<string, string> = {};
+      const unhandledMessages: string[] = [];
+
+      for (const m of rawMessages) {
+        if (!m) continue;
+        const low = m.toLowerCase();
+        if (low.includes('skillneeded') || low.includes('subject')) {
+          fieldErrors.subject = 'Tên môn học/kỹ năng phải có ít nhất 3 ký tự.';
+        } else if (low.includes('description') || low.includes('goals')) {
+          fieldErrors.goals = 'Chi tiết nội dung cần học phải có ít nhất 10 ký tự.';
+        } else {
+          unhandledMessages.push(m);
+        }
+      }
+
+      if (Object.keys(fieldErrors).length > 0) {
+        setErrors((prev) => ({ ...prev, ...fieldErrors }));
+        const firstErrorKey = Object.keys(fieldErrors)[0];
+        const el = document.getElementById(`field-learner-${firstErrorKey}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }
+
+      if (unhandledMessages.length > 0) {
+        setErrorMessage(unhandledMessages.join('. '));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   };
 
   return (
     <form noValidate onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
-      {/* Success Toast Banner */}
-      {successMessage && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-bold flex items-center gap-3 animate-in fade-in duration-200 shadow-xs">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-          <span>{successMessage}</span>
-        </div>
-      )}
-
-      {/* Error Toast Banner */}
-      {errorMessage && (
-        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-sm font-bold flex items-center gap-3 animate-in fade-in duration-200 shadow-xs">
-          <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
       <div className="border-b border-gray-100 pb-4">
         <h2 className="text-lg font-black text-gray-900">
           Thông Tin Yêu Cầu Tìm Mentor
@@ -306,6 +320,18 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
         >
           <span>{isLoading ? 'Đang phát sóng...' : 'Phát Sóng Yêu Cầu Học'}</span>
         </Button>
+
+        {successMessage && (
+          <p className="text-center text-xs text-emerald-600 font-semibold mt-2 animate-in fade-in">
+            {successMessage}
+          </p>
+        )}
+
+        {errorMessage && (
+          <p className="text-center text-xs text-red-500 font-semibold mt-2 animate-in fade-in">
+            {errorMessage}
+          </p>
+        )}
       </div>
     </form>
   );

@@ -18,6 +18,7 @@ interface SkillMultiSelectComboboxProps {
   onAddNewSkillToProfile: (skillName: string, category: SkillCategoryEnum, isStrong: boolean) => Promise<void>;
   label?: string;
   placeholder?: string;
+  error?: string;
 }
 
 // Helper lấy key duy nhất cho từng kỹ năng (ưu tiên id từ DB)
@@ -33,6 +34,7 @@ export const SkillMultiSelectCombobox: React.FC<SkillMultiSelectComboboxProps> =
   onAddNewSkillToProfile,
   label = 'KỸ NĂNG TRUYỀN ĐẠT CỦA BÀI DẠY *',
   placeholder = 'Chọn kỹ năng từ hồ sơ của bạn...',
+  error,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,7 +131,13 @@ export const SkillMultiSelectCombobox: React.FC<SkillMultiSelectComboboxProps> =
     <div className="relative w-full space-y-2" ref={containerRef}>
       <div className="flex items-center justify-between">
         <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
-          {label}
+          {typeof label === 'string' && label.includes('*') ? (
+            <>
+              {label.replace(/\s*\*/, '')} <span className="text-red-500">*</span>
+            </>
+          ) : (
+            label
+          )}
         </label>
         <span className="text-[11px] text-gray-400 font-medium">
           Đã chọn {selectedKeys.length} kỹ năng
@@ -140,7 +148,9 @@ export const SkillMultiSelectCombobox: React.FC<SkillMultiSelectComboboxProps> =
       <div
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full min-h-[46px] px-3.5 py-2 rounded-xl border text-sm flex items-center justify-between gap-2 bg-white transition-all duration-150 cursor-pointer ${
-          isOpen
+          error
+            ? 'border-red-500 ring-2 ring-red-100 shadow-xs'
+            : isOpen
             ? 'border-primary-500 ring-2 ring-primary-100 shadow-xs'
             : 'border-gray-200 hover:border-gray-300'
         }`}
@@ -182,6 +192,10 @@ export const SkillMultiSelectCombobox: React.FC<SkillMultiSelectComboboxProps> =
         </div>
       </div>
 
+      {error && (
+        <p className="mt-1 text-xs text-red-500">{error}</p>
+      )}
+
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute z-50 left-0 right-0 top-full mt-1.5 bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden p-2 space-y-2 animate-in fade-in zoom-in-95 duration-150">
@@ -200,7 +214,7 @@ export const SkillMultiSelectCombobox: React.FC<SkillMultiSelectComboboxProps> =
           </div>
 
           {/* Skills List */}
-          <div className="max-h-48 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+          <div className="max-h-56 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
             {filteredSkills.length > 0 ? (
               filteredSkills.map((item) => {
                 const key = getSkillKey(item);
@@ -210,17 +224,17 @@ export const SkillMultiSelectCombobox: React.FC<SkillMultiSelectComboboxProps> =
                   <div
                     key={key}
                     onClick={() => handleToggleItem(item)}
-                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
                       isSelected
-                        ? 'bg-teal-50 text-teal-900 border border-teal-200'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 border border-transparent'
+                        ? 'bg-primary-50 text-primary-800 font-bold'
+                        : 'hover:bg-gray-100 text-gray-700'
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <div
-                        className={`w-4 h-4 rounded-md border flex items-center justify-center transition-colors ${
+                        className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${
                           isSelected
-                            ? 'bg-[#005F4F] border-[#005F4F] text-white'
+                            ? 'bg-primary-600 border-primary-600 text-white'
                             : 'border-gray-300 bg-white'
                         }`}
                       >

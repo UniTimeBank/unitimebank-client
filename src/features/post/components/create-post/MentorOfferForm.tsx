@@ -123,7 +123,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
   // Field change handlers that clear errors dynamically
   const handleTitleChange = (val: string) => {
     setTitle(val);
-    if (val.trim()) {
+    if (val.trim().length >= 5) {
       setErrors((prev) => ({ ...prev, title: '' }));
     }
   };
@@ -136,6 +136,21 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
       .filter(Boolean);
     if (skillsList.length > 0) {
       setErrors((prev) => ({ ...prev, skills: '' }));
+    }
+  };
+
+  const handleShortDescriptionChange = (val: string) => {
+    setShortDescription(val);
+    if (val.trim().length >= 5 && val.trim().length <= 150) {
+      setErrors((prev) => ({ ...prev, shortDescription: '' }));
+    }
+  };
+
+  const handleDescriptionChange = (val: string) => {
+    setDescription(val);
+    const plain = val.replace(/<[^>]*>/g, '').trim();
+    if (plain.length >= 10) {
+      setErrors((prev) => ({ ...prev, description: '' }));
     }
   };
 
@@ -229,7 +244,12 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
       });
   }, [recurringSchedules]);
 
-  // Group schedules by day
+  const selectedDaysLabel = useMemo(() => {
+    const selectedSchedules = recurringSchedules.filter((s) => selectedSlotIds.includes(s.id));
+    const days = Array.from(new Set(selectedSchedules.map((s) => s.dayOfWeek)));
+    const dayNames = days.map((d) => ALL_DAYS.find((item) => item.value === d)?.label || d);
+    return dayNames.join(', ');
+  }, [recurringSchedules, selectedSlotIds]);
   const groupedSchedulesByDay = useMemo(() => {
     const groups: { dayOfWeek: string; dayLabel: string; slots: typeof recurringSchedules }[] = [];
 
@@ -365,6 +385,10 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
 
     if (!title.trim()) {
       newErrors.title = 'Vui lòng nhập tiêu đề bài dạy.';
+    } else if (title.trim().length < 5) {
+      newErrors.title = 'Tiêu đề bài dạy phải có ít nhất 5 ký tự.';
+    } else if (title.trim().length > 100) {
+      newErrors.title = 'Tiêu đề bài dạy không được vượt quá 100 ký tự.';
     }
 
     const skillsList = skillsText
@@ -374,6 +398,21 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
 
     if (skillsList.length === 0) {
       newErrors.skills = 'Vui lòng chọn ít nhất 1 kỹ năng truyền đạt.';
+    }
+
+    if (!shortDescription.trim()) {
+      newErrors.shortDescription = 'Vui lòng nhập mô tả tóm tắt bài dạy.';
+    } else if (shortDescription.trim().length < 5) {
+      newErrors.shortDescription = 'Mô tả tóm tắt phải có ít nhất 5 ký tự.';
+    } else if (shortDescription.trim().length > 150) {
+      newErrors.shortDescription = 'Mô tả tóm tắt không được vượt quá 150 ký tự.';
+    }
+
+    const cleanDescription = description.replace(/<[^>]*>/g, '').trim();
+    if (!cleanDescription) {
+      newErrors.description = 'Vui lòng nhập mô tả chi tiết lộ trình học.';
+    } else if (cleanDescription.length < 10) {
+      newErrors.description = 'Mô tả chi tiết phải có ít nhất 10 ký tự.';
     }
 
     if (scheduleType === 'LIMITED_TIME') {
@@ -397,13 +436,17 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
-      const firstErrorKey = ['title', 'skills', 'dates', 'slots'].find((key) => newErrors[key]);
+      const firstErrorKey = ['title', 'skills', 'shortDescription', 'description', 'dates', 'slots'].find((key) => newErrors[key]);
       if (firstErrorKey) {
         const el = document.getElementById(`field-mentor-${firstErrorKey}`);
         if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          const inputEl = el.querySelector('input') || el;
-          (inputEl as HTMLElement).focus?.();
+          const yOffset = -120;
+          const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+          setTimeout(() => {
+            const inputEl = el.querySelector('input, textarea') || el;
+            (inputEl as HTMLElement).focus?.({ preventScroll: true });
+          }, 350);
         }
       }
       return;
@@ -449,40 +492,62 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
         availableSlots,
       }).unwrap();
 
-      setSuccessMessage('🎉 Đã đăng bài dạy thành công! Bài viết của bạn đã hiển thị trên trang Khám phá.');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setSuccessMessage('Đăng bài dạy thành công! Đang chuyển hướng...');
       setTimeout(() => {
         navigate('/explore');
       }, 1500);
     } catch (err: any) {
       console.error('Failed to create mentor post:', err);
-      const msg = Array.isArray(err?.data?.message)
-        ? err.data.message.join('. ')
-        : err?.data?.message || err?.message || 'Có lỗi xảy ra khi tạo bài đăng.';
-      setErrorMessage(msg);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const rawMessages: string[] = Array.isArray(err?.data?.message)
+        ? err.data.message
+        : [err?.data?.message || err?.message || ''];
+
+      const fieldErrors: Record<string, string> = {};
+      const unhandledMessages: string[] = [];
+
+      for (const m of rawMessages) {
+        if (!m) continue;
+        const low = m.toLowerCase();
+        if (low.includes('title')) {
+          fieldErrors.title = 'Tiêu đề bài dạy phải có ít nhất 5 ký tự.';
+        } else if (low.includes('shortdescription') || low.includes('short description')) {
+          fieldErrors.shortDescription = 'Mô tả ngắn phải có ít nhất 10 ký tự.';
+        } else if (low.includes('description')) {
+          fieldErrors.description = 'Nội dung chi tiết phải có ít nhất 10 ký tự.';
+        } else if (low.includes('availableslots') || low.includes('slot')) {
+          fieldErrors.slots = 'Vui lòng chọn ít nhất một khung giờ rảnh để học viên có thể đặt lịch.';
+        } else if (low.includes('date') || low.includes('startdate') || low.includes('enddate')) {
+          fieldErrors.dates = 'Khoảng ngày mở lớp không hợp lệ.';
+        } else {
+          unhandledMessages.push(m);
+        }
+      }
+
+      if (Object.keys(fieldErrors).length > 0) {
+        setErrors((prev) => ({ ...prev, ...fieldErrors }));
+        const firstErrorKey = ['title', 'skills', 'dates', 'slots'].find((key) => fieldErrors[key]) || Object.keys(fieldErrors)[0];
+        const el = document.getElementById(`field-mentor-${firstErrorKey}`);
+        if (el) {
+          const yOffset = -120;
+          const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+          setTimeout(() => {
+            const inputEl = el.querySelector('input, textarea') || el;
+            (inputEl as HTMLElement).focus?.({ preventScroll: true });
+          }, 350);
+        }
+      }
+
+      if (unhandledMessages.length > 0) {
+        setErrorMessage(unhandledMessages.join('. '));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   };
 
   return (
     <>
       <form noValidate onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
-        {/* Success Toast Banner */}
-        {successMessage && (
-          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm font-bold flex items-center gap-3 animate-in fade-in duration-200 shadow-xs">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span>{successMessage}</span>
-          </div>
-        )}
-
-        {/* Error Toast Banner */}
-        {errorMessage && (
-          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 text-sm font-bold flex items-center gap-3 animate-in fade-in duration-200 shadow-xs">
-            <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
         <div className="border-b border-gray-100 pb-4">
           <h2 className="text-lg font-black text-gray-900">
             Thông Tin Bài Dạy Mới
@@ -578,31 +643,32 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
             onToggleSkill={handleToggleSkill}
             onRemoveSkill={handleRemoveSkill}
             onAddNewSkillToProfile={handleAddNewSkillToProfile}
+            error={errors.skills}
           />
-          {errors.skills && (
-            <p className="mt-1.5 text-xs text-red-500 font-semibold flex items-center gap-1 animate-in fade-in">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
-              <span>{errors.skills}</span>
-            </p>
-          )}
         </div>
 
         {/* Short Summary Description for Card Feed */}
-        <Input
-          label="MÔ TẢ TÓM TẮT"
-          value={shortDescription}
-          onChange={(e) => setShortDescription(e.target.value)}
-          placeholder="Tóm tắt ngắn 1-2 câu điểm nổi bật của bài dạy (tối đa 150 ký tự)..."
-        />
+        <div id="field-mentor-shortDescription">
+          <Input
+            label="MÔ TẢ TÓM TẮT *"
+            value={shortDescription}
+            onChange={(e) => handleShortDescriptionChange(e.target.value)}
+            placeholder="Tóm tắt ngắn 1-2 câu điểm nổi bật của bài dạy (tối đa 150 ký tự)..."
+            error={errors.shortDescription}
+          />
+        </div>
 
         {/* Description Rich Text Editor */}
-        <RichTextEditor
-          label="MÔ TẢ LỘ TRÌNH & NỘI DUNG BUỔI HỌC CHI TIẾT"
-          value={description}
-          onChange={setDescription}
-          placeholder="Mô tả cụ thể những kiến thức học viên sẽ đạt được sau buổi học..."
-          minHeight="150px"
-        />
+        <div id="field-mentor-description">
+          <RichTextEditor
+            label="MÔ TẢ LỘ TRÌNH & NỘI DUNG BUỔI HỌC CHI TIẾT *"
+            value={description}
+            onChange={handleDescriptionChange}
+            placeholder="Mô tả cụ thể những kiến thức học viên sẽ đạt được sau buổi học..."
+            minHeight="150px"
+            error={errors.description}
+          />
+        </div>
 
         {/* Credit Cost Box */}
         <div className="p-4 rounded-2xl bg-primary-50/60 border border-primary-200/80 flex items-center justify-between">
@@ -684,45 +750,30 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
               </div>
 
               {errors.dates && (
-                <p className="mt-1 text-xs text-red-500 font-semibold flex items-center gap-1 animate-in fade-in">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
-                  <span>{errors.dates}</span>
-                </p>
+                <p className="mt-1 text-xs text-red-500">{errors.dates}</p>
               )}
 
               {/* Thống kê tính khả dụng cho chế độ Có Thời Hạn */}
               {startDate && endDate && selectedSlotIds.length > 0 && (
-                <div className="pt-1">
+                <>
                   {limitedTimeAvailabilityStats.totalOccurrences === 0 ? (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 animate-in fade-in">
-                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-bold">Chưa có buổi học nào trong khoảng ngày này</p>
-                        <p className="text-[11px] text-amber-700 mt-0.5">
-                          Các khung giờ bạn tích chọn ở dưới không rơi vào các ngày từ {startDate} đến {endDate}. Vui lòng mở rộng khoảng ngày hoặc chọn thêm khung giờ.
-                        </p>
+                    <div className="pt-0.5">
+                      <div className="p-2.5 px-3.5 bg-red-50/90 border border-red-200/80 rounded-xl flex items-center gap-2 text-xs text-red-700 font-medium animate-in fade-in">
+                        <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                        <span>
+                          Không có buổi học {selectedDaysLabel ? selectedDaysLabel : 'nào'} trong khoảng ngày này.
+                        </span>
                       </div>
                     </div>
                   ) : limitedTimeAvailabilityStats.availableOccurrences === 0 ? (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-800 animate-in fade-in">
-                      <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-bold">Không có khung giờ khả dụng cho học viên</p>
-                        <p className="text-[11px] text-red-600 mt-0.5">
-                          Toàn bộ {limitedTimeAvailabilityStats.totalOccurrences} khung giờ trong đợt này đều trùng với Lịch bận trong Hồ sơ cá nhân của bạn. Học viên sẽ không thể đặt lịch hẹn.
-                        </p>
+                    <div className="pt-0.5">
+                      <div className="p-2.5 px-3.5 bg-red-50/90 border border-red-200/80 rounded-xl flex items-center gap-2 text-xs text-red-700 font-medium animate-in fade-in">
+                        <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                        <span>Các buổi học trong đợt này đều trùng với Lịch bận trong Hồ sơ của bạn.</span>
                       </div>
                     </div>
-                  ) : (
-                    <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-xl flex items-center gap-2.5 text-xs text-emerald-800 animate-in fade-in">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>
-                        Sẵn sàng: <strong>{limitedTimeAvailabilityStats.availableOccurrences} buổi học khả dụng</strong> cho học viên đăng ký
-                        {limitedTimeAvailabilityStats.blockedOccurrences > 0 && ` (${limitedTimeAvailabilityStats.blockedOccurrences} buổi bị ẩn do trùng lịch bận Profile)`}.
-                      </span>
-                    </div>
-                  )}
-                </div>
+                  ) : null}
+                </>
               )}
 
               <p className="text-[11px] text-amber-700 leading-relaxed font-semibold">
@@ -889,31 +940,74 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
             )}
 
             {errors.slots && (
-              <p className="mt-1.5 text-xs text-red-500 font-semibold flex items-center gap-1 animate-in fade-in">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
-                <span>{errors.slots}</span>
-              </p>
+              <p className="mt-1.5 text-xs text-red-500">{errors.slots}</p>
             )}
           </div>
         </div>
 
         {/* Submit CTA - Dùng Button Shared Component */}
         <div className="pt-4 border-t border-gray-100">
-          <Button
-            type="submit"
-            variant="primary"
-            fullWidth
-            size="md"
-            isLoading={isLoading}
-            disabled={isLoading || (sortedActiveSchedules.length > 0 && selectedSlotIds.length === 0)}
-          >
-            <span>{isLoading ? 'Đang đăng bài mới...' : 'Đăng bài mới'}</span>
-          </Button>
-          {sortedActiveSchedules.length > 0 && selectedSlotIds.length === 0 && (
-            <p className="text-center text-xs text-red-500 font-semibold mt-2">
-              Vui lòng chọn ít nhất một khung giờ rảnh để học viên có thể đặt lịch.
-            </p>
-          )}
+          {(() => {
+            const isNoSlotsSelected = sortedActiveSchedules.length > 0 && selectedSlotIds.length === 0;
+            const isLimitedTimeNoMatchingSlots =
+              scheduleType === 'LIMITED_TIME' &&
+              Boolean(startDate && endDate && selectedSlotIds.length > 0 && limitedTimeAvailabilityStats.totalOccurrences === 0);
+            const isLimitedTimeAllBlocked =
+              scheduleType === 'LIMITED_TIME' &&
+              Boolean(startDate && endDate && selectedSlotIds.length > 0 && limitedTimeAvailabilityStats.totalOccurrences > 0 && limitedTimeAvailabilityStats.availableOccurrences === 0);
+
+            const isSubmitDisabled = Boolean(
+              isLoading ||
+              isNoSlotsSelected ||
+              isLimitedTimeNoMatchingSlots ||
+              isLimitedTimeAllBlocked
+            );
+
+            return (
+              <>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  fullWidth
+                  size="md"
+                  isLoading={isLoading}
+                  disabled={isSubmitDisabled}
+                >
+                  <span>{isLoading ? 'Đang đăng bài mới...' : 'Đăng bài mới'}</span>
+                </Button>
+
+                {isNoSlotsSelected && (
+                  <p className="text-center text-xs text-red-500 font-semibold mt-2">
+                    Vui lòng chọn ít nhất một khung giờ rảnh để học viên có thể đặt lịch.
+                  </p>
+                )}
+
+                {isLimitedTimeNoMatchingSlots && (
+                  <p className="text-center text-xs text-red-500 font-semibold mt-2">
+                    Không có buổi học {selectedDaysLabel ? selectedDaysLabel : ''} nào trong khoảng ngày này. Vui lòng chọn lại.
+                  </p>
+                )}
+
+                {isLimitedTimeAllBlocked && (
+                  <p className="text-center text-xs text-red-500 font-semibold mt-2">
+                    Các buổi học trong đợt này đều trùng Lịch bận Profile. Vui lòng chọn ngày khác.
+                  </p>
+                )}
+
+                {successMessage && (
+                  <p className="text-center text-xs text-emerald-600 font-semibold mt-2 animate-in fade-in">
+                    {successMessage}
+                  </p>
+                )}
+
+                {errorMessage && (
+                  <p className="text-center text-xs text-red-500 font-semibold mt-2 animate-in fade-in">
+                    {errorMessage}
+                  </p>
+                )}
+              </>
+            );
+          })()}
         </div>
       </form>
 
