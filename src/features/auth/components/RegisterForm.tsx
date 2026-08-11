@@ -10,6 +10,7 @@ interface RegisterFormProps {
 export const RegisterForm = ({ onSwitchToLogin: _onSwitchToLogin, onRegisterSuccess }: RegisterFormProps) => {
   const { register, isLoading, error } = useAuth();
   const [formData, setFormData] = useState({
+    displayName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -26,6 +27,10 @@ export const RegisterForm = ({ onSwitchToLogin: _onSwitchToLogin, onRegisterSucc
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
+
+    if (!formData.displayName.trim()) {
+      newErrors.displayName = 'Vui lòng nhập họ và tên';
+    }
 
     if (!formData.email) {
       newErrors.email = 'Vui lòng nhập email';
@@ -55,7 +60,8 @@ export const RegisterForm = ({ onSwitchToLogin: _onSwitchToLogin, onRegisterSucc
     e.preventDefault();
     if (!validate()) return;
 
-    const result = await register(formData.email, formData.password);
+    sessionStorage.setItem('pending_display_name', formData.displayName.trim());
+    const result = await register(formData.email, formData.password, formData.displayName.trim());
     if (result.success) {
       onRegisterSuccess();
     }
@@ -68,6 +74,17 @@ export const RegisterForm = ({ onSwitchToLogin: _onSwitchToLogin, onRegisterSucc
           {error}
         </div>
       )}
+
+      <Input
+        label="Họ và tên"
+        name="displayName"
+        type="text"
+        placeholder="Nguyễn Văn A"
+        value={formData.displayName}
+        onChange={handleChange}
+        error={errors.displayName || undefined}
+        autoComplete="name"
+      />
 
       <Input
         label="Địa chỉ Gmail"

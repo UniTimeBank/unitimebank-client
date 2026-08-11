@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useMentorPosts, usePostRecommendations } from '../hooks';
@@ -107,7 +108,7 @@ export const PostExplorePage: React.FC = () => {
                   key={post._id}
                   post={post}
                   variant="vertical"
-                  onSelect={(p) => alert(`Xem chi tiết bài dạy: ${p.title}`)}
+                  onSelect={(p) => toast.success(`Xem chi tiết bài dạy: ${p.title}`)}
                 />
               ))}
             </div>

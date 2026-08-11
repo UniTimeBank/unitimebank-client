@@ -9,6 +9,8 @@ interface MentorAvailabilityViewerProps {
   onSelectSlot?: (date: string, startTime: string, endTime: string) => void;
 }
 
+import { toast } from 'react-hot-toast';
+
 export const MentorAvailabilityViewer: React.FC<MentorAvailabilityViewerProps> = ({
   mentorId,
   mentorName,
@@ -181,7 +183,7 @@ export const MentorAvailabilityViewer: React.FC<MentorAvailabilityViewerProps> =
               <button
                 type="button"
                 onClick={() => {
-                  alert(
+                  toast.success(
                     `Gửi yêu cầu đặt lịch ngày ${selectedSlot.date} (${selectedSlot.startTime} - ${selectedSlot.endTime})`,
                   );
                 }}

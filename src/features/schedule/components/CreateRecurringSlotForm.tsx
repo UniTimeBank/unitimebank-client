@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Plus, AlertCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { TimeInput } from '@/shared/components/ui';
 import type { DayOfWeek, RecurringSchedule } from '../types';
 import { ALL_DAYS } from '../constants';
@@ -110,6 +111,7 @@ export const CreateRecurringSlotForm: React.FC<CreateRecurringSlotFormProps> = (
         await onCreate({ dayOfWeek: day, startTime, endTime });
       }
       setSuccessMsg(`Đã thêm thành công khung giờ vào ${selectedDays.length} thứ trong tuần!`);
+      toast.success(` Tạo lịch rảnh thành công! (+10 Credit thưởng nếu là lần đầu)`);
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err: any) {
       setError(err?.data?.message || err?.message || 'Không thể tạo lịch lặp lại');

@@ -116,7 +116,7 @@ export const QuickAddScheduleModal: React.FC<QuickAddScheduleModalProps> = ({
         createdSlots.push({ dayOfWeek: day, startTime, endTime });
       }
 
-      setSuccessMsg(`🎉 Đã thêm thành công khung giờ vào ${selectedDays.length} ngày trong tuần!`);
+      setSuccessMsg(` Đã thêm thành công khung giờ vào ${selectedDays.length} ngày trong tuần!`);
       onSuccessCreated?.(createdSlots);
 
       setTimeout(() => {

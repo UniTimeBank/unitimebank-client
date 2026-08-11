@@ -6,4 +6,5 @@ export interface VerifyOtpDto {
   email: string;
   code: string;
   purpose: OtpPurpose;
+  displayName?: string;
 }

@@ -46,10 +46,10 @@ export const useAuth = () => {
 
   // Register - Đăng ký tài khoản
   const register = useCallback(
-    async (email: string, password: string): Promise<AuthOperationResult<RegisterResponse>> => {
+    async (email: string, password: string, displayName?: string): Promise<AuthOperationResult<RegisterResponse>> => {
       dispatch(setLoading());
       try {
-        const result = await registerMutation({ email, password }).unwrap();
+        const result = await registerMutation({ email, password, displayName }).unwrap();
         dispatch(setPendingEmail(email));
         return { success: true, data: result };
       } catch (err: unknown) {
@@ -66,11 +66,12 @@ export const useAuth = () => {
     async (
       email: string,
       code: string,
-      purpose: OtpPurpose = 'REGISTER'
+      purpose: OtpPurpose = 'REGISTER',
+      displayName?: string
     ): Promise<AuthOperationResult<AuthResponse>> => {
       dispatch(setLoading());
       try {
-        const result = await verifyOtpMutation({ email, code, purpose }).unwrap();
+        const result = await verifyOtpMutation({ email, code, purpose, displayName }).unwrap();
         if (!result || !result.accessToken || !result.user) {
           const message = (result as ApiErrorResponse)?.message || 'Xác thực OTP thất bại';
           dispatch(setError(message));
