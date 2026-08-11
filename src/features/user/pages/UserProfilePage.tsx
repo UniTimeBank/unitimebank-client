@@ -370,35 +370,36 @@ export const UserProfilePage: React.FC = () => {
             </button>
           </div>
 
-          {/* Header Thông tin công khai */}
-          <PublicProfileHeader
-            userName={userName}
-            avatarUrl={avatarUrl}
-            bio={bio}
-            skillsList={skills.map((s) => s.skillName)}
-            isLiked={isLiked}
-            onToggleLike={() => setIsLiked(!isLiked)}
-          />
-
-          {/* Grid thống kê công khai */}
-          <PublicStatsGrid trustScoreMax100={trustScoreMax100} />
-
-          {/* Thân trang: 2 cột (Trái: Lịch & Đặt lịch | Phải: Đánh giá) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* LEFT COLUMN (Wide 8 cols) */}
             <div className="lg:col-span-8 space-y-8">
-              {/* Lịch rảnh nhận học viên */}
-              <MentorScheduleManager />
+              {/* 1. Profile Header Card */}
+              <PublicProfileHeader
+                userName={userName}
+                avatarUrl={avatarUrl}
+                bio={bio}
+                skillsList={skills.map((s) => s.skillName)}
+                isLiked={isLiked}
+                onToggleLike={() => setIsLiked(!isLiked)}
+              />
 
-              {/* Đánh giá từ bạn học */}
+              {/* 2. Stats Grid (2 Cards) */}
+              <PublicStatsGrid trustScoreMax100={trustScoreMax100} />
+
+              {/* 3. Peer Reviews Section */}
               <PeerReviewsSection reviews={reviews} />
             </div>
 
-            {/* Cột phải: Thẻ Đặt lịch 1:1 trực tiếp */}
-            <div className="lg:col-span-4 sticky top-6">
+            {/* RIGHT COLUMN (Sidebar 4 cols) */}
+            <div className="lg:col-span-4 space-y-6 sticky top-20">
+              {/* Mentorship Cost & Booking Card */}
               <SidebarBookingCard
-                mentorId={profile?.userId || ''}
+                mentorId={profile?.userId || profile?.id || 'sample-id'}
                 mentorName={userName}
               />
+
+              {/* Expertise Track Card */}
+              <ExpertiseTrackCard />
             </div>
           </div>
         </div>

@@ -15,7 +15,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Button, Input, DateInput } from '@/shared/components/ui';
-import { useMentorSchedule, QuickAddScheduleModal, ALL_DAYS } from '@/features/schedule';
+import { useMentorSchedule, QuickAddScheduleModal, ALL_DAYS, formatLocalDate } from '@/features/schedule';
 import { useUserSkills } from '@/features/user';
 import { useCreateMentorPostMutation } from '@/core/api/post/postApi';
 import { SessionType, PostScheduleType, SkillCategoryName } from '../../types';
@@ -70,6 +70,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
     createRecurring,
     deleteRecurring,
     refetchRecurring,
+    exceptions,
   } = useMentorSchedule();
 
   const { skills: profileSkills, addSkill } = useUserSkills();
@@ -142,6 +143,9 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
     setStartDate(val);
     if (val) {
       setErrors((prev) => ({ ...prev, dates: '' }));
+      if (endDate && endDate < val) {
+        setEndDate(val);
+      }
     }
   };
 
@@ -243,6 +247,82 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
     return groups;
   }, [sortedActiveSchedules]);
 
+  // Tính toán số buổi học thực tế khả dụng cho học viên đăng ký khi ở chế độ Có Thời Hạn
+  const limitedTimeAvailabilityStats = useMemo(() => {
+    if (scheduleType !== 'LIMITED_TIME' || !startDate || !endDate || selectedSlotIds.length === 0) {
+      return { isLimitedTime: false, totalOccurrences: 0, availableOccurrences: 0, blockedOccurrences: 0 };
+    }
+
+    const selectedSchedules = recurringSchedules.filter((s) => selectedSlotIds.includes(s.id));
+    if (selectedSchedules.length === 0) {
+      return { isLimitedTime: true, totalOccurrences: 0, availableOccurrences: 0, blockedOccurrences: 0 };
+    }
+
+    const [startY, startM, startD] = startDate.split('-').map(Number);
+    const [endY, endM, endD] = endDate.split('-').map(Number);
+
+    const start = new Date(startY, startM - 1, startD);
+    const end = new Date(endY, endM - 1, endD);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+      return { isLimitedTime: true, totalOccurrences: 0, availableOccurrences: 0, blockedOccurrences: 0 };
+    }
+
+    const DAY_NUM_TO_CODE: Record<number, string> = {
+      0: 'SUN',
+      1: 'MON',
+      2: 'TUE',
+      3: 'WED',
+      4: 'THU',
+      5: 'FRI',
+      6: 'SAT',
+    };
+
+    let totalOccurrences = 0;
+    let availableOccurrences = 0;
+    let blockedOccurrences = 0;
+
+    const blockedExceptions = (exceptions || []).filter((e) => e.type === 'BLOCKED');
+
+    const curr = new Date(start);
+    while (curr <= end) {
+      const year = curr.getFullYear();
+      const month = String(curr.getMonth() + 1).padStart(2, '0');
+      const day = String(curr.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+      const dayCode = DAY_NUM_TO_CODE[curr.getDay()];
+
+      const slotsForDay = selectedSchedules.filter((s) => s.dayOfWeek === dayCode);
+      const dayBlockedExceptions = blockedExceptions.filter((e) => e.exceptionDate === dateStr);
+
+      for (const slot of slotsForDay) {
+        totalOccurrences++;
+        const isBlocked = dayBlockedExceptions.some((b) => {
+          return (
+            (b.startTime <= slot.startTime && b.endTime >= slot.endTime) ||
+            (b.startTime === slot.startTime && b.endTime === slot.endTime) ||
+            (b.startTime < slot.endTime && b.endTime > slot.startTime)
+          );
+        });
+
+        if (isBlocked) {
+          blockedOccurrences++;
+        } else {
+          availableOccurrences++;
+        }
+      }
+
+      curr.setDate(curr.getDate() + 1);
+    }
+
+    return {
+      isLimitedTime: true,
+      totalOccurrences,
+      availableOccurrences,
+      blockedOccurrences,
+    };
+  }, [scheduleType, startDate, endDate, selectedSlotIds, recurringSchedules, exceptions]);
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -300,7 +380,13 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
       if (!startDate || !endDate) {
         newErrors.dates = 'Vui lòng chọn đầy đủ ngày bắt đầu và ngày kết thúc đợt học.';
       } else if (startDate > endDate) {
-        newErrors.dates = 'Ngày kết thúc phải sau ngày bắt đầu.';
+        newErrors.dates = 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.';
+      } else if (selectedSlotIds.length > 0) {
+        if (limitedTimeAvailabilityStats.totalOccurrences === 0) {
+          newErrors.dates = 'Khoảng ngày bạn chọn không chứa bất kỳ thứ nào trong các khung giờ đã chọn.';
+        } else if (limitedTimeAvailabilityStats.availableOccurrences === 0) {
+          newErrors.dates = `Toàn bộ ${limitedTimeAvailabilityStats.totalOccurrences} khung giờ trong khoảng ngày này đều trùng với lịch bận trong Hồ sơ. Học viên không thể đặt lịch.`;
+        }
       }
     }
 
@@ -581,25 +667,18 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
                 <DateInput
                   label="NGÀY BẮT ĐẦU *"
                   value={startDate}
+                  min={formatLocalDate(new Date())}
                   onChange={(dateStr) => {
                     handleStartDateChange(dateStr);
-                    if (dateStr) {
-                      const [y, m, d] = dateStr.split('-').map(Number);
-                      if (y && m && d) {
-                        const date = new Date(y, m - 1, d);
-                        date.setDate(date.getDate() + 1);
-                        const nextYear = date.getFullYear();
-                        const nextMonth = String(date.getMonth() + 1).padStart(2, '0');
-                        const nextDay = String(date.getDate()).padStart(2, '0');
-                        handleEndDateChange(`${nextYear}-${nextMonth}-${nextDay}`);
-                      }
+                    if (dateStr && (!endDate || endDate < dateStr)) {
+                      handleEndDateChange(dateStr);
                     }
                   }}
                 />
                 <DateInput
                   label="NGÀY KẾT THÚC *"
                   value={endDate}
-                  min={startDate}
+                  min={startDate || formatLocalDate(new Date())}
                   onChange={handleEndDateChange}
                 />
               </div>
@@ -609,6 +688,41 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
                   <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
                   <span>{errors.dates}</span>
                 </p>
+              )}
+
+              {/* Thống kê tính khả dụng cho chế độ Có Thời Hạn */}
+              {startDate && endDate && selectedSlotIds.length > 0 && (
+                <div className="pt-1">
+                  {limitedTimeAvailabilityStats.totalOccurrences === 0 ? (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-xs text-amber-800 animate-in fade-in">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">Chưa có buổi học nào trong khoảng ngày này</p>
+                        <p className="text-[11px] text-amber-700 mt-0.5">
+                          Các khung giờ bạn tích chọn ở dưới không rơi vào các ngày từ {startDate} đến {endDate}. Vui lòng mở rộng khoảng ngày hoặc chọn thêm khung giờ.
+                        </p>
+                      </div>
+                    </div>
+                  ) : limitedTimeAvailabilityStats.availableOccurrences === 0 ? (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-800 animate-in fade-in">
+                      <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold">Không có khung giờ khả dụng cho học viên</p>
+                        <p className="text-[11px] text-red-600 mt-0.5">
+                          Toàn bộ {limitedTimeAvailabilityStats.totalOccurrences} khung giờ trong đợt này đều trùng với Lịch bận trong Hồ sơ cá nhân của bạn. Học viên sẽ không thể đặt lịch hẹn.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-xl flex items-center gap-2.5 text-xs text-emerald-800 animate-in fade-in">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>
+                        Sẵn sàng: <strong>{limitedTimeAvailabilityStats.availableOccurrences} buổi học khả dụng</strong> cho học viên đăng ký
+                        {limitedTimeAvailabilityStats.blockedOccurrences > 0 && ` (${limitedTimeAvailabilityStats.blockedOccurrences} buổi bị ẩn do trùng lịch bận Profile)`}.
+                      </span>
+                    </div>
+                  )}
+                </div>
               )}
 
               <p className="text-[11px] text-amber-700 leading-relaxed font-semibold">

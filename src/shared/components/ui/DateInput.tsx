@@ -49,11 +49,23 @@ export const DateInput: React.FC<DateInputProps> = ({
   };
 
   const todayStr = getTodayLocalDate();
-  const effectiveMin = min !== undefined ? min : todayStr;
+  const effectiveMin = min ? min : todayStr;
 
-  const initialDate = value ? new Date(value) : new Date();
-  const [viewYear, setViewYear] = useState(initialDate.getFullYear() || new Date().getFullYear());
-  const [viewMonth, setViewMonth] = useState(initialDate.getMonth() || new Date().getMonth());
+  const initialDateStr = value || effectiveMin;
+  const initialParts = initialDateStr ? initialDateStr.split('-').map(Number) : [];
+  const [viewYear, setViewYear] = useState(initialParts[0] || new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(initialParts[1] ? initialParts[1] - 1 : new Date().getMonth());
+
+  useEffect(() => {
+    const targetDateStr = value || effectiveMin;
+    if (targetDateStr) {
+      const [y, m] = targetDateStr.split('-').map(Number);
+      if (y && m) {
+        setViewYear(y);
+        setViewMonth(m - 1);
+      }
+    }
+  }, [value, effectiveMin]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -70,6 +82,15 @@ export const DateInput: React.FC<DateInputProps> = ({
       const rect = containerRef.current.getBoundingClientRect();
       const spaceBelow = window.innerHeight - rect.bottom;
       setOpenUpward(spaceBelow < 300);
+
+      const targetDateStr = value || effectiveMin;
+      if (targetDateStr) {
+        const [y, m] = targetDateStr.split('-').map(Number);
+        if (y && m) {
+          setViewYear(y);
+          setViewMonth(m - 1);
+        }
+      }
     }
     setIsOpen(!isOpen);
   };
@@ -225,12 +246,12 @@ export const DateInput: React.FC<DateInputProps> = ({
                   onClick={() => handleSelectDay(dayNum, isPast)}
                   className={`h-8 rounded-xl text-xs transition-all flex items-center justify-center ${
                     isPast
-                      ? 'text-slate-400/80 font-normal cursor-not-allowed pointer-events-none select-none'
+                      ? 'text-slate-400 font-medium cursor-not-allowed pointer-events-none select-none'
                       : isSelected
                       ? 'bg-primary-600 text-white font-bold shadow-xs'
                       : isToday
                       ? 'bg-primary-50 text-primary-700 font-bold border border-primary-300/80 cursor-pointer'
-                      : 'text-slate-700 font-bold hover:bg-slate-100 cursor-pointer'
+                      : 'text-slate-800 font-bold hover:bg-slate-100 cursor-pointer'
                   }`}
                 >
                   {dayNum}
