@@ -51,7 +51,7 @@ export const OpenRequestsPage: React.FC = () => {
             </div>
 
             {/* Sticky Right Preview Sidebar */}
-            <div className="lg:col-span-5 sticky top-8">
+            <div className="lg:col-span-5 sticky top-20">
               <MentorPostPreview
                 title={mentorPreview.title}
                 shortDescription={mentorPreview.shortDescription}
@@ -75,7 +75,7 @@ export const OpenRequestsPage: React.FC = () => {
             </div>
 
             {/* Sticky Right Preview Sidebar */}
-            <div className="lg:col-span-5 sticky top-8">
+            <div className="lg:col-span-5 sticky top-20">
               <LearnerRequestSidebar
                 subject={learnerPreview.subject}
                 coverImage={learnerPreview.coverImage}

@@ -14,12 +14,10 @@ export const CreatePostHeader: React.FC<CreatePostHeaderProps> = ({
     {
       value: 'MENTOR_OFFER',
       label: 'Đăng bài dạy',
-      subLabel: '(Tích lũy Credit)',
     },
     {
       value: 'LEARNER_REQUEST',
       label: 'Đăng yêu cầu học',
-      subLabel: '(Sử dụng Credit)',
     },
   ];
 
