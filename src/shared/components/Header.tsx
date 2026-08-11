@@ -1,19 +1,26 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Clock, Bell, LogOut } from 'lucide-react';
+import { Search, Clock, Gift, Bell, LogOut } from 'lucide-react';
 import { NAV_LINKS } from '@/shared/config';
+
+import LogoImage from '@/assets/images/Logo.png';
 
 interface HeaderProps {
   userCredits?: number;
   userName?: string;
   avatarUrl?: string;
+  hasUncompletedTasks?: boolean;
+  onOpenCreditTasks?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   userCredits = 0,
-  userName = 'User',
-  avatarUrl = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
+  userName = 'Thành viên UniTime',
+  avatarUrl,
+  hasUncompletedTasks = false,
+  onOpenCreditTasks,
 }) => {
+  const displayAvatar = avatarUrl || LogoImage;
   const location = useLocation();
 
   const handleLogout = () => {
@@ -73,6 +80,20 @@ export const Header: React.FC<HeaderProps> = ({
             <span>{userCredits} Credit</span>
           </div>
 
+          {/* Credit Tasks Gift Icon Button */}
+          {onOpenCreditTasks && (
+            <button
+              onClick={onOpenCreditTasks}
+              title="Nhiệm vụ nhận Credit"
+              className="relative p-2 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-full transition-colors cursor-pointer shrink-0"
+            >
+              <Gift className="w-4.5 h-4.5 text-gray-600 hover:text-emerald-600" />
+              {hasUncompletedTasks && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
+              )}
+            </button>
+          )}
+
           {/* Notification Bell */}
           <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer shrink-0">
             <Bell className="w-4.5 h-4.5" />
@@ -82,7 +103,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Profile Avatar */}
           <Link to="/profile" className="flex items-center gap-2 pl-1 group shrink-0">
             <img
-              src={avatarUrl}
+              src={displayAvatar}
               alt={userName}
               className="w-8 h-8 rounded-full object-cover ring-2 ring-primary-500/30 group-hover:ring-primary-500 transition-all"
             />

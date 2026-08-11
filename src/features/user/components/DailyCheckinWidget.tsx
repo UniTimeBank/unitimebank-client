@@ -1,5 +1,5 @@
 import React from 'react';
-import { Flame, Check, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Flame, Check, CheckCircle2 } from 'lucide-react';
 import { DAYS_REWARDS } from '../config';
 
 interface DailyCheckinWidgetProps {
@@ -11,7 +11,7 @@ interface DailyCheckinWidgetProps {
 }
 
 export const DailyCheckinWidget: React.FC<DailyCheckinWidgetProps> = ({
-  currentStreak = 3,
+  currentStreak = 0,
   hasCheckedInToday = false,
   rewardMessage,
   onCheckin,
@@ -42,9 +42,9 @@ export const DailyCheckinWidget: React.FC<DailyCheckinWidgetProps> = ({
           disabled={hasCheckedInToday || isCheckinLoading}
           className={`px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs ${
             hasCheckedInToday
-              ? 'bg-white/15 text-emerald-100 border border-white/20 cursor-default'
+              ? 'bg-white/15 text-emerald-100 border border-white/20 cursor-default opacity-80'
               : 'bg-white hover:bg-emerald-50 text-[#0B654D] active:scale-95'
-          } disabled:opacity-90 disabled:cursor-not-allowed flex-shrink-0 self-stretch sm:self-auto`}
+          } disabled:cursor-not-allowed flex-shrink-0 self-stretch sm:self-auto`}
         >
           {isCheckinLoading ? (
             <>
@@ -79,18 +79,23 @@ export const DailyCheckinWidget: React.FC<DailyCheckinWidgetProps> = ({
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
         {DAYS_REWARDS.map((item) => {
           const isDone = item.day <= currentStreak;
-          const isToday = item.day === currentStreak + 1 && !hasCheckedInToday;
+          const isToday = hasCheckedInToday
+            ? item.day === currentStreak
+            : item.day === currentStreak + 1;
+
+          let cardStyle = 'bg-white/10 border-white/15 text-emerald-100/70';
+          if (isDone && isToday) {
+            cardStyle = 'bg-[#128B6B] border-2 border-emerald-300 text-white shadow-xs ring-2 ring-emerald-400/40';
+          } else if (isToday) {
+            cardStyle = 'bg-[#128B6B] border-2 border-amber-300 text-amber-200 shadow-xs ring-2 ring-amber-400/30';
+          } else if (isDone) {
+            cardStyle = 'bg-[#128B6B] border-emerald-400/30 text-white font-bold shadow-2xs';
+          }
 
           return (
             <div
               key={item.day}
-              className={`flex flex-col items-center justify-between p-3.5 rounded-xl border text-center transition-all ${
-                isDone
-                  ? 'bg-[#128B6B] border-emerald-400/30 text-white font-bold shadow-2xs'
-                  : isToday
-                  ? 'bg-[#128B6B] border-2 border-amber-300 text-amber-200 shadow-xs ring-2 ring-amber-400/30'
-                  : 'bg-white/10 border-white/15 text-emerald-100/70'
-              }`}
+              className={`flex flex-col items-center justify-between p-3.5 rounded-xl border text-center transition-all ${cardStyle}`}
             >
               <span
                 className={`text-[10px] font-bold uppercase tracking-wider ${

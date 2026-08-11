@@ -62,7 +62,7 @@ export const walletApi = baseApi.injectEndpoints({
     // 1. Lấy thông tin ví của user đang đăng nhập
     getMyWallet: builder.query<Wallet, void>({
       query: () => '/wallets/me',
-      providesTags: ['User'],
+      providesTags: ['Wallet', 'User'],
     }),
 
     // 2. Lấy lịch sử giao dịch sổ cái

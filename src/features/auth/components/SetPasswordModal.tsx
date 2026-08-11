@@ -59,7 +59,7 @@ export const SetPasswordModal = ({ isOpen, onClose, onSuccess }: SetPasswordModa
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Thiết lập mật khẩu thủ công"
+      title="Thiết lập mật khẩu"
       description="Đặt mật khẩu mới để có thể đăng nhập bằng cả Google và Form Email + Mật khẩu."
     >
       <form onSubmit={handleSubmit} className="space-y-3.5">

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Eye, Pencil, Share2, Plus, TrendingUp, Sprout, X, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import { Eye, Pencil, Share2, Plus, TrendingUp, Sprout, Gift, X, ArrowLeft } from 'lucide-react';
 
 import { TrustScoreGauge } from '@/shared/components';
 import { SidebarBookingCard, MentorScheduleManager } from '@/features/schedule';
@@ -9,6 +10,7 @@ import {
   EditProfileModal,
   AddSkillModal,
   DailyCheckinWidget,
+  CreditTasksModal,
   CreditLedgerTable,
   RecommendedSkillsSection,
   PublicProfileHeader,
@@ -18,8 +20,11 @@ import {
 } from '../components';
 import { useUserProfile, useUserSkills, useDailyCheckin } from '../hooks';
 
+import LogoImage from '@/assets/images/Logo.png';
+
 export const UserProfilePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { profile, updateProfile, uploadAvatar } = useUserProfile();
   const { skills, addSkill, deleteSkill } = useUserSkills();
   const { currentStreak, hasCheckedInToday, rewardMessage, checkin, isCheckinLoading } = useDailyCheckin();
@@ -29,13 +34,40 @@ export const UserProfilePage: React.FC = () => {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddSkillModalOpen, setIsAddSkillModalOpen] = useState(false);
+  const [isCreditTasksOpen, setIsCreditTasksOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+
+  const handleProfileAction = (actionType: 'EDIT_PROFILE' | 'CREATE_SCHEDULE' | 'ADD_SKILL') => {
+    if (actionType === 'EDIT_PROFILE') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setIsEditModalOpen(true);
+    } else if (actionType === 'CREATE_SCHEDULE') {
+      const scheduleElem = document.getElementById('schedule-section');
+      if (scheduleElem) {
+        scheduleElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } else if (actionType === 'ADD_SKILL') {
+      const skillsElem = document.getElementById('skills-section');
+      if (skillsElem) {
+        skillsElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      setIsAddSkillModalOpen(true);
+    }
+  };
+
+  useEffect(() => {
+    if (location.state && (location.state as any).action) {
+      const action = (location.state as any).action;
+      setTimeout(() => {
+        handleProfileAction(action);
+      }, 250);
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const userName = profile?.displayName || 'Sinh viên UniTime';
   const bio = profile?.bio || 'Chưa cập nhật phần giới thiệu bản thân.';
-  const avatarUrl =
-    profile?.avatarUrl ||
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300';
+  const avatarUrl = profile?.avatarUrl || LogoImage;
 
   const credits = 120;
   const trustScoreMax100 = profile?.trustScore || 100;
@@ -217,7 +249,7 @@ export const UserProfilePage: React.FC = () => {
                   onClick={() => {
                     if (navigator.clipboard) {
                       navigator.clipboard.writeText(window.location.href);
-                      alert('Đã sao chép liên kết hồ sơ của bạn!');
+                      toast.success('Đã sao chép liên kết hồ sơ của bạn!');
                     }
                   }}
                   className="w-9 h-9 flex items-center justify-center text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200/80 rounded-xl transition-all cursor-pointer"
@@ -238,7 +270,7 @@ export const UserProfilePage: React.FC = () => {
             </div>
 
             {/* Bottom section: Real Skills Tags integrated seamlessly */}
-            <div className="mt-6 pt-5 border-t border-gray-100">
+            <div id="skills-section" className="mt-6 pt-5 border-t border-gray-100">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-xs font-extrabold text-gray-900 uppercase tracking-wider">
                   Kỹ năng & Bài dạy của tôi
@@ -309,12 +341,14 @@ export const UserProfilePage: React.FC = () => {
                 </p>
               </div>
 
-              <Link
-                to="/ledger"
-                className="mt-6 w-full text-center py-2.5 bg-primary-50/60 hover:bg-primary-100/80 text-primary-700 text-xs font-bold rounded-xl transition-colors block border border-primary-200/50"
-              >
-                Xem lịch sử chi tiết
-              </Link>
+              <div className="mt-6 flex items-center gap-2">
+                <Link
+                  to="/ledger"
+                  className="flex-1 text-center py-2.5 bg-primary-50/60 hover:bg-primary-100/80 text-primary-700 text-xs font-bold rounded-xl transition-colors block border border-primary-200/50"
+                >
+                  Xem lịch sử
+                </Link>
+              </div>
             </div>
 
             {/* Card 2: Điểm uy tín */}
@@ -342,7 +376,9 @@ export const UserProfilePage: React.FC = () => {
           </div>
 
           {/* 4. QUẢN LÝ LỊCH RẢNH DẠY HÀNG TUẦN & NGÀY NGHỈ ĐẶC BIỆT */}
-          <MentorScheduleManager />
+          <div id="schedule-section">
+            <MentorScheduleManager />
+          </div>
 
           {/* 5. GỢI Ý KỸ NĂNG NỔI BẬT TRONG CỘNG ĐỒNG */}
           <RecommendedSkillsSection recommendedSkills={recommendedSkills} />
@@ -413,10 +449,17 @@ export const UserProfilePage: React.FC = () => {
         initialBio={profile?.bio || ''}
         initialAvatarUrl={profile?.avatarUrl || ''}
         onSave={async (displayName: string, newBio: string, avatarFile?: File) => {
+          let hasAvatar = Boolean(avatarFile || profile?.avatarUrl);
           if (avatarFile) {
             await uploadAvatar(avatarFile);
+            hasAvatar = true;
           }
           await updateProfile({ displayName, bio: newBio });
+          if (hasAvatar && newBio.trim().length > 0) {
+            toast.success(' Đã cập nhật hồ sơ cá nhân thành công! (+10 Credit thưởng nếu là lần đầu)');
+          } else {
+            toast.success('Đã cập nhật thông tin cá nhân!');
+          }
         }}
       />
 
@@ -425,6 +468,13 @@ export const UserProfilePage: React.FC = () => {
         isOpen={isAddSkillModalOpen}
         onClose={() => setIsAddSkillModalOpen(false)}
         onAddSkill={handleAddSkillSuccess}
+      />
+
+      {/* Credit Tasks Modal */}
+      <CreditTasksModal
+        isOpen={isCreditTasksOpen}
+        onClose={() => setIsCreditTasksOpen(false)}
+        onActionClick={handleProfileAction}
       />
     </div>
   );

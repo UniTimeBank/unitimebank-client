@@ -6,15 +6,24 @@ export interface RewardDayItem {
 
 export interface LoginStreakResponse {
   currentStreak: number;
-  totalLoginDays: number;
-  totalReward: number;
-  rewardsReceived: RewardDayItem[];
+  isCheckedInToday?: boolean;
+  lastCheckInDate?: string | null;
+  history?: Array<{
+    date: string;
+    streakDay: number;
+    rewardGranted: boolean;
+  }>;
+  totalLoginDays?: number;
+  totalReward?: number;
+  rewardsReceived?: RewardDayItem[];
 }
 
 export interface CheckinResult {
-  streakDay: number;
-  creditReward: number;
-  totalReward: number;
-  nextReward: number;
-  remainingDays: number;
+  message?: string;
+  streakDay?: number;
+  creditReward?: number;
+  rewardCredits?: number;
+  totalReward?: number;
+  nextReward?: number;
+  remainingDays?: number;
 }

@@ -33,7 +33,7 @@ export const userApi = baseApi.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: ['User'],
+      invalidatesTags: ['User', 'Wallet'],
     }),
 
     // 3. Upload ảnh đại diện
@@ -43,7 +43,7 @@ export const userApi = baseApi.injectEndpoints({
         method: 'POST',
         body: formData,
       }),
-      invalidatesTags: ['User'],
+      invalidatesTags: ['User', 'Wallet'],
     }),
 
     // 4. Lấy danh sách kỹ năng của tôi
@@ -59,7 +59,7 @@ export const userApi = baseApi.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['User'],
+      invalidatesTags: ['User', 'Wallet'],
     }),
 
     // 6. Xóa kỹ năng
@@ -68,7 +68,7 @@ export const userApi = baseApi.injectEndpoints({
         url: `/users/me/skills/${skillId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['User'],
+      invalidatesTags: ['User', 'Wallet'],
     }),
 
     // 7. Lấy danh mục kỹ năng
@@ -145,7 +145,7 @@ export const userApi = baseApi.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['User'],
+      invalidatesTags: ['User', 'Wallet'],
     }),
 
     // 18. Cập nhật lịch rảnh lặp lại
@@ -210,6 +210,24 @@ export const userApi = baseApi.injectEndpoints({
       query: ({ userId, from, to }) =>
         `/users/${userId}/schedule/availability?from=${from}&to=${to}`,
     }),
+
+    // 24. Lấy tiến độ 3 nhiệm vụ nhận Credit
+    getOnboardingTasks: builder.query<{
+      profileCompleted: boolean;
+      scheduleCreated: boolean;
+      skillAdded: boolean;
+      totalBonusEarned: number;
+      tasks: Array<{
+        taskKey: string;
+        title: string;
+        description: string;
+        rewardCredits: number;
+        completed: boolean;
+      }>;
+    }, void>({
+      query: () => '/users/me/tasks',
+      providesTags: ['User'],
+    }),
   }),
 });
 
@@ -237,4 +255,5 @@ export const {
   useCreateScheduleExceptionMutation,
   useDeleteScheduleExceptionMutation,
   useGetAvailabilityQuery,
+  useGetOnboardingTasksQuery,
 } = userApi;

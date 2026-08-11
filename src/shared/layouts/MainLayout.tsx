@@ -2,10 +2,13 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Header, Footer } from '@/shared/components';
 import { SetPasswordModal } from '@/features/auth/components';
+import { CreditTasksModal } from '@/features/user/components';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentUser } from '@/core/store';
-import { useGetMeQuery } from '@/core/api/user';
+import { useGetMeQuery, useGetOnboardingTasksQuery } from '@/core/api/user';
 import { useGetMyWalletQuery } from '@/core/api/wallet/walletApi';
+
+import { useOnboardingTaskToastNotifier } from '@/features/user/hooks';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -14,11 +17,23 @@ interface MainLayoutProps {
 export const MainLayout = ({ children }: MainLayoutProps) => {
   const authUser = useAppSelector(selectCurrentUser);
   const { data: userProfile } = useGetMeQuery(undefined, { skip: !authUser });
-  const { data: walletData } = useGetMyWalletQuery(undefined, { skip: !authUser });
+  const { data: walletData } = useGetMyWalletQuery(undefined, {
+    skip: !authUser,
+    pollingInterval: 3000,
+    refetchOnFocus: true,
+  });
+  const { data: onboardingData } = useGetOnboardingTasksQuery(undefined, {
+    skip: !authUser,
+    pollingInterval: 4000,
+    refetchOnFocus: true,
+  });
+  useOnboardingTaskToastNotifier(onboardingData);
 
   const [isSetPasswordOpen, setIsSetPasswordOpen] = useState(() => {
     return sessionStorage.getItem('prompt_set_password') === 'true';
-  });
+  }); 
+
+  const [isCreditTasksOpen, setIsCreditTasksOpen] = useState(false);
 
   const handleCloseModal = () => {
     sessionStorage.removeItem('prompt_set_password');
@@ -28,6 +43,12 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   const userName = userProfile?.displayName || authUser?.email?.split('@')[0] || 'User';
   const avatarUrl = userProfile?.avatarUrl;
   const userCredits = walletData?.availableBalance ?? 0;
+  const hasUncompletedTasks = Boolean(
+    onboardingData &&
+      (!onboardingData.profileCompleted ||
+        !onboardingData.scheduleCreated ||
+        !onboardingData.skillAdded),
+  );
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans text-gray-800 antialiased">
@@ -36,6 +57,8 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
         userCredits={userCredits}
         userName={userName}
         avatarUrl={avatarUrl}
+        hasUncompletedTasks={hasUncompletedTasks}
+        onOpenCreditTasks={() => setIsCreditTasksOpen(true)}
       />
 
       {/* Main Content Body */}
@@ -48,6 +71,12 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
         isOpen={isSetPasswordOpen}
         onClose={handleCloseModal}
         onSuccess={handleCloseModal}
+      />
+
+      {/* Reusable Credit Tasks Modal */}
+      <CreditTasksModal
+        isOpen={isCreditTasksOpen}
+        onClose={() => setIsCreditTasksOpen(false)}
       />
 
       {/* Single Shared Footer */}

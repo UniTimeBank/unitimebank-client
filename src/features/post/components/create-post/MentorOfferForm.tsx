@@ -449,7 +449,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
         availableSlots,
       }).unwrap();
 
-      setSuccessMessage('🎉 Đã đăng bài dạy thành công! Bài viết của bạn đã hiển thị trên trang Khám phá.');
+      setSuccessMessage(' Đã đăng bài dạy thành công! Bài viết của bạn đã hiển thị trên trang Khám phá.');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       setTimeout(() => {
         navigate('/explore');

@@ -35,8 +35,10 @@ export const VerifyOtpForm = ({ email, onBack, onSuccess }: VerifyOtpFormProps) 
       return;
     }
 
-    const result = await verifyOtp(email, code, 'REGISTER');
+    const pendingName = sessionStorage.getItem('pending_display_name') || undefined;
+    const result = await verifyOtp(email, code, 'REGISTER', pendingName);
     if (result.success) {
+      sessionStorage.removeItem('pending_display_name');
       onSuccess();
     }
   };

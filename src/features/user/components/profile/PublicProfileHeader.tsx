@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'react-hot-toast';
 import { Share2, Heart } from 'lucide-react';
 
 interface PublicProfileHeaderProps {
@@ -44,7 +45,7 @@ export const PublicProfileHeader: React.FC<PublicProfileHeaderProps> = ({
                 onClick={() => {
                   if (navigator.clipboard) {
                     navigator.clipboard.writeText(window.location.href);
-                    alert('Đã sao chép liên kết hồ sơ!');
+                    toast.success('Đã sao chép liên kết hồ sơ!');
                   }
                 }}
                 className="w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors cursor-pointer"

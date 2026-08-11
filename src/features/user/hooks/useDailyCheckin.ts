@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { useGetLoginStreakQuery, useDailyCheckinMutation } from '@/core/api/user';
 
 export const useDailyCheckin = () => {
   const { data: streakInfo, isLoading: isLoadingStreak, refetch } = useGetLoginStreakQuery();
   const [checkinMutation, { isLoading: isCheckinLoading }] = useDailyCheckinMutation();
 
-  // Local state override for smooth UI responsiveness during dev / demo
   const [localStreak, setLocalStreak] = useState<number | null>(null);
-  const [hasCheckedInToday, setHasCheckedInToday] = useState(false);
+  const [localCheckedIn, setLocalCheckedIn] = useState<boolean | null>(null);
   const [rewardMessage, setRewardMessage] = useState<string | null>(null);
 
-  const currentStreak = localStreak ?? streakInfo?.currentStreak ?? 3;
+  const currentStreak = localStreak ?? streakInfo?.currentStreak ?? 0;
+  const hasCheckedInToday = localCheckedIn ?? streakInfo?.isCheckedInToday ?? false;
 
   // Auto-hide notification message after 4 seconds
   useEffect(() => {
@@ -25,18 +26,19 @@ export const useDailyCheckin = () => {
   const handleCheckin = async () => {
     try {
       const res = await checkinMutation().unwrap();
-      setHasCheckedInToday(true);
-      setLocalStreak((prev) => (prev !== null ? prev + 1 : (streakInfo?.currentStreak || 3) + 1));
-      setRewardMessage(`Chúc mừng! Bạn đã nhận thành công +${res.creditReward || 5} credit thưởng.`);
+      setLocalCheckedIn(true);
+      setLocalStreak(res.streakDay || (streakInfo?.currentStreak || 0) + 1);
+      const reward = res.rewardCredits || res.creditReward || 15;
+      const successMsg = ` Điểm danh thành công! Đã cộng +${reward} credit thưởng vào ví của bạn.`;
+      setRewardMessage(successMsg);
+      toast.success(successMsg);
       refetch();
       return { success: true, data: res };
-    } catch {
-      // Fallback for local testing / demo when backend API endpoint is not yet connected
-      const nextStreak = currentStreak + 1 > 7 ? 1 : currentStreak + 1;
-      setLocalStreak(nextStreak);
-      setHasCheckedInToday(true);
-      setRewardMessage('Điểm danh thành công! Đã cộng +5 credit thưởng vào ví của bạn.');
-      return { success: true, data: { streakDay: nextStreak, creditReward: 5 } };
+    } catch (err: any) {
+      const msg = err?.data?.message || err?.message || 'Bạn đã điểm danh ngày hôm nay rồi!';
+      setRewardMessage(msg);
+      toast.error(msg);
+      return { success: false, error: msg };
     }
   };
 
