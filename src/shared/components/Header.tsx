@@ -1,20 +1,18 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Clock, Key, Bell, LogOut } from 'lucide-react';
+import { Search, Clock, Bell, LogOut } from 'lucide-react';
 import { NAV_LINKS } from '@/shared/config';
 
 interface HeaderProps {
   userCredits?: number;
   userName?: string;
   avatarUrl?: string;
-  onOpenSetPassword?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  userCredits = 120,
-  userName = 'Alex',
+  userCredits = 0,
+  userName = 'User',
   avatarUrl = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-  onOpenSetPassword,
 }) => {
   const location = useLocation();
 
@@ -74,25 +72,6 @@ export const Header: React.FC<HeaderProps> = ({
             <Clock className="w-4 h-4 text-primary-500" />
             <span>{userCredits} Credit</span>
           </div>
-
-          {/* Post Request CTA Button */}
-          <Link
-            to="/requests"
-            className="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 bg-[#005F4F] hover:bg-[#004D40] text-white font-bold text-xs rounded-xl shadow-2xs hover:shadow-xs transition-all whitespace-nowrap shrink-0"
-          >
-            <span>Đăng Yêu Cầu</span>
-          </Link>
-
-          {/* Set Password Button (Optional) */}
-          {onOpenSetPassword && (
-            <button
-              onClick={onOpenSetPassword}
-              className="hidden lg:inline-flex text-xs font-bold text-primary-600 bg-primary-50 hover:bg-primary-100 px-3 py-1.5 rounded-full border border-primary-100 transition-all cursor-pointer items-center gap-1.5 whitespace-nowrap shrink-0"
-            >
-              <Key className="w-3.5 h-3.5 text-primary-500" />
-              <span>Đặt mật khẩu</span>
-            </button>
-          )}
 
           {/* Notification Bell */}
           <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer shrink-0">

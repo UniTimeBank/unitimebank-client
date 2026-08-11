@@ -5,6 +5,7 @@ import { SetPasswordModal } from '@/features/auth/components';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentUser } from '@/core/store';
 import { useGetMeQuery } from '@/core/api/user';
+import { useGetMyWalletQuery } from '@/core/api/wallet/walletApi';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -13,6 +14,7 @@ interface MainLayoutProps {
 export const MainLayout = ({ children }: MainLayoutProps) => {
   const authUser = useAppSelector(selectCurrentUser);
   const { data: userProfile } = useGetMeQuery(undefined, { skip: !authUser });
+  const { data: walletData } = useGetMyWalletQuery(undefined, { skip: !authUser });
 
   const [isSetPasswordOpen, setIsSetPasswordOpen] = useState(() => {
     return sessionStorage.getItem('prompt_set_password') === 'true';
@@ -23,17 +25,17 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
     setIsSetPasswordOpen(false);
   };
 
-  const userName = userProfile?.displayName || authUser?.email?.split('@')[0] || 'Alex';
+  const userName = userProfile?.displayName || authUser?.email?.split('@')[0] || 'User';
   const avatarUrl = userProfile?.avatarUrl;
+  const userCredits = walletData?.availableBalance ?? 0;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col font-sans text-gray-800 antialiased">
       {/* Single Shared Header */}
       <Header
-        userCredits={120}
+        userCredits={userCredits}
         userName={userName}
         avatarUrl={avatarUrl}
-        onOpenSetPassword={() => setIsSetPasswordOpen(true)}
       />
 
       {/* Main Content Body */}
