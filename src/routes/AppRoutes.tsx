@@ -4,7 +4,13 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 import { ROUTES } from './paths';
 import { UserProfilePage } from '@/features/user';
-import { PostExplorePage, OpenRequestsPage, CommunityPage } from '@/features/post';
+import {
+  PostExplorePage,
+  OpenRequestsPage,
+  CommunityPage,
+  MentorPostDetailPage,
+  LearnerRequestDetailPage,
+} from '@/features/post';
 
 export const AppRoutes = () => {
   return (
@@ -54,6 +60,24 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <OpenRequestsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Route bảo vệ - Chi tiết Bài Đăng */}
+      <Route
+        path={ROUTES.POST_MENTOR_DETAIL}
+        element={
+          <ProtectedRoute>
+            <MentorPostDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.POST_LEARNER_DETAIL}
+        element={
+          <ProtectedRoute>
+            <LearnerRequestDetailPage />
           </ProtectedRoute>
         }
       />
