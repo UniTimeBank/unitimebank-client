@@ -5,6 +5,7 @@ import { Eye, Pencil, Share2, Plus, TrendingUp, Sprout, Gift, X, ArrowLeft } fro
 
 import { TrustScoreGauge } from '@/shared/components';
 import { SidebarBookingCard, MentorScheduleManager } from '@/features/schedule';
+import { useActiveRole } from '@/shared/hooks/useActiveRole';
 
 import {
   EditProfileModal,
@@ -28,6 +29,7 @@ export const UserProfilePage: React.FC = () => {
   const { profile, updateProfile, uploadAvatar } = useUserProfile();
   const { skills, addSkill, deleteSkill } = useUserSkills();
   const { currentStreak, hasCheckedInToday, rewardMessage, checkin, isCheckinLoading } = useDailyCheckin();
+  const { isMentor, isLearner, activeRole, switchRole } = useActiveRole();
 
   // 2 View Modes: 'MYSELF' (Student Dashboard / My Profile) vs 'PUBLIC' (Mentor Profile / How Others See Me)
   const [viewMode, setViewMode] = useState<'MYSELF' | 'PUBLIC'>('MYSELF');
@@ -192,30 +194,51 @@ export const UserProfilePage: React.FC = () => {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="space-y-2">
               <span className="inline-flex items-center px-3 py-1 bg-white/10 text-emerald-100/90 font-medium text-xs rounded-full border border-white/15">
-                Không gian trao đổi tri thức sinh viên
+                {isMentor ? 'Chế độ Người Dạy' : 'Chế độ Người Học'}
               </span>
               <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                Chào mừng trở lại, {userName}!
+                {isMentor ? `Chào mừng, ${userName}!` : `Chào mừng trở lại, ${userName}!`}
               </h2>
               <p className="text-xs sm:text-sm text-emerald-100/80 font-normal max-w-2xl leading-relaxed">
-                Bạn đang sở hữu <span className="text-white font-semibold">{credits} Credit</span> sẵn sàng kết nối trao đổi kỹ năng 1:1 hoặc tham gia lớp nhóm cùng cộng đồng sinh viên.
+                {isMentor
+                  ? `Bạn đang sở hữu ${credits} Credit và Điểm Uy Tín đạt ${trustScoreMax100}/100. Sẵn sàng mở lịch nhận dạy kèm 1:1 để chia sẻ tri thức!`
+                  : `Bạn đang sở hữu ${credits} Credit sẵn sàng kết nối trao đổi kỹ năng 1:1 hoặc tham gia lớp nhóm cùng cộng đồng sinh viên.`}
               </p>
             </div>
 
             <div className="flex items-center gap-3 shrink-0 self-stretch sm:self-auto flex-wrap">
-              <Link
-                to="/requests"
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center px-5 py-2.5 bg-white hover:bg-emerald-50 text-[#0B654D] rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
-              >
-                Khám phá môn học
-              </Link>
-              <button
-                type="button"
-                onClick={() => handleProfileAction('CREATE_SCHEDULE')}
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-medium transition-all border border-white/20 active:scale-95 cursor-pointer"
-              >
-                Lịch rảnh của tôi
-              </button>
+              {isMentor ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => handleProfileAction('CREATE_SCHEDULE')}
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center px-5 py-2.5 bg-white hover:bg-emerald-50 text-[#0B654D] rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
+                  >
+                    Quản lý lịch rảnh
+                  </button>
+                  <Link
+                    to="/requests"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-medium transition-all border border-white/20 active:scale-95 cursor-pointer"
+                  >
+                    Nhận dạy học viên
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/explore"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center px-5 py-2.5 bg-white hover:bg-emerald-50 text-[#0B654D] rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
+                  >
+                    Khám phá Mentor
+                  </Link>
+                  <Link
+                    to="/requests"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-medium transition-all border border-white/20 active:scale-95 cursor-pointer"
+                  >
+                    Tìm gia sư kèm 1:1
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

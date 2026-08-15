@@ -70,7 +70,7 @@ const addMinutesToTime = (timeStr: string, minutesToAdd: number): string => {
 // Generate dynamic day options based on timeline selection
 const getDynamicDayOptions = (timelineStr: string) => {
   const today = new Date();
-  
+
   if (timelineStr.includes('24')) {
     // Within 24 Hours -> Only Today!
     const dayIndex = today.getDay();
@@ -105,7 +105,7 @@ const getDynamicDayOptions = (timelineStr: string) => {
     const code = DAY_CODE_MAP[dayIndex];
     const dateStr = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
     const prefix = i === 0 ? 'Hôm nay' : i === 1 ? 'Ngày mai' : i === 6 ? 'Tuần sau' : '';
-    const label = prefix 
+    const label = prefix
       ? `${DAY_LABEL_MAP[dayIndex]} (${dateStr}) — ${prefix}`
       : `${DAY_LABEL_MAP[dayIndex]} (${dateStr})`;
     options.push({ value: code, label });
@@ -189,22 +189,22 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
   };
 
   return (
-    <div className="space-y-3">
-      <div>
-        <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-700">
-          KHUNG GIỜ RẢNH MONG MUỐN HỌC (TÙY CHỌN)
-        </label>
-        <p className="text-[11px] text-gray-500">
-          Danh sách ngày tự động khớp theo Thời hạn ({timeline}). Giờ kết thúc tự động gán cố định ({validDuration} phút/buổi, bước nhảy 15 phút).
-        </p>
-      </div>
+    <div className="space-y-2">
+      {/* Spacious White Card matching the above section */}
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-2xs space-y-4">
+        <div>
+          <h4 className="text-xs font-bold text-slate-900 tracking-tight">
+            KHUNG GIỜ RẢNH MONG MUỐN HỌC
+          </h4>
+          <p className="text-[11px] text-slate-400 font-normal mt-0.5">
+            Danh sách ngày tự động khớp theo Thời hạn ({timeline}). Giờ kết thúc cố định {validDuration} phút/buổi.
+          </p>
+        </div>
 
-      {/* Spacious 2-Row Form Box */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-primary-50/50 border border-primary-100 space-y-4">
         {/* Row 1: Full-Width Day of Week Selector */}
         <div>
           <Select
-            label="CHỌN NGÀY RẢNH HỌC"
+            label="CHỌN NGÀY RẢNH HỌC *"
             options={dayOptions}
             value={dayOfWeek}
             onChange={setDayOfWeek}
@@ -215,7 +215,7 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-start">
           <div>
             <TimeInput
-              label="TỪ GIỜ BẮT ĐẦU (BƯỚC NHẢY 15P)"
+              label="TỪ GIỜ BẮT ĐẦU *"
               value={startTime}
               onChange={setStartTime}
               minuteStep={15}
@@ -223,23 +223,22 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-700 mb-1.5 truncate">
-              ĐẾN GIỜ (CỐ ĐỊNH +{validDuration}P)
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-700 mb-1 truncate">
+              ĐẾN GIỜ <span className="text-red-500">*</span>
             </label>
-            <div className="w-full px-3.5 py-2.5 bg-gray-100/90 border border-gray-200 rounded-xl text-xs font-black text-gray-700 flex items-center justify-between cursor-not-allowed h-[42px]">
-              <span className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-primary-600 shrink-0" />
-                <span>{endTime}</span>
+            <div className="w-full px-3.5 py-2 rounded-xl border border-slate-200/90 bg-slate-100/70 text-sm flex items-center justify-between cursor-not-allowed select-none min-h-[42px]">
+              <span className="text-sm tracking-wide font-medium text-slate-700">
+                {endTime}
               </span>
-              <span className="text-[10px] font-extrabold bg-primary-100 text-primary-800 px-2.5 py-1 rounded-md flex items-center gap-1 shrink-0">
-                <Lock className="w-3 h-3 text-primary-600" />
+              <span className="text-[11px] font-medium text-primary-700 bg-primary-50 px-2.5 py-0.5 rounded-lg border border-primary-100/80 flex items-center gap-1">
+                <Lock className="w-3 h-3 text-primary-600 shrink-0" />
                 +{validDuration} phút
               </span>
             </div>
           </div>
         </div>
 
-        {error && <p className="text-xs text-red-500 font-semibold">{error}</p>}
+        {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
 
         {/* Row 3: Full Width Submit Slot CTA Button */}
         <Button
@@ -248,10 +247,9 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
           fullWidth
           size="md"
           onClick={handleAddSlot}
-          leftIcon={<Plus className="w-4 h-4" />}
-          className="rounded-xl font-bold text-xs shadow-xs"
+          className="rounded-xl font-semibold text-xs shadow-2xs"
         >
-          <span>Thêm Khung Giờ ({startTime} - {endTime})</span>
+          <span>Thêm Khung Giờ</span>
         </Button>
       </div>
 
@@ -261,16 +259,16 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
           {value.map((slot, index) => (
             <span
               key={index}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-primary-200 text-primary-800 text-xs font-bold shadow-2xs animate-in fade-in"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-medium shadow-2xs animate-in fade-in"
             >
-              <Calendar className="w-3.5 h-3.5 text-primary-500" />
+              <Calendar className="w-3.5 h-3.5 text-primary-600" />
               <span>
                 {DAY_DISPLAY[slot.dayOfWeek] || slot.dayOfWeek}: {slot.startTime} - {slot.endTime}
               </span>
               <button
                 type="button"
                 onClick={() => handleRemoveSlot(index)}
-                className="hover:text-red-600 p-0.5 rounded-full transition-colors cursor-pointer"
+                className="hover:text-red-600 p-0.5 rounded-full transition-colors cursor-pointer text-slate-400"
                 title="Bỏ chọn"
               >
                 <X className="w-3.5 h-3.5" />

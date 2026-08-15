@@ -1,14 +1,15 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Clock, Gift, Bell, LogOut } from 'lucide-react';
+import { Search, Clock, Gift, Bell } from 'lucide-react';
 import { NAV_LINKS } from '@/shared/config';
-
-import LogoImage from '@/assets/images/Logo.png';
+import { UserRoleDropdown } from './UserRoleDropdown';
 
 interface HeaderProps {
   userCredits?: number;
   userName?: string;
+  userEmail?: string;
   avatarUrl?: string;
+  trustScore?: number;
   hasUncompletedTasks?: boolean;
   onOpenCreditTasks?: () => void;
 }
@@ -16,11 +17,12 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   userCredits = 0,
   userName = 'Thành viên UniTime',
+  userEmail,
   avatarUrl,
+  trustScore = 100,
   hasUncompletedTasks = false,
   onOpenCreditTasks,
 }) => {
-  const displayAvatar = avatarUrl || LogoImage;
   const location = useLocation();
 
   const handleLogout = () => {
@@ -34,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 md:gap-6">
         {/* Brand Logo & Nav */}
         <div className="flex items-center gap-6 lg:gap-8 shrink-0">
-          <Link to="/profile" className="flex items-center gap-2 shrink-0">
+          <Link to="/profile" className="flex items-center gap-2.5 shrink-0">
             <span className="text-xl font-black tracking-tight text-gray-900 whitespace-nowrap">
               UniTime<span className="text-primary-500">Bank</span>
             </span>
@@ -100,23 +102,15 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
           </button>
 
-          {/* Profile Avatar */}
-          <Link to="/profile" className="flex items-center gap-2 pl-1 group shrink-0">
-            <img
-              src={displayAvatar}
-              alt={userName}
-              className="w-8 h-8 rounded-full object-cover ring-2 ring-primary-500/30 group-hover:ring-primary-500 transition-all"
-            />
-          </Link>
-
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            title="Đăng xuất"
-            className="text-xs font-semibold text-gray-500 hover:text-red-600 p-2 rounded-full hover:bg-red-50 transition-all cursor-pointer shrink-0"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+          {/* Role Switcher & Profile Dropdown */}
+          <UserRoleDropdown
+            userName={userName}
+            userEmail={userEmail}
+            avatarUrl={avatarUrl}
+            userCredits={userCredits}
+            trustScore={trustScore}
+            onLogout={handleLogout}
+          />
         </div>
       </div>
     </header>

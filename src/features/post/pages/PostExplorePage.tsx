@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, BookOpen, GraduationCap } from 'lucide-react';
+import { useActiveRole } from '@/shared/hooks/useActiveRole';
 import { useMentorPosts, useLearnerRequests } from '../hooks';
 import {
   TrendingExchanges,
@@ -11,7 +12,16 @@ import {
 import { toast } from '@/shared/utils';
 
 export const PostExplorePage: React.FC = () => {
-  const [feedType, setFeedType] = useState<'MENTOR_POSTS' | 'LEARNER_REQUESTS'>('MENTOR_POSTS');
+  const { isMentor, activeRole } = useActiveRole();
+  const [feedType, setFeedType] = useState<'MENTOR_POSTS' | 'LEARNER_REQUESTS'>(
+    isMentor ? 'LEARNER_REQUESTS' : 'MENTOR_POSTS'
+  );
+
+  // Tự động đồng bộ feedType khi người dùng chuyển đổi vai trò
+  useEffect(() => {
+    setFeedType(isMentor ? 'LEARNER_REQUESTS' : 'MENTOR_POSTS');
+  }, [isMentor]);
+
   const [activeTab, setActiveTab] = useState<'Dành cho bạn' | 'Mới nhất' | 'Đang theo dõi'>(
     'Dành cho bạn'
   );
@@ -26,56 +36,7 @@ export const PostExplorePage: React.FC = () => {
         {/* 1. Top Trending Exchanges Section */}
         <TrendingExchanges />
 
-        {/* 2. Feed Type Switcher Banner (Bài Dạy Mentor vs Yêu Cầu Học Viên) */}
-        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-gray-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setFeedType('MENTOR_POSTS')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
-                feedType === 'MENTOR_POSTS'
-                  ? 'bg-primary-500 text-white shadow-xs'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <GraduationCap className="w-4 h-4" />
-              <span>Bài Dạy Của Mentor</span>
-              {mentorPosts.length > 0 && (
-                <span className="ml-1 px-2 py-0.5 rounded-full bg-white/20 text-white text-3xs font-extrabold">
-                  {mentorPosts.length}
-                </span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFeedType('LEARNER_REQUESTS')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
-                feedType === 'LEARNER_REQUESTS'
-                  ? 'bg-primary-500 text-white shadow-xs'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <BookOpen className="w-4 h-4" />
-              <span>Yêu Cầu Của Học Viên</span>
-              {learnerRequests.length > 0 && (
-                <span className="ml-1 px-2 py-0.5 rounded-full bg-white/20 text-white text-3xs font-extrabold">
-                  {learnerRequests.length}
-                </span>
-              )}
-            </button>
-          </div>
-
-          <Link
-            to="/requests"
-            className="w-full sm:w-auto px-4 py-2.5 rounded-2xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs shadow-2xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Đăng bài mới</span>
-          </Link>
-        </div>
-
-        {/* 3. Main Two Column Layout */}
+        {/* 2. Main Two Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Main Feed (8 Cols) */}
           <div className="lg:col-span-8 flex flex-col gap-6">

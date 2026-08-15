@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, ImageIcon, AlertCircle, Wallet, Sparkles, CheckCircle2, Circle, ArrowRight } from 'lucide-react';
+import { Upload, ImageIcon, AlertCircle, CheckCircle2, Circle, ArrowRight } from 'lucide-react';
 import { Button, Input, Select } from '@/shared/components/ui';
 import { SkillCategoryName } from '../../types';
 import { TIMELINE_OPTIONS, PRESET_COVER_IMAGES, SKILL_CATEGORY_LABELS } from '../../constants';
@@ -282,11 +282,10 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
                   key={idx}
                   type="button"
                   onClick={() => setCoverImage(imgUrl)}
-                  className={`relative h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
-                    coverImage === imgUrl
-                      ? 'border-primary-500 ring-2 ring-primary-200 scale-102'
-                      : 'border-transparent hover:opacity-80'
-                  }`}
+                  className={`relative h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${coverImage === imgUrl
+                    ? 'border-primary-500 ring-2 ring-primary-200 scale-102'
+                    : 'border-transparent hover:opacity-80'
+                    }`}
                 >
                   <img src={imgUrl} alt={`Preset ${idx + 1}`} className="w-full h-full object-cover" />
                 </button>
@@ -298,7 +297,7 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
 
       {/* Short Summary Description */}
       <Input
-        label="MÔ TẢ TÓM TẮT"
+        label="MÔ TẢ TÓM TẮT *"
         value={shortDescription}
         onChange={(e) => setShortDescription(e.target.value)}
         placeholder="Tóm tắt ngắn 1-2 câu vướng mắc hoặc nhu cầu cần hỗ trợ (tối đa 150 ký tự)..."
@@ -321,28 +320,29 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
         )}
       </div>
 
-      {/* Budget & Timeline (Hybrid: Presets + 15-min Stepper) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Budget & Duration */}
-        <div id="field-learner-duration" className="bg-primary-50/40 rounded-2xl p-4 border border-primary-100 space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="text-xs font-extrabold text-gray-900">THỜI LƯỢNG & NGÂN SÁCH *</h4>
-              <p className="text-[11px] text-gray-500 font-medium mt-0.5">1 Phút = 1 Credit (Tối thiểu 30p)</p>
+      {/* Unified Budget & Timeline Card (100% Width) */}
+      <div id="field-learner-duration" className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-2xs space-y-5">
+        {/* Phần 1: THỜI LƯỢNG HỌC & NGÂN SÁCH */}
+        <div className="space-y-3.5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <h4 className="text-xs font-bold text-slate-900 tracking-tight">
+                THỜI LƯỢNG HỌC <span className="text-red-500">*</span>
+              </h4>
+              <p className="text-[11px] text-slate-400 font-normal mt-0.5">1 phút = 1 Credit (Tối thiểu 30 phút)</p>
             </div>
-            <span className="text-[10px] font-bold text-primary-700 bg-primary-100 px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
-              <Wallet className="w-3 h-3 text-primary-600" />
-              Ví: {userBalance} Credit
+            <span className="text-[11px] text-primary-700 font-medium bg-primary-50 px-3 py-1 rounded-full border border-primary-100 whitespace-nowrap shrink-0">
+              Số dư: <strong className="text-primary-900 font-semibold">{userBalance}</strong> Credit
             </span>
           </div>
 
-          {/* Quick Presets Pills */}
-          <div className="grid grid-cols-4 gap-1.5">
+          {/* 4 Presets Pills (Hàng trên - Full Width) */}
+          <div className="grid grid-cols-4 gap-2.5">
             {[
-              { mins: 30, label: '30p', desc: 'Hỏi đáp' },
-              { mins: 45, label: '45p', desc: 'Review' },
-              { mins: 60, label: '60p ⭐', desc: 'Chuẩn' },
-              { mins: 90, label: '90p', desc: 'Sâu' },
+              { mins: 30, label: '30p' },
+              { mins: 45, label: '45p' },
+              { mins: 60, label: '60p', desc: 'Chuẩn' },
+              { mins: 90, label: '90p' },
             ].map((p) => {
               const isSelected = durationMinutes === p.mins;
               const isOverBalance = userBalance > 0 && p.mins > userBalance;
@@ -353,84 +353,85 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
                   type="button"
                   onClick={() => handleQuickDurationSelect(p.mins)}
                   disabled={isOverBalance}
-                  className={`py-1.5 px-2 rounded-xl text-center transition-all cursor-pointer border text-xs ${
-                    isSelected
-                      ? 'bg-primary-500 text-white font-black border-primary-600 shadow-2xs scale-[1.02]'
-                      : isOverBalance
-                      ? 'bg-gray-100 text-gray-300 border-gray-200 cursor-not-allowed'
-                      : 'bg-white text-gray-700 hover:border-primary-300 border-gray-200 font-bold hover:bg-primary-50/50'
-                  }`}
+                  className={`h-11 rounded-xl text-center transition-all cursor-pointer border text-xs flex flex-col items-center justify-center ${isSelected
+                    ? 'bg-primary-600 text-white font-semibold border-primary-600 shadow-2xs'
+                    : isOverBalance
+                      ? 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed'
+                      : 'bg-white text-slate-700 hover:border-primary-300 border-slate-200 font-medium hover:bg-primary-50/40'
+                    }`}
                 >
-                  <div className="font-extrabold">{p.label}</div>
-                  <div className={`text-[9px] ${isSelected ? 'text-primary-100' : 'text-gray-400 font-medium'}`}>
-                    {p.desc}
-                  </div>
+                  <span className="font-semibold text-xs leading-none">{p.label}</span>
+                  {p.desc && (
+                    <span className={`text-[10px] mt-0.5 leading-none ${isSelected ? 'text-primary-100' : 'text-slate-400 font-normal'}`}>
+                      {p.desc}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
 
-          {/* 15-min Stepper Input Box */}
+          {/* 15-min Stepper Input Box (Hàng dưới - Full Width) */}
           <div
-            className={`flex items-center justify-between rounded-xl border p-1 bg-white transition-all duration-200 ${
-              errors.duration
-                ? 'border-red-500 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100'
-                : 'border-gray-200 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-100'
-            }`}
+            className={`w-full flex items-center justify-between rounded-xl border p-1.5 bg-slate-50/50 transition-all ${errors.duration
+              ? 'border-red-400 ring-2 ring-red-50'
+              : 'border-slate-200 focus-within:border-primary-500'
+              }`}
           >
             <button
               type="button"
               onClick={() => handleStepDuration(-15)}
               disabled={durationMinutes <= 30}
-              className="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 font-black text-xs transition-colors cursor-pointer"
+              className="px-4 py-1.5 rounded-lg bg-white hover:bg-primary-50 hover:text-primary-700 active:bg-primary-100 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 font-medium text-xs border border-slate-200/80 transition-colors cursor-pointer"
             >
               - 15p
             </button>
 
-            <div className="flex items-baseline justify-center gap-1.5 flex-1 text-center">
-              <span className="font-black text-base text-primary-700 tracking-tight">{durationMinutes}</span>
-              <span className="text-xs font-extrabold text-gray-500">PHÚT</span>
-              <span className="text-[11px] font-bold text-primary-600">({durationMinutes} Credit)</span>
+            <div className="flex items-center gap-1.5 text-center">
+              <span className="font-semibold text-sm text-primary-800">{durationMinutes} phút</span>
+              <span className="text-xs text-slate-400 font-normal">({durationMinutes} Credit)</span>
             </div>
 
             <button
               type="button"
               onClick={() => handleStepDuration(15)}
               disabled={userBalance > 0 && durationMinutes + 15 > userBalance}
-              className="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 font-black text-xs transition-colors cursor-pointer"
+              className="px-4 py-1.5 rounded-lg bg-white hover:bg-primary-50 hover:text-primary-700 active:bg-primary-100 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 font-medium text-xs border border-slate-200/80 transition-colors cursor-pointer"
             >
               + 15p
             </button>
           </div>
-
-          {errors.duration ? (
-            <p className="text-[11px] text-red-500 font-bold flex items-center gap-1">
-              <AlertCircle className="w-3 h-3 text-red-500 shrink-0" />
-              <span>{errors.duration}</span>
-            </p>
-          ) : (
-            <p className="text-[10px] text-gray-400 italic text-center">
-              Bước nhảy 15 phút (30, 45, 60, 75, 90, 120p...). Tối đa {userBalance} Credit.
-            </p>
-          )}
         </div>
 
-        {/* Timeline */}
-        <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-200 space-y-1 flex flex-col justify-between">
+        {/* Divider */}
+        <div className="border-t border-slate-100" />
+
+        {/* Phần 2: THỜI HẠN CẦN HỌC */}
+        <div className="space-y-3.5">
           <div>
-            <Select
-              label="THỜI HẠN CẦN HỌC *"
-              options={timelineOptions}
-              value={timeline}
-              onChange={setTimeline}
-            />
-            <p className="text-[11px] text-gray-500 font-medium mt-2">
-              Khung giờ mong muốn sẽ được hệ thống gợi ý phù hợp theo thời hạn này.
-            </p>
+            <h4 className="text-xs font-bold text-slate-900 tracking-tight">
+              THỜI HẠN CẦN HỌC <span className="text-red-500">*</span>
+            </h4>
           </div>
-          <div className="p-2.5 rounded-xl bg-white border border-gray-200/80 text-[11px] text-gray-600 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-            <span>Thời lượng học sẽ tự động khóa và chia đều vào các khung giờ bạn chọn.</span>
+
+          {/* 3 Nút Thời Hạn Nằm Ngang */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            {TIMELINE_OPTIONS.map((opt) => {
+              const isSelected = timeline === opt.value || timeline === opt.label;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setTimeline(opt.value)}
+                  className={`h-11 px-4 rounded-xl text-xs transition-all cursor-pointer border text-center flex items-center justify-center font-medium ${isSelected
+                    ? 'bg-primary-600 text-white font-semibold border-primary-600 shadow-2xs'
+                    : 'bg-white text-slate-700 hover:border-primary-300 border-slate-200 hover:bg-primary-50/40'
+                    }`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -444,9 +445,9 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
       />
 
       {/* Policy Banner */}
-      <div className="bg-primary-50/80 border border-primary-200/90 rounded-2xl p-4 space-y-1">
-        <h5 className="text-xs font-bold text-primary-900">Chính sách Ký quỹ & Bảo vệ an toàn</h5>
-        <p className="text-xs text-primary-800 leading-relaxed">
+      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-1">
+        <h5 className="text-xs font-bold text-slate-900">Chính sách Ký quỹ & Bảo vệ an toàn</h5>
+        <p className="text-xs text-slate-500 leading-relaxed font-normal">
           Credit chỉ được tạm giữ ký quỹ khi bạn và Mentor xác nhận lịch dạy. Số dư được bảo toàn tuyệt đối cho đến khi bắt đầu buổi học.
         </p>
       </div>
@@ -470,8 +471,8 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
             {isInsufficientBalance
               ? `Không Đủ Credit Để Tạo Yêu Cầu (Cần Tối Thiểu 30 Credit)`
               : isLoading
-              ? 'Đang phát sóng...'
-              : 'Phát Sóng Yêu Cầu Học'}
+                ? 'Đang đăng yêu cầu...'
+                : 'Đăng Yêu Cầu Học'}
           </span>
         </Button>
 

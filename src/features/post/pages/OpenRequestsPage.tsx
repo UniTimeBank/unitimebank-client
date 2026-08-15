@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useActiveRole } from '@/shared/hooks/useActiveRole';
 import {
   CreatePostHeader,
   MentorOfferForm,
@@ -10,8 +11,8 @@ import type { MentorOfferFormState } from '../components/create-post/MentorOffer
 import type { LearnerRequestFormState } from '../components/create-post/LearnerRequestForm';
 
 export const OpenRequestsPage: React.FC = () => {
-  // Post Type: 'MENTOR_OFFER' (Đăng Bài Dạy) vs 'LEARNER_REQUEST' (Đăng Yêu Cầu Học)
-  const [postType, setPostType] = useState<'MENTOR_OFFER' | 'LEARNER_REQUEST'>('MENTOR_OFFER');
+  const { isMentor } = useActiveRole();
+  const postType = isMentor ? 'MENTOR_OFFER' : 'LEARNER_REQUEST';
 
   const [mentorPreview, setMentorPreview] = useState<MentorOfferFormState>({
     title: '',
@@ -40,10 +41,9 @@ export const OpenRequestsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header Banner & Post Type Switcher */}
+        {/* Header Banner */}
         <CreatePostHeader
           postType={postType}
-          onPostTypeChange={setPostType}
         />
 
         {/* FORM TYPE 1: ĐĂNG BÀI DẠY (MENTOR OFFER) */}

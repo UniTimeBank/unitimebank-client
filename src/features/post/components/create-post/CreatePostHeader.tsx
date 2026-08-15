@@ -1,25 +1,15 @@
 import React from 'react';
-import { Tabs, TabOption } from '@/shared/components/ui';
+import { useActiveRole } from '@/shared/hooks/useActiveRole';
 
 interface CreatePostHeaderProps {
   postType: 'MENTOR_OFFER' | 'LEARNER_REQUEST';
-  onPostTypeChange: (type: 'MENTOR_OFFER' | 'LEARNER_REQUEST') => void;
+  onPostTypeChange?: (type: 'MENTOR_OFFER' | 'LEARNER_REQUEST') => void;
 }
 
 export const CreatePostHeader: React.FC<CreatePostHeaderProps> = ({
   postType,
-  onPostTypeChange,
 }) => {
-  const tabOptions: TabOption<'MENTOR_OFFER' | 'LEARNER_REQUEST'>[] = [
-    {
-      value: 'MENTOR_OFFER',
-      label: 'Đăng bài dạy',
-    },
-    {
-      value: 'LEARNER_REQUEST',
-      label: 'Đăng yêu cầu học',
-    },
-  ];
+  const { isMentor } = useActiveRole();
 
   return (
     <div className="space-y-6">
@@ -30,28 +20,14 @@ export const CreatePostHeader: React.FC<CreatePostHeaderProps> = ({
             TRANG ĐĂNG BÀI UNITIMEBANK
           </span>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight">
-            Tạo Bài Đăng Mới
+            {isMentor ? 'Đăng Bài Nhận Dạy Kèm' : 'Đăng Yêu Cầu Tìm Mentor'}
           </h1>
-          <p className="text-xs md:text-sm text-gray-300 leading-relaxed">
-            Đăng bài dạy kỹ năng để chia sẻ kiến thức (nhận Credit) hoặc đăng bài tìm Mentor hướng dẫn môn học (trả Credit).
+          <p className="text-xs md:text-sm text-gray-300 leading-relaxed font-normal">
+            {isMentor
+              ? 'Thiết lập nội dung bài dạy, kỹ năng chia sẻ và khung giờ để học viên đăng ký học 1:1.'
+              : 'Nêu rõ môn học cần hướng dẫn và thời lượng mong muốn để các Mentor phù hợp liên hệ hỗ trợ.'}
           </p>
         </div>
-      </div>
-
-      {/* POST TYPE SWITCHER (Clean Single Color Tabs) */}
-      <div className="bg-white p-2.5 sm:p-3 rounded-2xl border border-gray-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider px-2">
-          LOẠI BÀI ĐĂNG
-        </span>
-
-        <Tabs<'MENTOR_OFFER' | 'LEARNER_REQUEST'>
-          options={tabOptions}
-          value={postType}
-          onChange={onPostTypeChange}
-          variant="segmented"
-          size="md"
-          className="w-full sm:w-auto"
-        />
       </div>
     </div>
   );

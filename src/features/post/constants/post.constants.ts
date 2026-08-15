@@ -46,7 +46,8 @@ export const URGENCY_OPTIONS = [
 ];
 
 export const TIMELINE_OPTIONS = [
-  { label: 'Trong 24 giờ', value: 'In 24 Hours' },
-  { label: 'Trong 3 ngày', value: 'In 3 Days' },
-  { label: 'Trong 7 ngày', value: 'In 7 Days' },
+  { label: 'Trong 24 giờ', value: 'Trong 24 giờ' },
+  { label: 'Trong 3 ngày', value: 'Trong 3 ngày' },
+  { label: 'Trong 7 ngày', value: 'Trong 7 ngày' },
 ];
+

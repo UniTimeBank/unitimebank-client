@@ -56,7 +56,9 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
       <Header
         userCredits={userCredits}
         userName={userName}
+        userEmail={authUser?.email}
         avatarUrl={avatarUrl}
+        trustScore={userProfile?.trustScore || 100}
         hasUncompletedTasks={hasUncompletedTasks}
         onOpenCreditTasks={() => setIsCreditTasksOpen(true)}
       />
