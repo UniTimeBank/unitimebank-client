@@ -75,7 +75,7 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
     let nextM = m;
     if (nextH >= 24) {
       nextH = 23;
-      nextM = 59;
+      nextM = 45;
     }
     let calculatedEnd = `${String(nextH).padStart(2, '0')}:${String(nextM).padStart(2, '0')}`;
 
@@ -231,6 +231,7 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
                   <TimeInput
                     value={startTime}
                     disabledIntervals={occupiedIntervalsOnDate}
+                    minuteStep={15}
                     onChange={handleStartTimeChange}
                   />
                 </div>
@@ -243,6 +244,7 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
                     minTime={startTime}
                     maxTime={maxEndBound}
                     disabledIntervals={occupiedIntervalsOnDate}
+                    minuteStep={15}
                     onChange={(val) => setEndTime(val)}
                   />
                 </div>

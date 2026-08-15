@@ -178,14 +178,48 @@ export const UserProfilePage: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-12">
-      {/* 1. DAILY CHECKIN BONUS BANNER TRÊN CÙNG */}
-      <DailyCheckinWidget
-        currentStreak={currentStreak}
-        hasCheckedInToday={hasCheckedInToday}
-        rewardMessage={rewardMessage}
-        onCheckin={checkin}
-        isCheckinLoading={isCheckinLoading}
-      />
+      {/* 1. TOP BANNER: DAILY CHECKIN (Khi chưa xong 7 ngày) HOẶC STUDENT MILESTONE BANNER (Khi đã hoàn thành) */}
+      {currentStreak < 7 ? (
+        <DailyCheckinWidget
+          currentStreak={currentStreak}
+          hasCheckedInToday={hasCheckedInToday}
+          rewardMessage={rewardMessage}
+          onCheckin={checkin}
+          isCheckinLoading={isCheckinLoading}
+        />
+      ) : (
+        <div className="bg-[#0B654D] text-white rounded-2xl py-7 sm:py-8 px-7 sm:px-9 shadow-xs border border-emerald-700/30 animate-in fade-in duration-200">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2">
+              <span className="inline-flex items-center px-3 py-1 bg-white/10 text-emerald-100/90 font-medium text-xs rounded-full border border-white/15">
+                Không gian trao đổi tri thức sinh viên
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                Chào mừng trở lại, {userName}!
+              </h2>
+              <p className="text-xs sm:text-sm text-emerald-100/80 font-normal max-w-2xl leading-relaxed">
+                Bạn đang sở hữu <span className="text-white font-semibold">{credits} Credit</span> sẵn sàng kết nối trao đổi kỹ năng 1:1 hoặc tham gia lớp nhóm cùng cộng đồng sinh viên.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0 self-stretch sm:self-auto flex-wrap">
+              <Link
+                to="/requests"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center px-5 py-2.5 bg-white hover:bg-emerald-50 text-[#0B654D] rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
+              >
+                Khám phá môn học
+              </Link>
+              <button
+                type="button"
+                onClick={() => handleProfileAction('CREATE_SCHEDULE')}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-medium transition-all border border-white/20 active:scale-95 cursor-pointer"
+              >
+                Lịch rảnh của tôi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* VIEW MODE 1: MYSELF (Student Dashboard - Clean Unified Profile Section) */}
       {viewMode === 'MYSELF' && (

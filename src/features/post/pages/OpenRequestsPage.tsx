@@ -27,11 +27,14 @@ export const OpenRequestsPage: React.FC = () => {
 
   const [learnerPreview, setLearnerPreview] = useState<LearnerRequestFormState>({
     subject: '',
+    category: 'PROGRAMMING' as any,
+    sessionType: 'ONE_ON_ONE' as any,
     coverImage: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600',
     shortDescription: '',
     goals: '',
     durationMinutes: 60,
     timeline: 'Trong 3 ngày',
+    desiredSlots: [],
   });
 
   return (

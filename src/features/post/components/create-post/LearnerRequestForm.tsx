@@ -1,11 +1,13 @@
 import React from 'react';
-import { Upload, ImageIcon, AlertCircle, Wallet } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Upload, ImageIcon, AlertCircle, Wallet, Sparkles, CheckCircle2, Circle, ArrowRight } from 'lucide-react';
 import { Button, Input, Select } from '@/shared/components/ui';
 import { SkillCategoryName } from '../../types';
 import { TIMELINE_OPTIONS, PRESET_COVER_IMAGES, SKILL_CATEGORY_LABELS } from '../../constants';
 import { RichTextEditor } from './RichTextEditor';
 import { DesiredSlotsSelector } from './DesiredSlotsSelector';
 import { useLearnerRequestForm, type LearnerRequestFormState } from '../../hooks';
+import { useGetOnboardingTasksQuery, useGetLoginStreakQuery } from '@/core/api/user/userApi';
 
 export type { LearnerRequestFormState };
 
@@ -19,6 +21,10 @@ const CATEGORY_OPTIONS = Object.entries(SKILL_CATEGORY_LABELS).map(([value, labe
 }));
 
 export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPreviewChange }) => {
+  const navigate = useNavigate();
+  const { data: onboardingData } = useGetOnboardingTasksQuery();
+  const { data: streakData } = useGetLoginStreakQuery();
+
   const {
     subject,
     category,
@@ -27,6 +33,7 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
     goals,
     durationMinutes,
     userBalance,
+    isInsufficientBalance,
     timeline,
     desiredSlots,
     errors,
@@ -36,6 +43,8 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
     setCoverImage,
     setShortDescription,
     setDurationMinutes,
+    handleQuickDurationSelect,
+    handleStepDuration,
     setTimeline,
     setDesiredSlots,
     handleSubjectChange,
@@ -55,6 +64,143 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
     value: opt.label,
     label: opt.label,
   }));
+
+  if (isInsufficientBalance) {
+    const isCompleted7DaysCheckin = Boolean(
+      streakData?.currentStreak && streakData.currentStreak >= 7,
+    );
+    const isCheckinDone = Boolean(streakData?.isCheckedInToday || isCompleted7DaysCheckin);
+
+    const allTasks = [
+      {
+        id: 'profile',
+        title: 'Cập nhật thông tin cá nhân (Avatar + Bio)',
+        reward: '+10 Credit',
+        isDone: Boolean(onboardingData?.profileCompleted),
+        actionLabel: 'Cập nhật',
+        onAction: () => navigate('/profile', { state: { action: 'EDIT_PROFILE' } }),
+      },
+      {
+        id: 'schedule',
+        title: 'Thiết lập lịch rảnh khả dụng',
+        reward: '+10 Credit',
+        isDone: Boolean(onboardingData?.scheduleCreated),
+        actionLabel: 'Tạo lịch',
+        onAction: () => navigate('/profile', { state: { action: 'CREATE_SCHEDULE' } }),
+      },
+      {
+        id: 'skills',
+        title: 'Khai báo kỹ năng thế mạnh',
+        reward: '+10 Credit',
+        isDone: Boolean(onboardingData?.skillAdded),
+        actionLabel: 'Thêm kỹ năng',
+        onAction: () => navigate('/profile', { state: { action: 'ADD_SKILL' } }),
+      },
+      {
+        id: 'checkin',
+        title: 'Điểm danh hằng ngày nhận thưởng',
+        reward: '+60 Credit',
+        isDone: isCheckinDone,
+        actionLabel: 'Điểm danh',
+        onAction: () => navigate('/profile'),
+      },
+    ];
+
+    const pendingTasks = allTasks.filter((t) => !t.isDone);
+
+    return (
+      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6 animate-in fade-in duration-200">
+        {/* Header */}
+        <div className="border-b border-slate-100 pb-4">
+          <h2 className="text-lg font-black text-slate-900">
+            Thông Tin Yêu Cầu Tìm Mentor
+          </h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Phát sóng môn học hoặc thắc mắc của bạn để các Mentor giỏi trong cộng đồng hỗ trợ.
+          </p>
+        </div>
+
+        {/* Minimal Clean Notice Banner */}
+        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-100/80 text-amber-800 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-4.5 h-4.5" />
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-slate-900">
+                Cần tối thiểu 30 Credit để phát sóng yêu cầu
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Ví hiện có: <strong className="text-slate-800 font-semibold">{userBalance} Credit</strong> (cần thêm <strong className="text-slate-800 font-semibold">{Math.max(0, 30 - userBalance)} Credit</strong>)
+              </p>
+            </div>
+          </div>
+          <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/60 self-start sm:self-auto">
+            Chưa đủ số dư
+          </span>
+        </div>
+
+        {/* Tasks Section or Completed Notice */}
+        {pendingTasks.length > 0 ? (
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-bold text-slate-800">
+                Nhiệm vụ nhận thêm Credit
+              </span>
+              <span className="text-[11px] text-slate-400">
+                Hoàn thành để nhận Credit miễn phí
+              </span>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200/70 divide-y divide-slate-100 overflow-hidden bg-white">
+              {pendingTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="px-4 py-3 flex items-center justify-between gap-3 hover:bg-slate-50/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="text-xs font-medium text-slate-800 truncate">
+                      {task.title}
+                    </span>
+                    <span className="text-[11px] font-bold text-emerald-600 shrink-0">
+                      {task.reward}
+                    </span>
+                  </div>
+
+                  <div className="shrink-0">
+                    <button
+                      type="button"
+                      onClick={task.onAction}
+                      className="text-xs font-bold text-slate-700 hover:text-slate-900 hover:underline flex items-center gap-1 transition-colors cursor-pointer py-0.5 px-2 rounded-lg hover:bg-slate-100"
+                    >
+                      <span>{task.actionLabel}</span>
+                      <ArrowRight className="w-3 h-3 text-slate-400" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="p-5 rounded-2xl border border-slate-200/70 bg-slate-50/60 text-center space-y-1.5">
+            <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100/70 text-emerald-700 mx-auto">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+            <h4 className="text-xs font-bold text-slate-900">
+              {isCompleted7DaysCheckin
+                ? 'Đã nhận trọn vẹn phần thưởng khởi tạo'
+                : 'Đã hoàn thành các nhiệm vụ hôm nay'}
+            </h4>
+            <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
+              {isCompleted7DaysCheckin
+                ? 'Bạn đã hoàn tất tất cả nhiệm vụ nhận Credit miễn phí.'
+                : 'Bạn đã hoàn tất các nhiệm vụ hôm nay. Hãy quay lại vào ngày mai để tiếp tục chuỗi điểm danh.'}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <form noValidate onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-6">
@@ -175,55 +321,117 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
         )}
       </div>
 
-      {/* Budget & Timeline (Capped by user wallet balance, spin arrows removed) */}
+      {/* Budget & Timeline (Hybrid: Presets + 15-min Stepper) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Budget */}
-        <div id="field-learner-duration" className="bg-primary-50/40 rounded-2xl p-4 border border-primary-100 space-y-2">
+        {/* Budget & Duration */}
+        <div id="field-learner-duration" className="bg-primary-50/40 rounded-2xl p-4 border border-primary-100 space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-extrabold text-gray-900">Ngân sách Credit</h4>
-            <span className="text-[10px] font-bold text-primary-700 bg-primary-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+            <div>
+              <h4 className="text-xs font-extrabold text-gray-900">THỜI LƯỢNG & NGÂN SÁCH *</h4>
+              <p className="text-[11px] text-gray-500 font-medium mt-0.5">1 Phút = 1 Credit (Tối thiểu 30p)</p>
+            </div>
+            <span className="text-[10px] font-bold text-primary-700 bg-primary-100 px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0">
               <Wallet className="w-3 h-3 text-primary-600" />
               Ví: {userBalance} Credit
             </span>
           </div>
 
+          {/* Quick Presets Pills */}
+          <div className="grid grid-cols-4 gap-1.5">
+            {[
+              { mins: 30, label: '30p', desc: 'Hỏi đáp' },
+              { mins: 45, label: '45p', desc: 'Review' },
+              { mins: 60, label: '60p ⭐', desc: 'Chuẩn' },
+              { mins: 90, label: '90p', desc: 'Sâu' },
+            ].map((p) => {
+              const isSelected = durationMinutes === p.mins;
+              const isOverBalance = userBalance > 0 && p.mins > userBalance;
+
+              return (
+                <button
+                  key={p.mins}
+                  type="button"
+                  onClick={() => handleQuickDurationSelect(p.mins)}
+                  disabled={isOverBalance}
+                  className={`py-1.5 px-2 rounded-xl text-center transition-all cursor-pointer border text-xs ${
+                    isSelected
+                      ? 'bg-primary-500 text-white font-black border-primary-600 shadow-2xs scale-[1.02]'
+                      : isOverBalance
+                      ? 'bg-gray-100 text-gray-300 border-gray-200 cursor-not-allowed'
+                      : 'bg-white text-gray-700 hover:border-primary-300 border-gray-200 font-bold hover:bg-primary-50/50'
+                  }`}
+                >
+                  <div className="font-extrabold">{p.label}</div>
+                  <div className={`text-[9px] ${isSelected ? 'text-primary-100' : 'text-gray-400 font-medium'}`}>
+                    {p.desc}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 15-min Stepper Input Box */}
           <div
-            className={`flex items-center justify-between rounded-xl border px-3.5 py-2 bg-white transition-all duration-200 ${
+            className={`flex items-center justify-between rounded-xl border p-1 bg-white transition-all duration-200 ${
               errors.duration
                 ? 'border-red-500 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100'
                 : 'border-gray-200 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-100'
             }`}
           >
-            <input
-              type="number"
-              min={1}
-              max={userBalance || 9999}
-              value={durationMinutes || ''}
-              onChange={(e) => setDurationMinutes(Number(e.target.value))}
-              placeholder="Nhập số..."
-              className="w-full font-black text-sm bg-transparent outline-none text-gray-900 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-            />
-            <span className="text-xs font-extrabold text-primary-600 shrink-0 ml-2">CREDIT</span>
+            <button
+              type="button"
+              onClick={() => handleStepDuration(-15)}
+              disabled={durationMinutes <= 30}
+              className="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 font-black text-xs transition-colors cursor-pointer"
+            >
+              - 15p
+            </button>
+
+            <div className="flex items-baseline justify-center gap-1.5 flex-1 text-center">
+              <span className="font-black text-base text-primary-700 tracking-tight">{durationMinutes}</span>
+              <span className="text-xs font-extrabold text-gray-500">PHÚT</span>
+              <span className="text-[11px] font-bold text-primary-600">({durationMinutes} Credit)</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleStepDuration(15)}
+              disabled={userBalance > 0 && durationMinutes + 15 > userBalance}
+              className="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 active:bg-gray-300 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 font-black text-xs transition-colors cursor-pointer"
+            >
+              + 15p
+            </button>
           </div>
 
           {errors.duration ? (
             <p className="text-[11px] text-red-500 font-bold flex items-center gap-1">
-              <AlertCircle className="w-3 h-3 text-red-500" />
-              {errors.duration}
+              <AlertCircle className="w-3 h-3 text-red-500 shrink-0" />
+              <span>{errors.duration}</span>
             </p>
           ) : (
-            <p className="text-[11px] text-gray-400 italic">1 Credit = 1 Phút học 1-1 (Tối đa {userBalance} Credit)</p>
+            <p className="text-[10px] text-gray-400 italic text-center">
+              Bước nhảy 15 phút (30, 45, 60, 75, 90, 120p...). Tối đa {userBalance} Credit.
+            </p>
           )}
         </div>
 
         {/* Timeline */}
-        <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-200 space-y-1">
-          <Select
-            label="THỜI HẠN CẦN HỌC"
-            options={timelineOptions}
-            value={timeline}
-            onChange={setTimeline}
-          />
+        <div className="bg-gray-50/80 rounded-2xl p-4 border border-gray-200 space-y-1 flex flex-col justify-between">
+          <div>
+            <Select
+              label="THỜI HẠN CẦN HỌC *"
+              options={timelineOptions}
+              value={timeline}
+              onChange={setTimeline}
+            />
+            <p className="text-[11px] text-gray-500 font-medium mt-2">
+              Khung giờ mong muốn sẽ được hệ thống gợi ý phù hợp theo thời hạn này.
+            </p>
+          </div>
+          <div className="p-2.5 rounded-xl bg-white border border-gray-200/80 text-[11px] text-gray-600 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <span>Thời lượng học sẽ tự động khóa và chia đều vào các khung giờ bạn chọn.</span>
+          </div>
         </div>
       </div>
 
@@ -244,16 +452,35 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
       </div>
 
       {/* Submit CTA */}
-      <div className="pt-4 border-t border-gray-100">
+      <div className="pt-4 border-t border-gray-100 space-y-2">
         <Button
           type="submit"
           variant="primary"
           fullWidth
           size="md"
+          disabled={isLoading || isInsufficientBalance}
           isLoading={isLoading}
+          className={
+            isInsufficientBalance
+              ? 'opacity-60 cursor-not-allowed bg-slate-300 hover:bg-slate-300 border-slate-300 text-slate-700 shadow-none'
+              : ''
+          }
         >
-          <span>{isLoading ? 'Đang phát sóng...' : 'Phát Sóng Yêu Cầu Học'}</span>
+          <span>
+            {isInsufficientBalance
+              ? `Không Đủ Credit Để Tạo Yêu Cầu (Cần Tối Thiểu 30 Credit)`
+              : isLoading
+              ? 'Đang phát sóng...'
+              : 'Phát Sóng Yêu Cầu Học'}
+          </span>
         </Button>
+
+        {isInsufficientBalance && (
+          <p className="text-center text-xs text-amber-700 font-bold flex items-center justify-center gap-1.5">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+            <span>Ví chỉ còn {userBalance} Credit. Vui lòng nạp thêm hoặc điểm danh nhận thêm Credit để tiếp tục.</span>
+          </p>
+        )}
       </div>
     </form>
   );

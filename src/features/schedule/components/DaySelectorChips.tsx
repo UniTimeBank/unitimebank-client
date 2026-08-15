@@ -14,7 +14,7 @@ export const DaySelectorChips: React.FC<DaySelectorChipsProps> = ({
   selectedDays,
   onChange,
   onChangeSelectedDays,
-  label = 'THỨ TRONG TUẦN',
+  label = 'Thứ trong tuần',
   hideLabel = false,
 }) => {
   const triggerChange = (days: DayOfWeek[]) => {
@@ -55,7 +55,7 @@ export const DaySelectorChips: React.FC<DaySelectorChipsProps> = ({
   return (
     <div>
       {!hideLabel && (
-        <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-wider mb-2.5">
+        <label className="block text-xs font-semibold text-slate-700 mb-2">
           {label}
         </label>
       )}
@@ -65,10 +65,10 @@ export const DaySelectorChips: React.FC<DaySelectorChipsProps> = ({
         <button
           type="button"
           onClick={handleSelectAll}
-          className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border text-center ${
+          className={`w-full py-2 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer border text-center ${
             selectedDays.length === ALL_DAYS.length
               ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
-              : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
           }`}
         >
           Chọn tất cả
@@ -77,13 +77,13 @@ export const DaySelectorChips: React.FC<DaySelectorChipsProps> = ({
         <button
           type="button"
           onClick={handleSelectWeekdays}
-          className={`w-full py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border text-center ${
+          className={`w-full py-2 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer border text-center ${
             selectedDays.length === 5 &&
             ['MON', 'TUE', 'WED', 'THU', 'FRI'].every((d: any) =>
               selectedDays.includes(d)
             )
               ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
-              : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
           }`}
         >
           T2 - T6
@@ -99,10 +99,10 @@ export const DaySelectorChips: React.FC<DaySelectorChipsProps> = ({
               key={d.value}
               type="button"
               onClick={() => handleToggleDay(d.value)}
-              className={`w-full aspect-square rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all cursor-pointer border ${
+              className={`w-full aspect-square rounded-full flex items-center justify-center text-xs sm:text-sm font-medium transition-all cursor-pointer border ${
                 isSelected
                   ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
-                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:border-gray-300'
+                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
               }`}
               title={d.label}
             >

@@ -101,14 +101,16 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Daily Checkin Bonus Banner */}
-      <DailyCheckinWidget
-        currentStreak={currentStreak}
-        hasCheckedInToday={hasCheckedInToday}
-        rewardMessage={rewardMessage}
-        onCheckin={checkin}
-        isCheckinLoading={isCheckinLoading}
-      />
+      {/* Daily Checkin Bonus Banner (Ẩn khi đã hoàn thành 7/7 ngày) */}
+      {currentStreak < 7 && (
+        <DailyCheckinWidget
+          currentStreak={currentStreak}
+          hasCheckedInToday={hasCheckedInToday}
+          rewardMessage={rewardMessage}
+          onCheckin={checkin}
+          isCheckinLoading={isCheckinLoading}
+        />
+      )}
 
       {/* Welcome Banner & Top Actions */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

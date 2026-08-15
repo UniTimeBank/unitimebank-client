@@ -27,7 +27,7 @@ export const RecurringScheduleTab: React.FC<RecurringScheduleTabProps> = ({
   const [copySource, setCopySource] = useState<CopyScheduleSource | null>(null);
   const [isCopying, setIsCopying] = useState(false);
   const [globalSuccessMsg, setGlobalSuccessMsg] = useState('');
-  
+
   // Lưu lỗi riêng biệt cho từng thứ trong tuần
   const [dayErrors, setDayErrors] = useState<Record<string, string>>({});
 
@@ -187,9 +187,8 @@ export const RecurringScheduleTab: React.FC<RecurringScheduleTabProps> = ({
 
                     {/* Cột các thẻ khung giờ bên phải (Khi chỉ có 1 khung giờ thì tự động full chiều rộng) */}
                     <div
-                      className={`md:col-span-8 grid gap-3 ${
-                        slotsForDay.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'
-                      }`}
+                      className={`md:col-span-8 grid gap-3 ${slotsForDay.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'
+                        }`}
                     >
                       {slotsForDay.map((slot) => (
                         <RecurringSlotCard

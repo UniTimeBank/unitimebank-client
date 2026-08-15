@@ -126,7 +126,7 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
   durationMinutes = 60,
   timeline = 'Trong 3 ngày',
 }) => {
-  const validDuration = Math.max(15, Number(durationMinutes) || 60);
+  const validDuration = Math.max(30, Number(durationMinutes) || 60);
 
   // Real-time day options based on timeline
   const dayOptions = useMemo(() => getDynamicDayOptions(timeline), [timeline]);
@@ -195,7 +195,7 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
           KHUNG GIỜ RẢNH MONG MUỐN HỌC (TÙY CHỌN)
         </label>
         <p className="text-[11px] text-gray-500">
-          Danh sách ngày tự động khớp theo Thời hạn ({timeline}). Giờ kết thúc tự động gán cố định ({validDuration} phút/buổi).
+          Danh sách ngày tự động khớp theo Thời hạn ({timeline}). Giờ kết thúc tự động gán cố định ({validDuration} phút/buổi, bước nhảy 15 phút).
         </p>
       </div>
 
@@ -215,9 +215,10 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-start">
           <div>
             <TimeInput
-              label="TỪ GIỜ BẮT ĐẦU"
+              label="TỪ GIỜ BẮT ĐẦU (BƯỚC NHẢY 15P)"
               value={startTime}
               onChange={setStartTime}
+              minuteStep={15}
             />
           </div>
 

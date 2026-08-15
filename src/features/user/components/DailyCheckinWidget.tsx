@@ -17,6 +17,8 @@ export const DailyCheckinWidget: React.FC<DailyCheckinWidgetProps> = ({
   onCheckin,
   isCheckinLoading = false,
 }) => {
+  const isCompletedAll = currentStreak >= 7;
+
   return (
     <div className="bg-[#0B654D] text-white rounded-2xl p-6 shadow-xs border border-emerald-700/30">
       {/* Top Header Row */}
@@ -25,23 +27,25 @@ export const DailyCheckinWidget: React.FC<DailyCheckinWidgetProps> = ({
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 text-emerald-100 font-extrabold text-xs rounded-full border border-white/20">
               <Flame className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
-              <span>Ngày {currentStreak} / 7</span>
+              <span>{isCompletedAll ? 'Đã hoàn thành 7 / 7 ngày' : `Ngày ${currentStreak} / 7`}</span>
             </span>
             <h3 className="text-lg font-extrabold text-white tracking-tight">
               Điểm danh nhận thưởng hàng ngày
             </h3>
           </div>
           <p className="text-xs text-emerald-100/90 font-medium">
-            Đăng nhập đủ 7 ngày tích lũy để nhận trọn vẹn 60 credit thưởng (= 1 giờ học miễn phí)!
+            {isCompletedAll
+              ? 'Chúc mừng bạn đã hoàn thành trọn vẹn 7 ngày điểm danh và nhận tối đa 60 credit thưởng!'
+              : 'Đăng nhập đủ 7 ngày tích lũy để nhận trọn vẹn 60 credit thưởng (= 1 giờ học miễn phí)!'}
           </p>
         </div>
 
         <button
           type="button"
           onClick={onCheckin}
-          disabled={hasCheckedInToday || isCheckinLoading}
+          disabled={hasCheckedInToday || isCompletedAll || isCheckinLoading}
           className={`px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs ${
-            hasCheckedInToday
+            isCompletedAll || hasCheckedInToday
               ? 'bg-white/15 text-emerald-100 border border-white/20 cursor-default opacity-80'
               : 'bg-white hover:bg-emerald-50 text-[#0B654D] active:scale-95'
           } disabled:cursor-not-allowed flex-shrink-0 self-stretch sm:self-auto`}
@@ -53,6 +57,11 @@ export const DailyCheckinWidget: React.FC<DailyCheckinWidgetProps> = ({
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
               <span>Đang xử lý...</span>
+            </>
+          ) : isCompletedAll ? (
+            <>
+              <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+              <span>Đã hoàn thành 7 ngày (+60 Credit)</span>
             </>
           ) : hasCheckedInToday ? (
             <>

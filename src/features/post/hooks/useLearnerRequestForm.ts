@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useCreateLearnerRequestMutation } from '@/core/api/post/postApi';
@@ -23,8 +23,9 @@ export const useLearnerRequestForm = (
 ) => {
   const navigate = useNavigate();
   const [createLearnerRequest, { isLoading }] = useCreateLearnerRequestMutation();
-  const { data: walletData } = useGetMyWalletQuery();
+  const { data: walletData, isLoading: isWalletLoading } = useGetMyWalletQuery();
   const userBalance = walletData?.availableBalance ?? (walletData as any)?.balance ?? 0;
+  const isInsufficientBalance = !isWalletLoading && walletData !== undefined && userBalance < 30;
 
   const [subject, setSubject] = useState('');
   const [category, setCategory] = useState<SkillCategoryName>(SkillCategoryName.PROGRAMMING);
@@ -37,6 +38,22 @@ export const useLearnerRequestForm = (
   const [durationMinutes, setDurationMinutes] = useState(60);
   const [timeline, setTimeline] = useState('Trong 3 ngày');
   const [desiredSlots, setDesiredSlots] = useState<TimeSlot[]>([]);
+
+  // Tự động chọn mốc thời lượng phù hợp khi ví tải xong:
+  // - Nếu ví >= 60: chọn 60 phút
+  // - Nếu 30 <= ví < 60: chọn 30 phút
+  // - Nếu ví < 30: chọn 30 phút (và đánh dấu isInsufficientBalance để block)
+  const hasAutoSelectedRef = useRef(false);
+  useEffect(() => {
+    if (walletData !== undefined && !hasAutoSelectedRef.current) {
+      if (userBalance >= 60) {
+        setDurationMinutes(60);
+      } else {
+        setDurationMinutes(30);
+      }
+      hasAutoSelectedRef.current = true;
+    }
+  }, [walletData, userBalance]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -78,17 +95,51 @@ export const useLearnerRequestForm = (
   };
 
   const handleDurationChange = (val: number) => {
-    if (userBalance > 0 && val > userBalance) {
-      setDurationMinutes(userBalance);
+    let sanitized = val;
+    if (userBalance > 0 && sanitized > userBalance) {
+      sanitized = userBalance;
+      setDurationMinutes(sanitized);
       setErrors((prev) => ({
         ...prev,
         duration: `Số dư ví hiện tại của bạn chỉ có ${userBalance} Credit`,
       }));
       toast.error('Vượt số dư ví', `Tối đa ${userBalance} Credit hiện có trong ví`);
-    } else {
-      setDurationMinutes(val);
+      return;
+    }
+
+    setDurationMinutes(sanitized);
+    if (sanitized >= 30 && sanitized % 15 === 0) {
       setErrors((prev) => ({ ...prev, duration: '' }));
     }
+  };
+
+  const handleQuickDurationSelect = (mins: number) => {
+    if (userBalance > 0 && mins > userBalance) {
+      toast.error('Số dư không đủ', `Cần ${mins} Credit nhưng ví chỉ có ${userBalance} Credit`);
+      setErrors((prev) => ({
+        ...prev,
+        duration: `Số dư ví (${userBalance} Credit) không đủ cho gói ${mins} phút`,
+      }));
+      return;
+    }
+    setDurationMinutes(mins);
+    setErrors((prev) => ({ ...prev, duration: '' }));
+  };
+
+  const handleStepDuration = (delta: number) => {
+    setDurationMinutes((prev) => {
+      const next = prev + delta;
+      if (next < 30) {
+        toast.info('Thời lượng tối thiểu', 'Thời lượng buổi học tối thiểu là 30 phút (30 Credit)');
+        return 30;
+      }
+      if (userBalance > 0 && next > userBalance) {
+        toast.error('Vượt số dư ví', `Số dư ví hiện tại tối đa ${userBalance} Credit`);
+        return prev;
+      }
+      setErrors((errs) => ({ ...errs, duration: '' }));
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -106,8 +157,10 @@ export const useLearnerRequestForm = (
       newErrors.goals = 'Vui lòng nhập chi tiết nội dung hoặc bài tập cần giải đáp.';
     }
 
-    if (durationMinutes <= 0) {
-      newErrors.duration = 'Ngân sách Credit phải lớn hơn 0.';
+    if (durationMinutes < 30) {
+      newErrors.duration = 'Thời lượng buổi học tối thiểu là 30 phút (30 Credit).';
+    } else if (durationMinutes % 15 !== 0) {
+      newErrors.duration = 'Thời lượng phải là bội số của 15 phút (30, 45, 60, 75, 90...).';
     } else if (userBalance > 0 && durationMinutes > userBalance) {
       newErrors.duration = `Ngân sách Credit không được vượt quá số dư ví (${userBalance} Credit).`;
     }
@@ -163,6 +216,7 @@ export const useLearnerRequestForm = (
     goals,
     durationMinutes,
     userBalance,
+    isInsufficientBalance,
     timeline,
     desiredSlots,
     errors,
@@ -173,6 +227,8 @@ export const useLearnerRequestForm = (
     setCoverImage,
     setShortDescription,
     setDurationMinutes: handleDurationChange,
+    handleQuickDurationSelect,
+    handleStepDuration,
     setTimeline,
     setDesiredSlots,
     handleSubjectChange,
