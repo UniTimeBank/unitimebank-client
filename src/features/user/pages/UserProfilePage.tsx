@@ -179,10 +179,12 @@ export const UserProfilePage: React.FC = () => {
     },
   ];
 
+  const isCompleted7Days = currentStreak >= 7 && hasCheckedInToday;
+
   return (
     <div className="space-y-8 pb-12">
-      {/* 1. TOP BANNER: DAILY CHECKIN (Khi chưa xong 7 ngày) HOẶC STUDENT MILESTONE BANNER (Khi đã hoàn thành) */}
-      {currentStreak < 7 ? (
+      {/* 1. TOP BANNER: DAILY CHECKIN (Khi chưa xong 7 ngày) HOẶC STUDENT MILESTONE BANNER (Khi đã hoàn thành đủ 7 ngày) */}
+      {!isCompleted7Days ? (
         <DailyCheckinWidget
           currentStreak={currentStreak}
           hasCheckedInToday={hasCheckedInToday}

@@ -6,7 +6,7 @@ export interface NavLinkItem {
 export const NAV_LINKS: NavLinkItem[] = [
   { label: 'Khám phá', path: '/explore' },
   { label: 'Đăng bài', path: '/requests' },
-  { label: 'Sổ cái Credit', path: '/profile' },
+  { label: 'Quản lý', path: '/manage/bookings' },
   { label: 'Cộng đồng', path: '/community' },
 ];
 

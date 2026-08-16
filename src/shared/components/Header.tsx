@@ -24,6 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenCreditTasks,
 }) => {
   const location = useLocation();
+  const isManagePage = location.pathname.startsWith('/manage');
 
   const handleLogout = () => {
     localStorage.clear();
@@ -33,10 +34,14 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xs border-b border-gray-100 px-4 sm:px-6 py-3 shadow-2xs">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 md:gap-6">
+      <div
+        className={`mx-auto flex items-center justify-between gap-3 md:gap-6 ${
+          isManagePage ? 'max-w-[1536px]' : 'max-w-7xl'
+        }`}
+      >
         {/* Brand Logo & Nav */}
         <div className="flex items-center gap-6 lg:gap-8 shrink-0">
-          <Link to="/profile" className="flex items-center gap-2.5 shrink-0">
+          <Link to="/explore" className="flex items-center gap-2.5 shrink-0">
             <span className="text-xl font-black tracking-tight text-gray-900 whitespace-nowrap">
               UniTime<span className="text-primary-500">Bank</span>
             </span>
@@ -44,7 +49,9 @@ export const Header: React.FC<HeaderProps> = ({
 
           <nav className="hidden md:flex items-center gap-5 lg:gap-6 text-sm font-semibold">
             {NAV_LINKS.map((link) => {
-              const isActive = location.pathname === link.path;
+              const isActive =
+                location.pathname === link.path ||
+                (link.path !== '/' && location.pathname.startsWith(link.path));
               return (
                 <Link
                   key={link.path}

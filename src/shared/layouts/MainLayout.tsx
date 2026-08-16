@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Header, Footer } from '@/shared/components';
 import { SetPasswordModal } from '@/features/auth/components';
 import { CreditTasksModal } from '@/features/user/components';
@@ -15,6 +16,9 @@ interface MainLayoutProps {
 }
 
 export const MainLayout = ({ children }: MainLayoutProps) => {
+  const location = useLocation();
+  const isManagePage = location.pathname.startsWith('/manage');
+
   const authUser = useAppSelector(selectCurrentUser);
   const { data: userProfile } = useGetMeQuery(undefined, { skip: !authUser });
   const { data: walletData } = useGetMyWalletQuery(undefined, {
@@ -63,8 +67,12 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
         onOpenCreditTasks={() => setIsCreditTasksOpen(true)}
       />
 
-      {/* Main Content Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8">
+      {/* Main Content Body - Dynamically wider only for manage pages */}
+      <main
+        className={`flex-1 w-full mx-auto px-4 sm:px-6 py-8 ${
+          isManagePage ? 'max-w-[1536px]' : 'max-w-7xl'
+        }`}
+      >
         {children}
       </main>
 

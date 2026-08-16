@@ -10,8 +10,9 @@ export const useDailyCheckin = () => {
   const [localCheckedIn, setLocalCheckedIn] = useState<boolean | null>(null);
   const [rewardMessage, setRewardMessage] = useState<string | null>(null);
 
-  const currentStreak = localStreak ?? streakInfo?.currentStreak ?? 0;
-  const hasCheckedInToday = localCheckedIn ?? streakInfo?.isCheckedInToday ?? false;
+  const rawData = (streakInfo as any)?.data || streakInfo;
+  const currentStreak = localStreak ?? rawData?.currentStreak ?? 0;
+  const hasCheckedInToday = localCheckedIn ?? rawData?.isCheckedInToday ?? false;
 
   // Auto-hide notification message after 4 seconds
   useEffect(() => {
@@ -26,14 +27,15 @@ export const useDailyCheckin = () => {
   const handleCheckin = async () => {
     try {
       const res = await checkinMutation().unwrap();
+      const resData = (res as any)?.data || res;
       setLocalCheckedIn(true);
-      setLocalStreak(res.streakDay || (streakInfo?.currentStreak || 0) + 1);
-      const reward = res.rewardCredits || res.creditReward || 15;
+      setLocalStreak(resData.streakDay || resData.currentStreak || (currentStreak + 1));
+      const reward = resData.rewardCredits || resData.creditReward || 15;
       const successMsg = ` Điểm danh thành công! Đã cộng +${reward} credit thưởng vào ví của bạn.`;
       setRewardMessage(successMsg);
       toast.success(successMsg);
       refetch();
-      return { success: true, data: res };
+      return { success: true, data: resData };
     } catch (err: any) {
       const msg = err?.data?.message || err?.message || 'Bạn đã điểm danh ngày hôm nay rồi!';
       setRewardMessage(msg);
