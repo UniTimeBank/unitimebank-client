@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, X, Calendar, Clock, Lock } from 'lucide-react';
+import { Plus, X, Calendar, Clock, Lock, AlertCircle } from 'lucide-react';
 import { Button, Select, TimeInput } from '@/shared/components/ui';
 import type { TimeSlot } from '../../types';
 
@@ -35,6 +35,23 @@ const DAY_DISPLAY: Record<string, string> = {
   FRI: 'Thứ 6',
   SAT: 'Thứ 7',
   SUN: 'Chủ Nhật',
+};
+
+const DAY_SHORT_DISPLAY: Record<string, string> = {
+  MONDAY: 'T2',
+  TUESDAY: 'T3',
+  WEDNESDAY: 'T4',
+  THURSDAY: 'T5',
+  FRIDAY: 'T6',
+  SATURDAY: 'T7',
+  SUNDAY: 'CN',
+  MON: 'T2',
+  TUE: 'T3',
+  WED: 'T4',
+  THU: 'T5',
+  FRI: 'T6',
+  SAT: 'T7',
+  SUN: 'CN',
 };
 
 const DAY_CODE_MAP: Record<number, string> = {
@@ -118,6 +135,7 @@ interface DesiredSlotsSelectorProps {
   onChange: (slots: TimeSlot[]) => void;
   durationMinutes?: number;
   timeline?: string;
+  error?: string;
 }
 
 export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
@@ -125,6 +143,7 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
   onChange,
   durationMinutes = 60,
   timeline = 'Trong 3 ngày',
+  error,
 }) => {
   const validDuration = Math.max(30, Number(durationMinutes) || 60);
 
@@ -133,7 +152,7 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
 
   const [dayOfWeek, setDayOfWeek] = useState(() => dayOptions[0]?.value || 'MONDAY');
   const [startTime, setStartTime] = useState('19:00');
-  const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   // Update dayOfWeek and filter out invalid slots when timeline selection changes
   useEffect(() => {
@@ -158,11 +177,21 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
     return addMinutesToTime(startTime, validDuration);
   }, [startTime, validDuration]);
 
+  const handleDayChange = (day: string) => {
+    setDayOfWeek(day);
+    setLocalError(null);
+  };
+
+  const handleStartTimeChange = (time: string) => {
+    setStartTime(time);
+    setLocalError(null);
+  };
+
   const handleAddSlot = () => {
-    setError(null);
+    setLocalError(null);
 
     if (!startTime || !endTime) {
-      setError('Vui lòng chọn giờ bắt đầu');
+      setLocalError('Vui lòng chọn giờ bắt đầu.');
       return;
     }
 
@@ -175,7 +204,7 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
     );
 
     if (exists) {
-      setError('Khung giờ này đã được thêm từ trước');
+      setLocalError('Khung giờ này đã được thêm từ trước.');
       return;
     }
 
@@ -189,12 +218,12 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {/* Spacious White Card matching the above section */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-2xs space-y-4">
         <div>
           <h4 className="text-xs font-bold text-slate-900 tracking-tight">
-            KHUNG GIỜ RẢNH MONG MUỐN HỌC
+            KHUNG GIỜ RẢNH MONG MUỐN HỌC <span className="text-red-500">*</span>
           </h4>
           <p className="text-[11px] text-slate-400 font-normal mt-0.5">
             Danh sách ngày tự động khớp theo Thời hạn ({timeline}). Giờ kết thúc cố định {validDuration} phút/buổi.
@@ -207,7 +236,7 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
             label="CHỌN NGÀY RẢNH HỌC *"
             options={dayOptions}
             value={dayOfWeek}
-            onChange={setDayOfWeek}
+            onChange={handleDayChange}
           />
         </div>
 
@@ -217,7 +246,7 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
             <TimeInput
               label="TỪ GIỜ BẮT ĐẦU *"
               value={startTime}
-              onChange={setStartTime}
+              onChange={handleStartTimeChange}
               minuteStep={15}
             />
           </div>
@@ -238,42 +267,41 @@ export const DesiredSlotsSelector: React.FC<DesiredSlotsSelectorProps> = ({
           </div>
         </div>
 
-        {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
-
-        {/* Row 3: Full Width Submit Slot CTA Button */}
-        <Button
+        {/* Row 3: Submit Slot Button clean */}
+        <button
           type="button"
-          variant="primary"
-          fullWidth
-          size="md"
           onClick={handleAddSlot}
-          className="rounded-xl font-semibold text-xs shadow-2xs"
+          className="w-full py-2.5 px-4 rounded-xl border border-dashed border-primary-500 text-primary-800 bg-primary-50/40 hover:bg-primary-100/60 hover:border-primary-600 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
         >
           <span>Thêm Khung Giờ</span>
-        </Button>
+        </button>
+
+        {localError && <p className="mt-1 text-xs text-red-500">{localError}</p>}
       </div>
 
-      {/* Selected Slots Pills */}
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+
+      {/* Selected Slots Pills: 3 cột nằm chung một hàng */}
       {value.length > 0 && (
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1.5">
           {value.map((slot, index) => (
-            <span
+            <div
               key={index}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-medium shadow-2xs animate-in fade-in"
+              className="flex items-center justify-between px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-medium shadow-2xs animate-in fade-in"
             >
-              <Calendar className="w-3.5 h-3.5 text-primary-600" />
-              <span>
-                {DAY_DISPLAY[slot.dayOfWeek] || slot.dayOfWeek}: {slot.startTime} - {slot.endTime}
+              <Calendar className="w-3.5 h-3.5 text-primary-600 shrink-0" />
+              <span className="flex-1 text-center whitespace-nowrap leading-none font-semibold px-1">
+                {DAY_SHORT_DISPLAY[slot.dayOfWeek] || slot.dayOfWeek}: {slot.startTime} - {slot.endTime}
               </span>
               <button
                 type="button"
                 onClick={() => handleRemoveSlot(index)}
-                className="hover:text-red-600 p-0.5 rounded-full transition-colors cursor-pointer text-slate-400"
+                className="hover:text-red-600 p-0.5 rounded-full transition-colors cursor-pointer text-slate-400 shrink-0 inline-flex items-center justify-center -mr-0.5"
                 title="Bỏ chọn"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
-            </span>
+            </div>
           ))}
         </div>
       )}

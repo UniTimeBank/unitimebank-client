@@ -156,8 +156,9 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
   };
 
   const handleShortDescriptionChange = (val: string) => {
-    setShortDescription(val);
-    if (val.trim().length >= 5 && val.trim().length <= 150) {
+    const trimmed = val.slice(0, 150);
+    setShortDescription(trimmed);
+    if (trimmed.trim().length >= 5 && trimmed.trim().length <= 150) {
       setErrors((prev) => ({ ...prev, shortDescription: '' }));
     }
   };
@@ -675,9 +676,15 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
         <div id="field-mentor-shortDescription">
           <Input
             label="MÔ TẢ TÓM TẮT *"
+            labelRight={
+              <span className="text-[11px] font-medium text-slate-400">
+                {shortDescription.length}/150
+              </span>
+            }
+            maxLength={150}
             value={shortDescription}
             onChange={(e) => handleShortDescriptionChange(e.target.value)}
-            placeholder="Tóm tắt ngắn 1-2 câu điểm nổi bật của bài dạy (tối đa 150 ký tự)..."
+            placeholder="Tóm tắt ngắn 1-2 câu điểm nổi bật của bài dạy"
             error={errors.shortDescription}
           />
         </div>

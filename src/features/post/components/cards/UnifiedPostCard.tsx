@@ -28,7 +28,30 @@ export interface UnifiedPostCardData {
   scheduleType?: 'ALWAYS_OPEN' | 'LIMITED_TIME';
   detailUrl?: string;
   isPreview?: boolean;
+  createdAt?: string | Date;
+  timeAgoText?: string;
 }
+
+const formatTimeAgo = (dateInput?: string | Date, fallback: string = 'Vừa xong'): string => {
+  if (!dateInput) return fallback;
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return fallback;
+
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return 'Vừa xong';
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} giờ trước`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) return `${diffInDays} ngày trước`;
+  const diffInWeeks = Math.floor(diffInDays / 7);
+  if (diffInWeeks < 4) return `${diffInWeeks} tuần trước`;
+
+  return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+};
 
 export const UnifiedPostCard: React.FC<{
   data: UnifiedPostCardData;
@@ -54,6 +77,8 @@ export const UnifiedPostCard: React.FC<{
     scheduleType = 'ALWAYS_OPEN',
     detailUrl,
     isPreview = false,
+    createdAt,
+    timeAgoText,
   } = data;
 
   const rawCat = category?.toUpperCase() || 'PROGRAMMING';
@@ -105,7 +130,7 @@ export const UnifiedPostCard: React.FC<{
           <img
             src={coverUrl}
             alt={validTitle}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25" />
 
@@ -144,18 +169,23 @@ export const UnifiedPostCard: React.FC<{
                   <img
                     src={authorAvatar}
                     alt={authorName}
-                    className="w-7 h-7 rounded-full object-cover border border-slate-200"
+                    className="w-8 h-8 rounded-full object-cover border border-slate-200"
                   />
                 ) : (
-                  <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs">
+                  <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs">
                     {authorName?.charAt(0) || 'U'}
                   </div>
                 )}
               </div>
 
-              <h4 className="text-xs font-bold text-slate-900 truncate">
-                {authorName || 'Thành viên UniTime'}
-              </h4>
+              <div className="min-w-0 flex flex-col justify-center">
+                <h4 className="text-xs font-bold text-slate-900 truncate leading-tight">
+                  {authorName || 'Thành viên UniTime'}
+                </h4>
+                <span className="text-[11px] text-slate-400 font-normal leading-tight mt-0.5">
+                  {timeAgoText || formatTimeAgo(createdAt)}
+                </span>
+              </div>
             </div>
 
             {/* Trust Score */}

@@ -89,6 +89,12 @@ export const useLearnerRequestForm = (
     if (val.trim()) setErrors((prev) => ({ ...prev, subject: '' }));
   };
 
+  const handleShortDescriptionChange = (val: string) => {
+    const trimmed = val.slice(0, 150);
+    setShortDescription(trimmed);
+    if (trimmed.trim()) setErrors((prev) => ({ ...prev, shortDescription: '' }));
+  };
+
   const handleGoalsChange = (val: string) => {
     setGoals(val);
     if (val.replace(/<[^>]*>/g, '').trim()) setErrors((prev) => ({ ...prev, goals: '' }));
@@ -152,6 +158,10 @@ export const useLearnerRequestForm = (
       newErrors.subject = 'Vui lòng nhập tên môn học hoặc kỹ năng cần học.';
     }
 
+    if (!shortDescription.trim()) {
+      newErrors.shortDescription = 'Vui lòng nhập mô tả tóm tắt nhu cầu học.';
+    }
+
     const cleanGoals = goals.replace(/<[^>]*>/g, '').trim();
     if (!cleanGoals) {
       newErrors.goals = 'Vui lòng nhập chi tiết nội dung hoặc bài tập cần giải đáp.';
@@ -165,10 +175,14 @@ export const useLearnerRequestForm = (
       newErrors.duration = `Ngân sách Credit không được vượt quá số dư ví (${userBalance} Credit).`;
     }
 
+    if (!desiredSlots || desiredSlots.length === 0) {
+      newErrors.slots = 'Vui lòng chọn và thêm ít nhất một khung giờ rảnh mong muốn học.';
+    }
+
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
-      const firstErrorKey = ['subject', 'goals', 'duration'].find((key) => newErrors[key]);
+      const firstErrorKey = ['subject', 'shortDescription', 'goals', 'duration', 'slots'].find((key) => newErrors[key]);
       if (firstErrorKey) {
         const el = document.getElementById(`field-learner-${firstErrorKey}`);
         if (el) {
@@ -176,7 +190,7 @@ export const useLearnerRequestForm = (
           const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
           window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
           setTimeout(() => {
-            const inputEl = el.querySelector('input, textarea') || el;
+            const inputEl = el.querySelector('input, textarea, button') || el;
             (inputEl as HTMLElement).focus?.({ preventScroll: true });
           }, 350);
         }
@@ -207,6 +221,13 @@ export const useLearnerRequestForm = (
     }
   };
 
+  const handleDesiredSlotsChange = (slots: TimeSlot[]) => {
+    setDesiredSlots(slots);
+    if (slots && slots.length > 0) {
+      setErrors((prev) => ({ ...prev, slots: '' }));
+    }
+  };
+
   return {
     subject,
     category,
@@ -230,8 +251,9 @@ export const useLearnerRequestForm = (
     handleQuickDurationSelect,
     handleStepDuration,
     setTimeline,
-    setDesiredSlots,
+    setDesiredSlots: handleDesiredSlotsChange,
     handleSubjectChange,
+    handleShortDescriptionChange,
     handleGoalsChange,
     handleSubmit,
   };

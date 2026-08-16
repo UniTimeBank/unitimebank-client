@@ -45,6 +45,7 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
     setTimeline,
     setDesiredSlots,
     handleSubjectChange,
+    handleShortDescriptionChange,
     handleGoalsChange,
     handleSubmit,
   } = useLearnerRequestForm(onPreviewChange);
@@ -293,12 +294,21 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
       </div>
 
       {/* Short Summary Description */}
-      <Input
-        label="MÔ TẢ TÓM TẮT *"
-        value={shortDescription}
-        onChange={(e) => setShortDescription(e.target.value)}
-        placeholder="Tóm tắt ngắn 1-2 câu vướng mắc hoặc nhu cầu cần hỗ trợ (tối đa 150 ký tự)..."
-      />
+      <div id="field-learner-shortDescription">
+        <Input
+          label="MÔ TẢ TÓM TẮT *"
+          labelRight={
+            <span className="text-[11px] font-medium text-slate-400">
+              {shortDescription.length}/150
+            </span>
+          }
+          maxLength={150}
+          value={shortDescription}
+          onChange={(e) => handleShortDescriptionChange(e.target.value)}
+          placeholder="Tóm tắt ngắn 1-2 câu vướng mắc hoặc nhu cầu cần hỗ trợ"
+          error={errors.shortDescription}
+        />
+      </div>
 
       {/* Learning Goals Rich Text Editor */}
       <div id="field-learner-goals">
@@ -308,13 +318,8 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
           onChange={handleGoalsChange}
           placeholder="Mô tả cụ thể những bài tập vướng mắc hoặc kỹ năng bạn cần người hướng dẫn giải đáp..."
           minHeight="140px"
+          error={errors.goals}
         />
-        {errors.goals && (
-          <p className="mt-1.5 text-xs text-red-500 font-semibold flex items-center gap-1 animate-in fade-in">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0 text-red-500" />
-            <span>{errors.goals}</span>
-          </p>
-        )}
       </div>
 
       {/* Unified Budget & Timeline Card (100% Width) */}
@@ -350,16 +355,19 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
                   type="button"
                   onClick={() => handleQuickDurationSelect(p.mins)}
                   disabled={isOverBalance}
-                  className={`h-11 rounded-xl text-center transition-all cursor-pointer border text-xs flex flex-col items-center justify-center ${isSelected
-                    ? 'bg-primary-600 text-white font-semibold border-primary-600 shadow-2xs'
-                    : isOverBalance
-                      ? 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed'
-                      : 'bg-white text-slate-700 hover:border-primary-300 border-slate-200 font-medium hover:bg-primary-50/40'
+                  className={`h-11 rounded-xl text-center transition-all text-xs flex flex-col items-center justify-center border ${isSelected
+                      ? 'border-primary-500 bg-primary-50/40 ring-1 ring-primary-500/80 text-primary-900 font-bold shadow-xs cursor-pointer'
+                      : isOverBalance
+                        ? 'bg-slate-50 text-slate-300 border-slate-200/60 cursor-not-allowed select-none'
+                        : 'bg-white text-slate-700 hover:border-slate-300 border-slate-200 font-medium hover:bg-slate-50/70 cursor-pointer'
                     }`}
                 >
-                  <span className="font-semibold text-xs leading-none">{p.label}</span>
+                  <span className="font-bold text-xs leading-none">{p.label}</span>
                   {p.desc && (
-                    <span className={`text-[10px] mt-0.5 leading-none ${isSelected ? 'text-primary-100' : 'text-slate-400 font-normal'}`}>
+                    <span
+                      className={`text-[10px] mt-0.5 leading-none ${isSelected ? 'text-primary-700 font-medium' : 'text-slate-400 font-normal'
+                        }`}
+                    >
                       {p.desc}
                     </span>
                   )}
@@ -370,22 +378,22 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
 
           {/* 15-min Stepper Input Box (Hàng dưới - Full Width) */}
           <div
-            className={`w-full flex items-center justify-between rounded-xl border p-1.5 bg-slate-50/50 transition-all ${errors.duration
-              ? 'border-red-400 ring-2 ring-red-50'
-              : 'border-slate-200 focus-within:border-primary-500'
+            className={`w-full flex items-center justify-between rounded-xl border p-1.5 bg-white transition-all ${errors.duration
+                ? 'border-red-400 ring-2 ring-red-50'
+                : 'border-slate-200'
               }`}
           >
             <button
               type="button"
               onClick={() => handleStepDuration(-15)}
               disabled={durationMinutes <= 30}
-              className="px-4 py-1.5 rounded-lg bg-white hover:bg-primary-50 hover:text-primary-700 active:bg-primary-100 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 font-medium text-xs border border-slate-200/80 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 active:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 font-medium text-xs border border-slate-200 transition-colors cursor-pointer"
             >
               - 15p
             </button>
 
             <div className="flex items-center gap-1.5 text-center">
-              <span className="font-semibold text-sm text-primary-800">{durationMinutes} phút</span>
+              <span className="font-bold text-sm text-slate-900">{durationMinutes} phút</span>
               <span className="text-xs text-slate-400 font-normal">({durationMinutes} Credit)</span>
             </div>
 
@@ -393,7 +401,7 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
               type="button"
               onClick={() => handleStepDuration(15)}
               disabled={userBalance > 0 && durationMinutes + 15 > userBalance}
-              className="px-4 py-1.5 rounded-lg bg-white hover:bg-primary-50 hover:text-primary-700 active:bg-primary-100 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 font-medium text-xs border border-slate-200/80 transition-colors cursor-pointer"
+              className="px-3.5 py-1.5 rounded-lg bg-slate-50 hover:bg-emerald-50 hover:text-emerald-700 active:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 font-medium text-xs border border-slate-200 transition-colors cursor-pointer"
             >
               + 15p
             </button>
@@ -421,8 +429,8 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
                   type="button"
                   onClick={() => setTimeline(opt.value)}
                   className={`h-11 px-4 rounded-xl text-xs transition-all cursor-pointer border text-center flex items-center justify-center font-medium ${isSelected
-                    ? 'bg-primary-600 text-white font-semibold border-primary-600 shadow-2xs'
-                    : 'bg-white text-slate-700 hover:border-primary-300 border-slate-200 hover:bg-primary-50/40'
+                      ? 'border-primary-500 bg-primary-50/40 ring-1 ring-primary-500/80 text-primary-900 font-bold shadow-xs'
+                      : 'bg-white text-slate-700 hover:border-slate-300 border-slate-200 hover:bg-slate-50/70'
                     }`}
                 >
                   {opt.label}
@@ -434,12 +442,15 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
       </div>
 
       {/* Desired Slots Selector (Auto calculated based on durationMinutes & timeline) */}
-      <DesiredSlotsSelector
-        value={desiredSlots}
-        onChange={setDesiredSlots}
-        durationMinutes={durationMinutes}
-        timeline={timeline}
-      />
+      <div id="field-learner-slots">
+        <DesiredSlotsSelector
+          value={desiredSlots}
+          onChange={setDesiredSlots}
+          durationMinutes={durationMinutes}
+          timeline={timeline}
+          error={errors.slots}
+        />
+      </div>
 
       {/* Policy Banner */}
       <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-1">

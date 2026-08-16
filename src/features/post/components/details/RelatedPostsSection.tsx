@@ -95,7 +95,7 @@ export const RelatedPostsSection: React.FC<RelatedPostsSectionProps> = ({
                   <img
                     src={coverImg}
                     alt={post.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-full object-cover"
                   />
                   <span className="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-xs text-primary-700 text-[10px] font-extrabold border border-primary-100 shadow-2xs">
                     1 Credit

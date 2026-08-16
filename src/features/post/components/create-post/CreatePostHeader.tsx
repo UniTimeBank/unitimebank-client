@@ -20,12 +20,12 @@ export const CreatePostHeader: React.FC<CreatePostHeaderProps> = ({
             TRANG ĐĂNG BÀI UNITIMEBANK
           </span>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight">
-            {isMentor ? 'Đăng Bài Nhận Dạy Kèm' : 'Đăng Yêu Cầu Tìm Mentor'}
+            {isMentor ? 'Đăng Bài Nhận Dạy Kèm' : 'Đăng Yêu Cầu Tìm Người Dạy Học'}
           </h1>
           <p className="text-xs md:text-sm text-gray-300 leading-relaxed font-normal">
             {isMentor
               ? 'Thiết lập nội dung bài dạy, kỹ năng chia sẻ và khung giờ để học viên đăng ký học 1:1.'
-              : 'Nêu rõ môn học cần hướng dẫn và thời lượng mong muốn để các Mentor phù hợp liên hệ hỗ trợ.'}
+              : 'Nêu rõ môn học cần hướng dẫn và thời lượng mong muốn để các Người dạy phù hợp liên hệ hỗ trợ.'}
           </p>
         </div>
       </div>

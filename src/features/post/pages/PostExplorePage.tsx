@@ -49,23 +49,29 @@ export const PostExplorePage: React.FC = () => {
   const rawItems: ExploreCardItem[] = useMemo(() => {
     if (isMentor) {
       // Khi là Mentor: Hiển thị các bài yêu cầu tìm người dạy của học viên
-      return learnerRequests.map((req) => ({
-        id: req._id,
-        type: 'LEARNER' as const,
-        title: req.skillNeeded,
-        description: req.shortDescription || req.description || '',
-        category: req.category || 'PROGRAMMING',
-        coverImage: (req as any).coverImage,
-        tagSkill: req.skillNeeded?.toUpperCase().slice(0, 16) || 'HỌC TẬP',
-        secondaryTag: 'Cần hỗ trợ',
-        authorName: req.learnerName || 'Học viên UniTime',
-        authorAvatar: req.learnerAvatar,
-        authorUniversity: 'Sinh viên UniTime',
-        rateCreditText: `${req.expectedCreditAmount || req.expectedDurationMinutes || 60} credit`,
-        trustScore: 100,
-        sessionType: req.sessionType || 'ONE_ON_ONE',
-        detailUrl: `/posts/learner/${req._id}`,
-      }));
+      return learnerRequests.map((req) => {
+        const cat = req.category || 'PROGRAMMING';
+        const categoryLabel = (SKILL_CATEGORY_LABELS[cat.toUpperCase()] || cat).toUpperCase();
+        return {
+          id: req._id,
+          type: 'LEARNER' as const,
+          title: req.skillNeeded,
+          description: req.shortDescription || req.description || '',
+          category: req.category || 'PROGRAMMING',
+          coverImage: (req as any).coverImage,
+          tagSkill: categoryLabel,
+          secondaryTag: undefined,
+          allSkills: [],
+          authorName: req.learnerName || 'Học viên UniTime',
+          authorAvatar: req.learnerAvatar,
+          authorUniversity: 'Sinh viên UniTime',
+          rateCreditText: `${req.expectedCreditAmount || req.expectedDurationMinutes || 60} credit`,
+          trustScore: 100,
+          sessionType: req.sessionType || 'ONE_ON_ONE',
+          detailUrl: `/posts/learner/${req._id}`,
+          createdAt: (req as any).createdAt,
+        };
+      });
     } else {
       // Hiển thị các bài dạy của Mentor
       return mentorPosts.map((post) => {
@@ -94,6 +100,7 @@ export const PostExplorePage: React.FC = () => {
           sessionType: post.sessionType || 'BOTH',
           scheduleType: (post.scheduleType as 'ALWAYS_OPEN' | 'LIMITED_TIME') || 'ALWAYS_OPEN',
           detailUrl: `/posts/mentor/${post._id}`,
+          createdAt: (post as any).createdAt,
         };
       });
     }
@@ -325,6 +332,7 @@ export const PostExplorePage: React.FC = () => {
                       : 'Lớp 1:1',
                   scheduleType: (item as any).scheduleType,
                   timelineText: 'Trong 3 ngày',
+                  createdAt: (item as any).createdAt,
                 }}
               />
             ))}

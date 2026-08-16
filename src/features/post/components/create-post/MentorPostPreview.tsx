@@ -67,6 +67,7 @@ export const MentorPostPreview: React.FC<MentorPostPreviewProps> = ({
             creditText: scheduleLabel,
             sessionTypeText: 'Lớp 1:1',
             scheduleType: scheduleType,
+            timeAgoText: 'Vừa xong',
             isPreview: true,
           }}
         />

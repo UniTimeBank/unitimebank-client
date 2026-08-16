@@ -83,6 +83,7 @@ export const OpenRequestsPage: React.FC = () => {
             <div className="lg:col-span-5 sticky top-20">
               <LearnerRequestSidebar
                 subject={learnerPreview.subject}
+                category={learnerPreview.category}
                 coverImage={learnerPreview.coverImage}
                 shortDescription={learnerPreview.shortDescription}
                 goals={learnerPreview.goals}
