@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Upload, ImageIcon, AlertCircle, CheckCircle2, Circle, ArrowRight } from 'lucide-react';
 import { Button, Input, Select } from '@/shared/components/ui';
 import { SkillCategoryName } from '../../types';
-import { TIMELINE_OPTIONS, PRESET_COVER_IMAGES, SKILL_CATEGORY_LABELS } from '../../constants';
+import { TIMELINE_OPTIONS, PRESET_COVER_IMAGES, POST_CATEGORIES } from '../../constants';
 import { RichTextEditor } from './RichTextEditor';
 import { DesiredSlotsSelector } from './DesiredSlotsSelector';
 import { useLearnerRequestForm, type LearnerRequestFormState } from '../../hooks';
@@ -15,10 +15,7 @@ interface LearnerRequestFormProps {
   onPreviewChange?: (state: LearnerRequestFormState) => void;
 }
 
-const CATEGORY_OPTIONS = Object.entries(SKILL_CATEGORY_LABELS).map(([value, label]) => ({
-  value,
-  label,
-}));
+const CATEGORY_OPTIONS = POST_CATEGORIES.filter((c) => c.value !== 'All');
 
 export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPreviewChange }) => {
   const navigate = useNavigate();

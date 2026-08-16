@@ -1,29 +1,63 @@
 export const POST_CATEGORIES = [
   { label: 'Tất cả danh mục', value: 'All' },
-  { label: 'Lập trình & CNTT', value: 'PROGRAMMING' },
+  { label: 'Lập trình', value: 'PROGRAMMING' },
   { label: 'Ngoại ngữ', value: 'LANGUAGE' },
-  { label: 'Thiết kế & Đồ họa', value: 'DESIGN' },
+  { label: 'Thiết kế', value: 'DESIGN' },
+  { label: 'Học thuật', value: 'ACADEMIC' },
+  { label: 'Kinh doanh', value: 'BUSINESS' },
   { label: 'Kỹ năng mềm', value: 'SOFT_SKILLS' },
-  { label: 'Âm nhạc & Xử lý âm thanh', value: 'MUSIC' },
-  { label: 'Thể thao & Sức khỏe', value: 'SPORTS' },
-  { label: 'Kinh doanh & Tài chính', value: 'BUSINESS' },
-  { label: 'Học thuật / Khác', value: 'OTHER' },
+  { label: 'Âm nhạc', value: 'MUSIC' },
+  { label: 'Thể thao', value: 'SPORTS' },
+  { label: 'Khác', value: 'OTHER' },
 ];
 
 export const SKILL_CATEGORY_LABELS: Record<string, string> = {
-  PROGRAMMING: 'Lập trình & CNTT',
+  PROGRAMMING: 'Lập trình',
   LANGUAGE: 'Ngoại ngữ',
-  DESIGN: 'Thiết kế & Đồ họa',
+  DESIGN: 'Thiết kế',
+  ACADEMIC: 'Học thuật',
+  BUSINESS: 'Kinh doanh',
   SOFT_SKILLS: 'Kỹ năng mềm',
-  MUSIC: 'Âm nhạc & Xử lý âm thanh',
-  SPORTS: 'Thể thao & Sức khỏe',
-  BUSINESS: 'Kinh doanh & Tài chính',
-  OTHER: 'Học thuật / Khác',
+  MUSIC: 'Âm nhạc',
+  SPORTS: 'Thể thao',
+  OTHER: 'Khác',
   // Legacy / fallback mappings
-  STEM: 'Lập trình & CNTT',
-  ARTS: 'Thiết kế & Đồ họa',
+  STEM: 'Lập trình',
+  ARTS: 'Thiết kế',
   HUMANITIES: 'Ngoại ngữ',
   ECONOMICS: 'Kinh doanh',
+};
+
+export const DEFAULT_POST_COVER =
+  'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600';
+
+export const FALLBACK_CATEGORY_IMAGES: Record<string, string> = {
+  PROGRAMMING:
+    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600',
+  STEM:
+    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600',
+  LANGUAGE:
+    'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600',
+  HUMANITIES:
+    'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600',
+  DESIGN:
+    'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&q=80&w=600',
+  ARTS:
+    'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&q=80&w=600',
+  ACADEMIC:
+    'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=600',
+  BUSINESS:
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=600',
+  ECONOMICS:
+    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=600',
+  SOFT_SKILLS:
+    'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=600',
+  MUSIC:
+    'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=600',
+  SPORTS:
+    'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&q=80&w=600',
+  OTHER:
+    'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=600',
 };
 
 export const PRESET_COVER_IMAGES = [

@@ -21,16 +21,35 @@ export enum SkillCategoryName {
   PROGRAMMING = 'PROGRAMMING',
   LANGUAGE = 'LANGUAGE',
   DESIGN = 'DESIGN',
+  ACADEMIC = 'ACADEMIC',
+  BUSINESS = 'BUSINESS',
   SOFT_SKILLS = 'SOFT_SKILLS',
   MUSIC = 'MUSIC',
   SPORTS = 'SPORTS',
-  BUSINESS = 'BUSINESS',
   OTHER = 'OTHER',
 }
 
 export enum PostScheduleType {
   ALWAYS_OPEN = 'ALWAYS_OPEN',       // Dạy kèm thường xuyên (Luôn mở)
   LIMITED_TIME = 'LIMITED_TIME',     // Lớp học / Ôn thi cấp tốc (Có thời hạn)
+}
+
+export interface ExploreCardItem {
+  id: string;
+  type: 'MENTOR' | 'LEARNER';
+  title: string;
+  description: string;
+  category: string;
+  coverImage?: string;
+  tagSkill?: string;
+  secondaryTag?: string;
+  authorName: string;
+  authorAvatar?: string;
+  authorUniversity?: string;
+  rateCreditText?: string;
+  trustScore?: number;
+  sessionType?: string;
+  detailUrl: string;
 }
 
 export interface PostTag {

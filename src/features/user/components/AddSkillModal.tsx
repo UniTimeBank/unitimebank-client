@@ -1,35 +1,180 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { ChevronDown, Check, X } from 'lucide-react';
 import type { SkillCategoryEnum } from '../types';
 import { SKILL_CATEGORIES } from '../constants';
-import { Modal, Input, Select, Button, Checkbox } from '@/shared/components/ui';
+import { Modal, Select, Button } from '@/shared/components/ui';
+import { useUserSkills } from '../hooks';
 
 interface AddSkillModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
+  defaultCategory?: SkillCategoryEnum;
+  hideCategorySelect?: boolean;
   onAddSkill: (skillName: string, category: SkillCategoryEnum, isStrong: boolean) => Promise<void>;
 }
+
+// Preset gợi ý kỹ năng theo từng danh mục
+export const PRESET_SKILLS_BY_CATEGORY: Record<SkillCategoryEnum, string[]> = {
+  PROGRAMMING: [
+    'Java',
+    'Python',
+    'JavaScript',
+    'TypeScript',
+    'React',
+    'Node.js',
+    'Spring Boot',
+    'C++',
+    'SQL',
+    'Flutter',
+    'HTML/CSS',
+    'Cấu trúc dữ liệu & Giải thuật',
+  ],
+  LANGUAGE: [
+    'Tiếng Anh Giao Tiếp',
+    'IELTS Speaking',
+    'TOEIC 4 Kỹ năng',
+    'Tiếng Nhật N3',
+    'Tiếng Trung HSK',
+    'Tiếng Hàn Topik',
+    'Tiếng Pháp',
+    'Tiếng Đức',
+  ],
+  DESIGN: [
+    'Figma UI/UX',
+    'Photoshop',
+    'Illustrator',
+    'Premiere Pro',
+    'Canva Pro',
+    'Thiết kế 3D Blender',
+    'After Effects',
+    'Typography',
+  ],
+  ACADEMIC: [
+    'Giải tích 1',
+    'Giải tích 2',
+    'Đại số tuyến tính',
+    'Vật lý đại cương',
+    'Xác suất thống kê',
+    'Hóa học đại cương',
+    'Triết học Mác - Lênin',
+    'Nghiên cứu khoa học',
+  ],
+  BUSINESS: [
+    'Kế toán Quản trị',
+    'Phân tích Tài chính',
+    'Digital Marketing',
+    'Quản trị Dự án',
+    'Đầu tư Chứng khoán',
+    'Kinh tế Vi mô',
+    'Excel Nâng cao & Dashboard',
+  ],
+  SOFT_SKILLS: [
+    'Thuyết trình trước đám đông',
+    'Quản lý Thời gian',
+    'Giao tiếp & Đàm phán',
+    'Tư duy Phản biện',
+    'Làm việc Nhóm',
+    'Kỹ năng Viết CV & Phỏng vấn',
+  ],
+  MUSIC: [
+    'Guitar đệm hát',
+    'Piano cơ bản',
+    'Thanh nhạc',
+    'Sản xuất âm nhạc FL Studio',
+    'Ukulele',
+    'Thu âm & Mix Vocal',
+  ],
+  SPORTS: [
+    'Cầu lông',
+    'Bóng rổ',
+    'Yoga',
+    'Gym & Fitness',
+    'Chạy bộ đường dài',
+    'Cờ vua',
+    'Bơi lội',
+  ],
+  OTHER: [
+    'Nấu ăn & Làm bánh',
+    'Nhiếp ảnh cơ bản',
+    'Quản trị cá nhân',
+    'Viết lách & Sáng tạo nội dung',
+  ],
+};
 
 export const AddSkillModal: React.FC<AddSkillModalProps> = ({
   isOpen,
   onClose,
-  title = 'Thêm kỹ năng mới',
+  title = 'Thêm Kỹ Năng Mới Vào Hồ Sơ',
+  defaultCategory = 'PROGRAMMING',
+  hideCategorySelect = false,
   onAddSkill,
 }) => {
+  const { skills: userExistingSkills } = useUserSkills();
+
   const [skillName, setSkillName] = useState('');
-  const [category, setCategory] = useState<SkillCategoryEnum>('PROGRAMMING');
-  const [isStrong, setIsStrong] = useState(true);
+  const [category, setCategory] = useState<SkillCategoryEnum>(defaultCategory);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync default category when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setCategory(defaultCategory);
+      setSkillName('');
+      setIsDropdownOpen(false);
+    }
+  }, [isOpen, defaultCategory]);
+
+  // Click outside to close dropdown suggestions
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (inputContainerRef.current && !inputContainerRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Danh sách các kỹ năng user ĐÃ CÓ trong hồ sơ
+  const existingNamesLower = useMemo(() => {
+    return (userExistingSkills || []).map((s) => s.skillName.trim().toLowerCase());
+  }, [userExistingSkills]);
+
+  // Lọc các kỹ năng gợi ý thuộc category MÀ CHƯA CÓ TRONG HỒ SƠ
+  const unaddedCategoryPresets = useMemo(() => {
+    const presets = PRESET_SKILLS_BY_CATEGORY[category] || [];
+    return presets.filter((name) => !existingNamesLower.includes(name.toLowerCase()));
+  }, [category, existingNamesLower]);
+
+  // Lọc theo từ khóa đang gõ trong input
+  const filteredSuggestions = useMemo(() => {
+    const query = skillName.trim().toLowerCase();
+    if (!query) return unaddedCategoryPresets;
+    return unaddedCategoryPresets.filter((name) => name.toLowerCase().includes(query));
+  }, [unaddedCategoryPresets, skillName]);
+
+  const handleSelectSuggestion = (name: string) => {
+    setSkillName(name);
+    setIsDropdownOpen(false);
+    inputRef.current?.focus();
+  };
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    if (!skillName.trim()) return;
+    const trimmed = skillName.trim();
+    if (!trimmed) return;
+
     setIsSubmitting(true);
     try {
-      await onAddSkill(skillName.trim(), category, isStrong);
+      await onAddSkill(trimmed, category, false);
       setSkillName('');
       onClose();
     } finally {
@@ -42,44 +187,136 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
       e.preventDefault();
       e.stopPropagation();
       handleSave();
+    } else if (e.key === 'Escape') {
+      setIsDropdownOpen(false);
     }
   };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="md">
-      {/* Use div instead of form to avoid DOM form nesting inside parent forms */}
       <div className="space-y-4" onKeyDown={handleKeyDown}>
-        {/* Skill Name */}
-        <Input
-          label="Tên kỹ năng"
-          type="text"
-          value={skillName}
-          onChange={(e) => setSkillName(e.target.value)}
-          placeholder="VD: Python, Thuyết trình đám đông, Figma, Tiếng Nhật"
-          required
-          autoFocus
-        />
+        {/* 1. Skill Category Selector (Ẩn đi khi đã có danh mục cố định từ Form Đăng bài) */}
+        {!hideCategorySelect && (
+          <div>
+            <Select
+              label="DANH MỤC LĨNH VỰC *"
+              options={SKILL_CATEGORIES}
+              value={category}
+              onChange={(val) => {
+                setCategory(val as SkillCategoryEnum);
+                setIsDropdownOpen(false);
+              }}
+            />
+          </div>
+        )}
 
-        {/* Skill Category */}
-        <Select
-          label="Danh mục kỹ năng"
-          options={SKILL_CATEGORIES}
-          value={category}
-          onChange={(val) => setCategory(val as SkillCategoryEnum)}
-        />
+        {/* 2. Skill Name Input với Design Đồng Bộ 100% với Select Trigger */}
+        <div className="relative" ref={inputContainerRef}>
+          <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-1">
+            TÊN KỸ NĂNG <span className="text-red-500">*</span>
+          </label>
 
-        {/* Is Strong Checkbox */}
-        <div className="pt-1">
-          <Checkbox
-            id="isStrong"
-            checked={isStrong}
-            onChange={(checked) => setIsStrong(checked)}
-            label={<span className="text-xs font-semibold text-gray-700">Đặt làm Kỹ năng cốt lõi / Thế mạnh nhất của tôi</span>}
-          />
+          <div
+            onClick={() => {
+              if (!isDropdownOpen) setIsDropdownOpen(true);
+              inputRef.current?.focus();
+            }}
+            className={`w-full px-3.5 py-2.5 rounded-xl border text-sm flex items-center justify-between bg-white transition-all duration-200 cursor-text ${
+              isDropdownOpen
+                ? 'border-primary-500 ring-2 ring-primary-100'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <input
+              ref={inputRef}
+              type="text"
+              value={skillName}
+              onChange={(e) => {
+                setSkillName(e.target.value);
+                if (!isDropdownOpen) setIsDropdownOpen(true);
+              }}
+              onFocus={() => setIsDropdownOpen(true)}
+              placeholder="VD: Python, Figma, Giải tích 1, Tiếng Nhật..."
+              className="w-full text-sm text-gray-900 placeholder:text-gray-400 placeholder:font-normal font-normal bg-transparent focus:outline-hidden pr-2"
+              autoFocus
+            />
+
+            {/* Clear Button or Toggle Dropdown Arrow */}
+            <div className="flex items-center gap-1 shrink-0">
+              {skillName ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSkillName('');
+                    inputRef.current?.focus();
+                  }}
+                  className="p-0.5 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsDropdownOpen(!isDropdownOpen);
+                }}
+                className="text-gray-400 hover:text-primary-500 transition-colors cursor-pointer"
+                title="Gợi ý kỹ năng"
+              >
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    isDropdownOpen ? 'rotate-180 text-primary-500' : 'text-gray-400'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Dropdown Gợi Ý Sổ Xuống Đồng Bộ với Custom Select Menu */}
+          {isDropdownOpen && (
+            <div className="absolute z-50 top-full left-0 right-0 mt-1.5 bg-white rounded-2xl border border-gray-100 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+              <div className="px-3.5 pt-2.5 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center justify-between border-b border-gray-100">
+                <span>Gợi ý kỹ năng chưa tạo</span>
+                <span>{filteredSuggestions.length} gợi ý</span>
+              </div>
+
+              <div className="p-1.5 max-h-52 overflow-y-auto space-y-0.5 custom-scrollbar">
+                {filteredSuggestions.length > 0 ? (
+                  filteredSuggestions.map((name) => {
+                    const isSelected = skillName.trim().toLowerCase() === name.toLowerCase();
+
+                    return (
+                      <div
+                        key={name}
+                        onClick={() => handleSelectSuggestion(name)}
+                        className={`px-3.5 py-2.5 rounded-xl text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'bg-primary-50 text-primary-700 font-semibold'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-normal'
+                        }`}
+                      >
+                        <span>{name}</span>
+                        {isSelected && <Check className="w-4 h-4 text-primary-500" />}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="p-3 text-center text-xs text-gray-400 font-medium">
+                    {skillName.trim()
+                      ? `Nhấn Enter để thêm kỹ năng "${skillName.trim()}"`
+                      : 'Đã thêm tất cả kỹ năng gợi ý của danh mục này.'}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+        {/* Actions Footer */}
+        <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
           <Button type="button" variant="outline" size="sm" onClick={onClose}>
             Hủy
           </Button>

@@ -1,7 +1,8 @@
 import React from 'react';
 import { useGetMyWalletQuery } from '@/core/api/wallet/walletApi';
 import { useUserProfile } from '@/features/user/hooks';
-import { RichTextViewer } from './RichTextEditor';
+import { UnifiedPostCard } from '../cards/UnifiedPostCard';
+
 
 interface LearnerRequestSidebarProps {
   subject: string;
@@ -35,54 +36,31 @@ export const LearnerRequestSidebar: React.FC<LearnerRequestSidebarProps> = ({
     <div className="space-y-6 sticky top-24">
       {/* Live Preview Card */}
       <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs space-y-4">
-        <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 border-b border-gray-100 pb-3">
+        <h3 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-gray-100 pb-3">
           XEM TRƯỚC BÀI TÌM MENTOR
         </h3>
 
-        <div className="rounded-2xl border border-gray-200/90 overflow-hidden bg-white shadow-xs group hover:shadow-md transition-all">
-          {/* Card Header Media */}
-          <div className="relative h-44 overflow-hidden bg-gray-100">
-            {coverImage ? (
-              <img
-                src={coverImage}
-                alt={subject || 'Subject'}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white font-black text-xl">
-                {subject ? subject.slice(0, 2).toUpperCase() : 'HỌC'}
-              </div>
-            )}
-            <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md text-white font-extrabold text-xs">
-              {durationMinutes || 60} credit
-            </div>
-          </div>
-
-          {/* Body Content */}
-          <div className="p-5 space-y-2">
-            <h4 className="text-base font-extrabold text-gray-900 line-clamp-2 leading-snug">
-              {subject || 'Tên môn học / Kỹ năng cần tìm Mentor'}
-            </h4>
-
-            {shortDescription ? (
-              <p className="text-xs text-gray-600 font-medium line-clamp-2 leading-relaxed">
-                {shortDescription}
-              </p>
-            ) : goals ? (
-              <RichTextViewer content={goals} className="line-clamp-3" />
-            ) : (
-              <p className="text-xs text-gray-400 font-medium italic">
-                Mô tả cụ thể những kiến thức hoặc bài tập bạn muốn được hỗ trợ giải đáp...
-              </p>
-            )}
-          </div>
-
-          {/* Footer Info */}
-          <div className="p-5 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-gray-500">
-            <span>Thời hạn: {timeline || 'Trong 3 ngày'}</span>
-            <span className="text-teal-700 font-extrabold">{durationMinutes || 60} phút học</span>
-          </div>
-        </div>
+        <UnifiedPostCard
+          data={{
+            type: 'LEARNER',
+            title: subject || 'Tên môn học / Kỹ năng cần tìm Mentor',
+            description:
+              shortDescription ||
+              (goals ? goals.replace(/<[^>]+>/g, ' ').slice(0, 120) : '') ||
+              'Mô tả cụ thể những kiến thức hoặc bài tập bạn muốn được hỗ trợ giải đáp...',
+            coverImage: coverImage,
+            primaryTag: subject ? subject.toUpperCase().slice(0, 14) : 'HỌC TẬP',
+            secondaryTags: ['Cần hỗ trợ', 'Lớp 1:1'],
+            authorName: profile?.displayName || 'Bạn (Học viên)',
+            authorAvatar: profile?.avatarUrl,
+            authorSubtitle: 'Sinh viên UniTime',
+            trustScore: rawTrust > 10 ? rawTrust : rawTrust * 10,
+            creditAmount: durationMinutes || 60,
+            creditText: `${durationMinutes || 60} credit`,
+            timelineText: timeline || 'Trong 3 ngày',
+            isPreview: true,
+          }}
+        />
       </div>
 
       {/* Credit Overview Wallet Widget (REAL DATA CONNECTED) */}

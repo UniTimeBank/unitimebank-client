@@ -1,13 +1,14 @@
 import type { SkillCategoryEnum } from '../types/user-skill.type.ts';
 
 export const SKILL_CATEGORIES: { label: string; value: SkillCategoryEnum }[] = [
-  { label: 'Lập trình & CNTT', value: 'PROGRAMMING' },
-  { label: 'Ngoại ngữ & Ngôn ngữ', value: 'LANGUAGE' },
-  { label: 'Thiết kế & UI/UX', value: 'DESIGN' },
-  { label: 'Kỹ năng mềm & Giao tiếp', value: 'SOFT_SKILLS' },
-  { label: 'Âm nhạc & Nghệ thuật', value: 'MUSIC' },
-  { label: 'Thể thao & Sức khỏe', value: 'SPORTS' },
-  { label: 'Kinh doanh & Quản trị', value: 'BUSINESS' },
+  { label: 'Lập trình', value: 'PROGRAMMING' },
+  { label: 'Ngoại ngữ', value: 'LANGUAGE' },
+  { label: 'Thiết kế', value: 'DESIGN' },
+  { label: 'Học thuật', value: 'ACADEMIC' },
+  { label: 'Kinh doanh', value: 'BUSINESS' },
+  { label: 'Kỹ năng mềm', value: 'SOFT_SKILLS' },
+  { label: 'Âm nhạc', value: 'MUSIC' },
+  { label: 'Thể thao', value: 'SPORTS' },
   { label: 'Khác', value: 'OTHER' },
 ];
 

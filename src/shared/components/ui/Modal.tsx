@@ -80,7 +80,7 @@ export const Modal = ({
         {(title || description) && (
           <div className="mb-4 pr-6">
             {title && (
-              <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+              <h2 className="text-lg font-bold text-slate-800 tracking-tight">
                 {title}
               </h2>
             )}

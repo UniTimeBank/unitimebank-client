@@ -2,10 +2,11 @@ export type SkillCategoryEnum =
   | 'PROGRAMMING'
   | 'LANGUAGE'
   | 'DESIGN'
+  | 'ACADEMIC'
+  | 'BUSINESS'
   | 'SOFT_SKILLS'
   | 'MUSIC'
   | 'SPORTS'
-  | 'BUSINESS'
   | 'OTHER';
 
 export interface UserSkill {
