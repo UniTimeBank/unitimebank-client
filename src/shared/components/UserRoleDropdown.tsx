@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Calendar, ReceiptText, LogOut } from 'lucide-react';
+import { User, Calendar, ReceiptText, LogOut, CalendarCheck, LayoutDashboard } from 'lucide-react';
 import { useActiveRole } from '@/shared/hooks/useActiveRole';
 import LogoImage from '@/assets/images/Logo.png';
 
@@ -17,15 +17,13 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
   userName = 'Thành viên UniTime',
   userEmail,
   avatarUrl,
-  userCredits = 120,
-  trustScore = 100,
   onLogout,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { activeRole, isMentor, switchRole } = useActiveRole();
+  const { isMentor, switchRole } = useActiveRole();
   const displayAvatar = avatarUrl || LogoImage;
 
   const handleMouseEnter = () => {
@@ -56,7 +54,7 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
       onMouseLeave={handleMouseLeave}
       className="relative shrink-0"
     >
-      {/* Avatar Button Tinh Gọn (Không icon dính góc) */}
+      {/* Avatar Button Tinh Gọn */}
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
@@ -65,10 +63,11 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
         <img
           src={displayAvatar}
           alt={userName}
-          className={`w-8.5 h-8.5 rounded-full object-cover ring-1 transition-all ${isOpen
-            ? 'ring-slate-900 shadow-xs'
-            : 'ring-slate-200 group-hover:ring-slate-400'
-            }`}
+          className={`w-8.5 h-8.5 rounded-full object-cover ring-1 transition-all ${
+            isOpen
+              ? 'ring-slate-900 shadow-xs'
+              : 'ring-slate-200 group-hover:ring-slate-400'
+          }`}
         />
       </button>
 
@@ -89,7 +88,6 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
               <p className="text-xs text-slate-400 truncate">
                 {userEmail || 'Sinh viên UniTime'}
               </p>
-
             </div>
           </div>
 
@@ -99,7 +97,6 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
               <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
                 Vai trò hiện tại
               </span>
-
             </div>
 
             {/* Segmented Buttons */}
@@ -107,10 +104,11 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
               <button
                 type="button"
                 onClick={() => switchRole('LEARNER')}
-                className={`py-1.5 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer text-center ${!isMentor
-                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                  : 'text-slate-500 hover:text-slate-800'
-                  }`}
+                className={`py-1.5 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer text-center ${
+                  !isMentor
+                    ? 'bg-white text-slate-900 shadow-xs font-semibold'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
               >
                 Người học
               </button>
@@ -118,16 +116,15 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
               <button
                 type="button"
                 onClick={() => switchRole('MENTOR')}
-                className={`py-1.5 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer text-center ${isMentor
-                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                  : 'text-slate-500 hover:text-slate-800'
-                  }`}
+                className={`py-1.5 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer text-center ${
+                  isMentor
+                    ? 'bg-white text-slate-900 shadow-xs font-semibold'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
               >
                 Người dạy
               </button>
             </div>
-
-
           </div>
 
           {/* Quick Menu Links */}
@@ -142,21 +139,39 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
             </Link>
 
             <Link
-              to={isMentor ? '/profile' : '/explore'}
+              to="/manage/bookings"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+            >
+              <CalendarCheck className="w-4 h-4 text-slate-400 stroke-[1.75]" />
+              <span>Quản lý Booking</span>
+            </Link>
+
+            <Link
+              to="/manage/schedule"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
             >
               <Calendar className="w-4 h-4 text-slate-400 stroke-[1.75]" />
-              <span>{isMentor ? 'Quản lý lịch rảnh của tôi' : 'Khám phá bài học mới'}</span>
+              <span>Quản lý Lịch rảnh</span>
             </Link>
 
             <Link
-              to="/profile"
+              to="/manage/wallet"
               onClick={() => setIsOpen(false)}
               className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
             >
               <ReceiptText className="w-4 h-4 text-slate-400 stroke-[1.75]" />
-              <span>Sổ cái & Lịch sử Credit</span>
+              <span>Sổ cái & Ví Credit</span>
+            </Link>
+
+            <Link
+              to="/manage/dashboard"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+            >
+              <LayoutDashboard className="w-4 h-4 text-slate-400 stroke-[1.75]" />
+              <span>Dashboard Tổng quan</span>
             </Link>
 
             <button

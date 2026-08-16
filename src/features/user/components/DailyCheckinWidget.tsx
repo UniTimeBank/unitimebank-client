@@ -17,7 +17,9 @@ export const DailyCheckinWidget: React.FC<DailyCheckinWidgetProps> = ({
   onCheckin,
   isCheckinLoading = false,
 }) => {
-  const isCompletedAll = currentStreak >= 7;
+  const isCompletedAll = currentStreak >= 7 && hasCheckedInToday;
+  const cycleDay = currentStreak === 0 ? 0 : ((currentStreak - 1) % 7) + 1;
+  const currentStep = hasCheckedInToday ? cycleDay : Math.min(cycleDay + 1, 7);
 
   return (
     <div className="bg-[#0B654D] text-white rounded-2xl p-6 shadow-xs border border-emerald-700/30">
@@ -27,7 +29,7 @@ export const DailyCheckinWidget: React.FC<DailyCheckinWidgetProps> = ({
           <div className="flex items-center gap-2.5 flex-wrap">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 text-emerald-100 font-extrabold text-xs rounded-full border border-white/20">
               <Flame className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
-              <span>{isCompletedAll ? 'Đã hoàn thành 7 / 7 ngày' : `Ngày ${currentStreak} / 7`}</span>
+              <span>{isCompletedAll ? 'Đã hoàn thành 7 / 7 ngày' : `Ngày ${hasCheckedInToday ? cycleDay : cycleDay} / 7`}</span>
             </span>
             <h3 className="text-lg font-extrabold text-white tracking-tight">
               Điểm danh nhận thưởng hàng ngày
@@ -87,10 +89,10 @@ export const DailyCheckinWidget: React.FC<DailyCheckinWidgetProps> = ({
       {/* 7 Days Progress Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
         {DAYS_REWARDS.map((item) => {
-          const isDone = item.day <= currentStreak;
+          const isDone = hasCheckedInToday ? item.day <= cycleDay : item.day < currentStep;
           const isToday = hasCheckedInToday
-            ? item.day === currentStreak
-            : item.day === currentStreak + 1;
+            ? item.day === cycleDay
+            : item.day === currentStep;
 
           let cardStyle = 'bg-white/10 border-white/15 text-emerald-100/70';
           if (isDone && isToday) {

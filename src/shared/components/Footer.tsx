@@ -1,9 +1,17 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 
 export const Footer: React.FC = () => {
+  const location = useLocation();
+  const isManagePage = location.pathname.startsWith('/manage');
+
   return (
-    <footer className="mt-16 bg-gray-50 border-t border-gray-100 py-10 px-6">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-gray-500">
+    <footer className="mt-16 bg-gray-50 border-t border-gray-100 py-10 px-4 sm:px-6">
+      <div
+        className={`mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-gray-500 ${
+          isManagePage ? 'max-w-[1536px]' : 'max-w-7xl'
+        }`}
+      >
         <div>
           <h3 className="text-base font-bold text-gray-900 mb-1">UniTime Bank</h3>
           <p className="max-w-md text-gray-500">

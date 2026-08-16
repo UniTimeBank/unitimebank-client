@@ -11,6 +11,15 @@ import {
   MentorPostDetailPage,
   LearnerRequestDetailPage,
 } from '@/features/post';
+import {
+  ManagementLayout,
+  BookingManagementPage,
+  ScheduleManagementPage,
+  DashboardManagementPage,
+  PostsManagementPage,
+  WalletManagementPage,
+  MessagesManagementPage,
+} from '@/features/management';
 
 export const AppRoutes = () => {
   return (
@@ -99,6 +108,24 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
+      {/* Route bảo vệ - Quản lý */}
+      <Route
+        path="/manage"
+        element={
+          <ProtectedRoute>
+            <ManagementLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to={ROUTES.MANAGE.BOOKINGS} replace />} />
+        <Route path="bookings" element={<BookingManagementPage />} />
+        <Route path="schedule" element={<ScheduleManagementPage />} />
+        <Route path="dashboard" element={<DashboardManagementPage />} />
+        <Route path="posts" element={<PostsManagementPage />} />
+        <Route path="wallet" element={<WalletManagementPage />} />
+        <Route path="messages" element={<MessagesManagementPage />} />
+      </Route>
 
       {/* Wildcard 404 Route */}
       <Route path={ROUTES.NOT_FOUND} element={<Navigate to={ROUTES.EXPLORE} replace />} />

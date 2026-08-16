@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Calendar, Clock, Award } from 'lucide-react';
 import { useGetMentorPostByIdQuery } from '@/core/api/post/postApi';
 import { useGetPublicProfileQuery } from '@/core/api/user/userApi';
+import { useCreateMentorPostBookingMutation } from '@/core/api/booking/bookingApi';
 import {
   PostHero,
   PostAuthorCard,
@@ -11,10 +12,12 @@ import {
   RelatedPostsSection,
 } from '../components/details';
 import { SKILL_CATEGORY_LABELS } from '../constants';
+import { Button, Modal } from '@/shared/components/ui';
 import { toast } from '@/shared/utils';
 
 export const MentorPostDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -27,6 +30,16 @@ export const MentorPostDetailPage: React.FC = () => {
   const { data: mentorProfile } = useGetPublicProfileQuery(post?.mentorId || '', {
     skip: !post?.mentorId,
   });
+
+  const [createBooking, { isLoading: isBookingLoading }] = useCreateMentorPostBookingMutation();
+
+  // Booking Modal State
+  const [bookingModal, setBookingModal] = useState<{
+    isOpen: boolean;
+    date: string;
+    slot: { startTime: string; endTime: string };
+    note: string;
+  } | null>(null);
 
   if (isLoading) {
     return (
@@ -65,6 +78,34 @@ export const MentorPostDetailPage: React.FC = () => {
   const trustScore = mentorProfile?.trustScore || post.trustScoreSnapshot || 98;
   const ratingValue = (trustScore / 20).toFixed(1);
   const skillTags = post.tags?.map((t) => t.skillName) || ['ReactJS', 'TypeScript'];
+
+  // Handle Submit Booking
+  const handleConfirmBooking = async () => {
+    if (!bookingModal || !post) return;
+
+    try {
+      const { date, slot, note } = bookingModal;
+      const scheduledStart = new Date(`${date}T${slot.startTime}:00`).toISOString();
+      const scheduledEnd = new Date(`${date}T${slot.endTime}:00`).toISOString();
+
+      await createBooking({
+        mentorPostId: post._id,
+        scheduledStart,
+        scheduledEnd,
+        note: note.trim() || undefined,
+      }).unwrap();
+
+      toast.success(
+        'Đặt lịch thành công!',
+        `Yêu cầu học đã được gửi tới ${mentorName}. Vui lòng theo dõi trong mục Quản lý Booking.`,
+      );
+
+      setBookingModal(null);
+      navigate('/manage/bookings');
+    } catch (err: any) {
+      toast.error(err?.data?.message || 'Không thể đặt lịch học. Vui lòng thử lại sau.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
@@ -128,10 +169,12 @@ export const MentorPostDetailPage: React.FC = () => {
               authorName={mentorName}
               primaryButtonText="Đặt lịch ngay"
               onPrimaryAction={(date, slot) => {
-                toast.success(
-                  'Đã gửi yêu cầu đặt lịch học!',
-                  `Ngày ${date} (${slot.startTime} - ${slot.endTime}) với ${mentorName}`,
-                );
+                setBookingModal({
+                  isOpen: true,
+                  date,
+                  slot: { startTime: slot.startTime, endTime: slot.endTime },
+                  note: '',
+                });
               }}
             />
           </div>
@@ -156,6 +199,93 @@ export const MentorPostDetailPage: React.FC = () => {
           </div>
         </footer>
       </div>
+
+      {/* ════════════════════════════════════════════════════════════════ */}
+      {/* REUSED SHARED MODAL COMPONENT */}
+      {/* ════════════════════════════════════════════════════════════════ */}
+      <Modal
+        isOpen={Boolean(bookingModal?.isOpen)}
+        onClose={() => !isBookingLoading && setBookingModal(null)}
+        title="Xác nhận Đặt lịch học 1-1"
+        description="Gửi yêu cầu học tập tới Người hướng dẫn chuyên môn"
+        size="lg"
+      >
+        {bookingModal && (
+          <div className="space-y-5">
+            {/* Session Info Capsule */}
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-3">
+              <div>
+                <span className="text-[10px] font-extrabold text-primary-700 uppercase tracking-wider block">
+                  BÀI DẠY
+                </span>
+                <h4 className="text-sm font-bold text-gray-900 line-clamp-1">{post.title}</h4>
+                <p className="text-xs text-gray-500 font-medium">Mentor: {mentorName}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200/60 text-xs">
+                <div className="flex items-center gap-2 text-gray-700">
+                  <Calendar className="w-4 h-4 text-primary-600 shrink-0" />
+                  <span className="font-bold">{bookingModal.date}</span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-700">
+                  <Clock className="w-4 h-4 text-primary-600 shrink-0" />
+                  <span className="font-bold">
+                    {bookingModal.slot.startTime} - {bookingModal.slot.endTime}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Note Textarea */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-gray-700">
+                Lời nhắn gửi Mentor (Nhu cầu, câu hỏi cần giải đáp):
+              </label>
+              <textarea
+                value={bookingModal.note}
+                onChange={(e) =>
+                  setBookingModal((prev) => (prev ? { ...prev, note: e.target.value } : null))
+                }
+                placeholder="Ví dụ: Em muốn hỏi kỹ phần setup kiến trúc microservices và xác thực JWT..."
+                rows={3}
+                className="w-full p-3 bg-white border border-gray-200 rounded-xl text-xs font-medium placeholder:text-gray-400 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all resize-none"
+              />
+            </div>
+
+            {/* Escrow Guarantee Note */}
+            <div className="flex items-start gap-2 p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-[11px] text-emerald-800 font-medium">
+              <Award className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <span>
+                Credit chỉ được trừ tạm giữ (ký quỹ an toàn) sau khi Mentor chấp nhận yêu cầu của bạn.
+              </span>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => setBookingModal(null)}
+                disabled={isBookingLoading}
+                className="rounded-xl border-gray-200 text-gray-700 font-bold text-xs"
+              >
+                Hủy bỏ
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={handleConfirmBooking}
+                disabled={isBookingLoading}
+                className="rounded-xl bg-primary-700 hover:bg-primary-800 text-white font-bold text-xs px-6 shadow-xs"
+              >
+                {isBookingLoading ? 'Đang gửi...' : 'Xác nhận Đặt lịch'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

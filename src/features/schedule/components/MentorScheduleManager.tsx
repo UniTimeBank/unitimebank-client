@@ -34,14 +34,9 @@ export const MentorScheduleManager: React.FC = () => {
     <div className="bg-white rounded-3xl border border-gray-100 shadow-xs p-6 sm:p-8 relative">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-slate-100">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="p-2 rounded-xl bg-primary-50 text-primary-600">
-              <Calendar className="w-5 h-5" />
-            </span>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
-              Quản Lý Lịch Dạy Rảnh Rỗi
-            </h2>
-          </div>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mb-1">
+            Quản Lý Lịch Dạy Rảnh Rỗi
+          </h2>
           <p className="text-xs text-slate-500">
             Thiết lập các khung giờ bạn rảnh cố định hàng tuần và cài đặt các ngày bận/rảnh đột xuất.
           </p>

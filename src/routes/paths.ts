@@ -14,5 +14,14 @@ export const ROUTES = {
   DASHBOARD: '/dashboard',
   PROFILE: '/profile',
   USER_PROFILE: '/profile/:userId',
+  MANAGE: {
+    ROOT: '/manage',
+    BOOKINGS: '/manage/bookings',
+    SCHEDULE: '/manage/schedule',
+    POSTS: '/manage/posts',
+    WALLET: '/manage/wallet',
+    MESSAGES: '/manage/messages',
+    DASHBOARD: '/manage/dashboard',
+  },
   NOT_FOUND: '*',
 } as const;
