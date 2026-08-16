@@ -1,16 +1,31 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, CalendarCheck } from 'lucide-react';
-import { Button } from '@/shared/components/ui';
-import { toast } from '@/shared/utils';
+import { ArrowLeft } from 'lucide-react';
 import { useGetMentorPostByIdQuery } from '@/core/api/post/postApi';
-import { MentorPostHeader, MentorScheduleTable } from '../components/details';
-import { RichTextViewer } from '../components/create-post/RichTextEditor';
+import { useGetPublicProfileQuery } from '@/core/api/user/userApi';
+import {
+  PostHero,
+  PostAuthorCard,
+  PostDescriptionCard,
+  PostScheduleSidebar,
+  RelatedPostsSection,
+} from '../components/details';
+import { SKILL_CATEGORY_LABELS } from '../constants';
+import { toast } from '@/shared/utils';
 
 export const MentorPostDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [id]);
+
   const { data: post, isLoading, error } = useGetMentorPostByIdQuery(id || '', {
     skip: !id,
+  });
+
+  const { data: mentorProfile } = useGetPublicProfileQuery(post?.mentorId || '', {
+    skip: !post?.mentorId,
   });
 
   if (isLoading) {
@@ -34,7 +49,7 @@ export const MentorPostDetailPage: React.FC = () => {
           </p>
           <Link
             to="/explore"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs shadow-xs transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary-700 hover:bg-primary-800 text-white font-bold text-xs shadow-xs transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Quay lại trang Khám phá</span>
@@ -44,82 +59,102 @@ export const MentorPostDetailPage: React.FC = () => {
     );
   }
 
+  const mentorName = mentorProfile?.displayName || post.mentorName || 'Mentor';
+  const categoryCode = post.tags?.[0]?.category || 'PROGRAMMING';
+  const categoryLabel = SKILL_CATEGORY_LABELS[categoryCode] || post.tags?.[0]?.skillName || 'CÔNG NGHỆ THÔNG TIN';
+  const trustScore = mentorProfile?.trustScore || post.trustScoreSnapshot || 98;
+  const ratingValue = (trustScore / 20).toFixed(1);
+  const skillTags = post.tags?.map((t) => t.skillName) || ['ReactJS', 'TypeScript'];
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#F8FAFC] py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* Navigation Back */}
         <Link
           to="/explore"
-          className="inline-flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-primary-600 transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-primary-700 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại danh sách bài dạy</span>
         </Link>
 
-        {/* Main Content Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Content (8 Cols) */}
+        {/* Main Content Layout Grid (7:3 ratio with compact gap) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Left Column (8 Cols - 70%) */}
           <div className="lg:col-span-8 space-y-6">
-            {/* Header Component */}
-            <MentorPostHeader post={post} />
+            {/* Card 1: Hero Banner, Title, Badges, Metrics */}
+            <PostHero
+              title={post.title}
+              categoryCode={categoryCode}
+              skills={skillTags}
+              coverImage={post.coverImage}
+              shortDescription={post.shortDescription}
+              ratingValue={ratingValue}
+              reviewsCount={128}
+              durationMinutes={60}
+            />
 
-            {/* Description Section */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-4">
-              <h3 className="text-base font-black text-gray-900 border-b border-gray-100 pb-3">
-                Lộ Trình & Nội Dung Hướng Dẫn
-              </h3>
-              {post.description ? (
-                <RichTextViewer content={post.description} />
-              ) : (
-                <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                  {post.shortDescription || 'Mentor chưa cập nhật mô tả chi tiết lộ trình học.'}
-                </p>
-              )}
-            </div>
+            {/* Card 2: Mentor Profile Card */}
+            <PostAuthorCard
+              authorName={mentorName}
+              authorAvatar={mentorProfile?.avatarUrl || post.mentorAvatar}
+              trustScore={trustScore}
+              badgeText="TOP 5% MENTOR"
+              roleSubtitle={mentorProfile?.bio || 'Người hướng dẫn chuyên môn @ UniTimeBank'}
+              tags={skillTags}
+            />
 
-            {/* Available Schedule Table Component */}
-            <MentorScheduleTable slots={post.availableSlots} />
+            {/* Card 3: Detailed Description Card */}
+            <PostDescriptionCard
+              title="Mô tả chi tiết"
+              description={post.description}
+              shortDescription={post.shortDescription}
+            />
           </div>
 
-          {/* Right Action Sidebar (4 Cols) */}
-          <div className="lg:col-span-4 sticky top-20 space-y-4">
-            <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs space-y-4 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-primary-50 text-primary-600 font-black text-xl flex items-center justify-center mx-auto shadow-xs">
-                {(post.mentorName || 'M').charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <h4 className="text-base font-black text-gray-900">{post.mentorName || 'Mentor UniTime'}</h4>
-                <p className="text-xs font-semibold text-gray-500">Sẵn sàng kèm học 1-on-1</p>
-              </div>
-
-              <div className="pt-2 border-t border-gray-100 space-y-2">
-                <Button
-                  type="button"
-                  variant="primary"
-                  fullWidth
-                  size="md"
-                  onClick={() => toast.info('Tính năng Đặt lịch học', 'Vui lòng sử dụng luồng Booking')}
-                  leftIcon={<CalendarCheck className="w-4 h-4" />}
-                  className="rounded-xl font-bold text-xs"
-                >
-                  <span>Đặt Lịch Học Vẫn Mở</span>
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  fullWidth
-                  size="md"
-                  onClick={() => toast.info('Nhắn tin với Mentor', 'Tính năng trò chuyện trực tiếp đang phát triển')}
-                  leftIcon={<MessageSquare className="w-4 h-4 text-gray-500" />}
-                  className="rounded-xl font-bold text-xs"
-                >
-                  <span>Gửi tin nhắn</span>
-                </Button>
-              </div>
-            </div>
+          {/* Right Column (4 Cols - 30%) */}
+          <div className="lg:col-span-4">
+            {/* Mentor Available Schedule & Action Sidebar */}
+            <PostScheduleSidebar
+              title="Lịch rảnh"
+              mentorId={post.mentorId}
+              slots={post.availableSlots}
+              scheduleType={post.scheduleType}
+              startDate={post.startDate}
+              endDate={post.endDate}
+              creditCost="1"
+              creditRateText="credit / phút"
+              freeTrialText="Miễn phí 5 phút đầu"
+              authorName={mentorName}
+              primaryButtonText="Đặt lịch ngay"
+              onPrimaryAction={(date, slot) => {
+                toast.success(
+                  'Đã gửi yêu cầu đặt lịch học!',
+                  `Ngày ${date} (${slot.startTime} - ${slot.endTime}) với ${mentorName}`,
+                );
+              }}
+            />
           </div>
         </div>
+
+        {/* Bottom Section: Related/Suggested Posts */}
+        <RelatedPostsSection currentPostId={post._id} title="Các lớp học gợi ý khác" />
+
+        {/* Page Footer */}
+        <footer className="pt-8 pb-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500 font-medium">
+          <div>© 2024 UniTimeBank. Nền tảng trao đổi tri thức học thuật.</div>
+          <div className="flex items-center gap-6">
+            <a href="#privacy" className="hover:text-gray-800 transition-colors">
+              Chính sách
+            </a>
+            <a href="#terms" className="hover:text-gray-800 transition-colors">
+              Điều khoản
+            </a>
+            <a href="#help" className="hover:text-gray-800 transition-colors">
+              Trợ giúp
+            </a>
+          </div>
+        </footer>
       </div>
     </div>
   );

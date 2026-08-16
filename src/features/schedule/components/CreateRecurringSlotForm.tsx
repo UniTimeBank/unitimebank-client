@@ -13,85 +13,11 @@ interface CreateRecurringSlotFormProps {
   isCreating: boolean;
 }
 
-const ALL_WEEK_DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-
-const timeToMinutes = (t: string): number => {
-  const [h, m] = t.split(':').map(Number);
-  return (h || 0) * 60 + (m || 0);
-};
-
-const minutesToTime = (mins: number): string => {
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-};
-
-const findFirstAvailableSlotOnDay = (
-  day: DayOfWeek,
-  list: { dayOfWeek: DayOfWeek; startTime: string; endTime: string; isActive?: boolean }[],
-  preferStartFrom = '08:00',
-): { startTime: string; endTime: string } | null => {
-  const occupied = list
-    .filter((s) => s.dayOfWeek === day && (s.isActive ?? true))
-    .map((s) => ({ startTime: s.startTime, endTime: s.endTime }));
-
-  const duration = 60;
-
-  let startM = timeToMinutes(preferStartFrom);
-  while (startM + duration <= 23 * 60 + 45) {
-    const endM = startM + duration;
-    const sStr = minutesToTime(startM);
-    const eStr = minutesToTime(endM);
-
-    const isOverlap = occupied.some((occ) => sStr < occ.endTime && occ.startTime < eStr);
-    if (!isOverlap) {
-      return { startTime: sStr, endTime: eStr };
-    }
-    startM += 15;
-  }
-
-  startM = 7 * 60;
-  const preferM = timeToMinutes(preferStartFrom);
-  while (startM + duration <= preferM) {
-    const endM = startM + duration;
-    const sStr = minutesToTime(startM);
-    const eStr = minutesToTime(endM);
-
-    const isOverlap = occupied.some((occ) => sStr < occ.endTime && occ.startTime < eStr);
-    if (!isOverlap) {
-      return { startTime: sStr, endTime: eStr };
-    }
-    startM += 15;
-  }
-
-  return null;
-};
-
-const findNextAvailableDayAndSlot = (
-  startDay: DayOfWeek,
-  list: { dayOfWeek: DayOfWeek; startTime: string; endTime: string; isActive?: boolean }[],
-  preferStartFrom = '08:00',
-): { day: DayOfWeek; startTime: string; endTime: string } => {
-  const slotOnCurrentDay = findFirstAvailableSlotOnDay(startDay, list, preferStartFrom);
-  if (slotOnCurrentDay) {
-    return { day: startDay, startTime: slotOnCurrentDay.startTime, endTime: slotOnCurrentDay.endTime };
-  }
-
-  const startIndex = ALL_WEEK_DAYS.indexOf(startDay);
-  const otherDays = [
-    ...ALL_WEEK_DAYS.slice(startIndex + 1),
-    ...ALL_WEEK_DAYS.slice(0, startIndex),
-  ];
-
-  for (const day of otherDays) {
-    const slot = findFirstAvailableSlotOnDay(day, list, '08:00');
-    if (slot) {
-      return { day, startTime: slot.startTime, endTime: slot.endTime };
-    }
-  }
-
-  return { day: startDay, startTime: '08:00', endTime: '09:00' };
-};
+import {
+  ALL_WEEK_DAYS,
+  findFirstAvailableSlotOnDay,
+  findNextAvailableDayAndSlot,
+} from '../utils';
 
 export const CreateRecurringSlotForm: React.FC<CreateRecurringSlotFormProps> = ({
   recurringList,

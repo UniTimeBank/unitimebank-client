@@ -82,10 +82,12 @@ export const TimeInput: React.FC<TimeInputProps> = ({
 
   // Đồng bộ giá trị từ prop vào state nội bộ
   useEffect(() => {
-    const [h, m] = (value || '19:00').split(':');
+    const [h, m] = (value || '08:00').split(':');
     if (h && h !== activeHour) setActiveHour(h);
-    if (m && m !== activeMinute) setActiveMinute(m);
-  }, [value]);
+    const rawM = parseInt(m || '00', 10);
+    const snappedM = String(roundMinuteToStep(rawM, minuteStep)).padStart(2, '0');
+    if (snappedM !== activeMinute) setActiveMinute(snappedM);
+  }, [value, minuteStep]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -124,7 +126,12 @@ export const TimeInput: React.FC<TimeInputProps> = ({
 
   const scrollToMinute = useCallback((mVal: string, smooth = false) => {
     if (!minuteListRef.current) return;
-    const idx = availableMinutes.indexOf(mVal);
+    let idx = availableMinutes.indexOf(mVal);
+    if (idx < 0) {
+      const rawM = parseInt(mVal || '00', 10);
+      const snapped = String(roundMinuteToStep(rawM, minuteStep)).padStart(2, '0');
+      idx = availableMinutes.indexOf(snapped);
+    }
     if (idx >= 0) {
       isInternalScrollRef.current = true;
       minuteListRef.current.scrollTo({
@@ -135,18 +142,20 @@ export const TimeInput: React.FC<TimeInputProps> = ({
         isInternalScrollRef.current = false;
       }, 150);
     }
-  }, [availableMinutes]);
+  }, [availableMinutes, minuteStep]);
 
   // Định vị khi mở popup
   useEffect(() => {
     if (isOpen) {
-      const [h, m] = (value || '19:00').split(':');
+      const [h, m] = (value || '08:00').split(':');
+      const rawM = parseInt(m || '00', 10);
+      const snappedM = String(roundMinuteToStep(rawM, minuteStep)).padStart(2, '0');
       requestAnimationFrame(() => {
         scrollToHour(h || availableHours[0], false);
-        scrollToMinute(m || availableMinutes[0], false);
+        scrollToMinute(snappedM || availableMinutes[0], false);
       });
     }
-  }, [isOpen, scrollToHour, scrollToMinute, value, availableHours, availableMinutes]);
+  }, [isOpen, scrollToHour, scrollToMinute, value, availableHours, availableMinutes, minuteStep]);
 
   // Kiểm tra giờ bị khóa
   const isHourBlocked = useCallback(

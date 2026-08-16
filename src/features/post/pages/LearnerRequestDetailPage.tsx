@@ -1,16 +1,31 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, MessageSquare, Handshake } from 'lucide-react';
-import { Button } from '@/shared/components/ui';
-import { toast } from '@/shared/utils';
+import { ArrowLeft } from 'lucide-react';
 import { useGetLearnerRequestByIdQuery } from '@/core/api/post/postApi';
-import { LearnerRequestHeader, LearnerDesiredSlotsTable } from '../components/details';
-import { RichTextViewer } from '../components/create-post/RichTextEditor';
+import { useGetPublicProfileQuery } from '@/core/api/user/userApi';
+import {
+  PostHero,
+  PostAuthorCard,
+  PostDescriptionCard,
+  LearnerRequestDetailSidebar,
+  RelatedPostsSection,
+} from '../components/details';
+import { SKILL_CATEGORY_LABELS } from '../constants';
+import { toast } from '@/shared/utils';
 
 export const LearnerRequestDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [id]);
+
   const { data: request, isLoading, error } = useGetLearnerRequestByIdQuery(id || '', {
     skip: !id,
+  });
+
+  const { data: learnerProfile } = useGetPublicProfileQuery(request?.learnerId || '', {
+    skip: !request?.learnerId,
   });
 
   if (isLoading) {
@@ -18,7 +33,7 @@ export const LearnerRequestDetailPage: React.FC = () => {
       <div className="min-h-screen bg-[#F8FAFC] py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="text-center space-y-3">
           <div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs font-bold text-gray-500">Đang tải chi tiết yêu cầu học...</p>
+          <p className="text-xs font-bold text-gray-500">Đang tải thông tin yêu cầu học...</p>
         </div>
       </div>
     );
@@ -30,97 +45,112 @@ export const LearnerRequestDetailPage: React.FC = () => {
         <div className="bg-white rounded-3xl p-8 border border-gray-200 text-center space-y-4 max-w-md">
           <h3 className="text-lg font-black text-gray-900">Không tìm thấy yêu cầu</h3>
           <p className="text-xs text-gray-500 font-medium">
-            Bài đăng tìm người dạy này không tồn tại hoặc đã bị gỡ.
+            Yêu cầu học này không tồn tại hoặc đã được nhận bởi gia sư khác.
           </p>
           <Link
             to="/explore"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs shadow-xs transition-colors"
+            className="inline-block px-5 py-2.5 bg-primary-700 hover:bg-primary-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Quay lại trang Khám phá</span>
+            Khám phá yêu cầu khác
           </Link>
         </div>
       </div>
     );
   }
 
+  const learnerName = request.learnerName || learnerProfile?.displayName || 'Học viên UniTimeBank';
+  const categoryCode = request.category || 'OTHER';
+  const categoryLabel = SKILL_CATEGORY_LABELS[categoryCode] || request.category || 'YÊU CẦU HỌC TẬP';
+  const trustScore = (learnerProfile as any)?.trustScoreSnapshot || (learnerProfile as any)?.trustScore || 85;
+  const ratingValue = 5.0;
+  const durationMinutes = request.expectedDurationMinutes || 60;
+  const creditBudget = request.expectedCreditAmount || durationMinutes;
+
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto space-y-6">
-        {/* Navigation Back */}
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Back Link */}
         <Link
           to="/explore"
-          className="inline-flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-primary-600 transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-bold text-gray-500 hover:text-primary-700 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại danh sách yêu cầu</span>
         </Link>
 
-        {/* Main Content Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Content (8 Cols) */}
+        {/* Main Content Layout Grid (7:3 ratio with compact gap) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          {/* Left Column (8 Cols - 70%) */}
           <div className="lg:col-span-8 space-y-6">
-            {/* Header Component */}
-            <LearnerRequestHeader request={request} />
+            {/* Card 1: Hero Banner, Title, Badges, Metrics */}
+            <PostHero
+              title={`Cần tìm Mentor kèm: ${request.skillNeeded}`}
+              categoryCode={categoryCode}
+              skills={[request.skillNeeded]}
+              coverImage={request.coverImage}
+              shortDescription={request.shortDescription}
+              ratingValue={ratingValue.toFixed(1)}
+              reviewsCount={56}
+              durationMinutes={durationMinutes}
+            />
 
-            {/* Content & Problem Explanation Section */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200/80 shadow-xs space-y-4">
-              <h3 className="text-base font-black text-gray-900 border-b border-gray-100 pb-3">
-                Chi Tiết Bài Tập & Thắc Mắc Cần Giải Đáp
-              </h3>
-              {request.description ? (
-                <RichTextViewer content={request.description} />
-              ) : (
-                <p className="text-xs text-gray-600 leading-relaxed font-medium">
-                  {request.shortDescription || 'Học viên chưa mô tả thêm chi tiết nội dung vướng mắc.'}
-                </p>
-              )}
-            </div>
+            {/* Card 2: Learner Profile Card */}
+            <PostAuthorCard
+              authorName={learnerName}
+              authorAvatar={learnerProfile?.avatarUrl || request.learnerAvatar}
+              trustScore={trustScore}
+              badgeText="HỌC VIÊN TÍCH CỰC"
+              roleSubtitle={learnerProfile?.bio || 'Học viên tìm kiếm người hướng dẫn 1-1 trên UniTimeBank'}
+              tags={[request.skillNeeded]}
+            />
 
-            {/* Desired Schedule Table Component */}
-            <LearnerDesiredSlotsTable slots={request.desiredSlots} />
+            {/* Card 3: Detailed Description Card */}
+            <PostDescriptionCard
+              title="Chi tiết bài tập & thắc mắc cần giải đáp"
+              description={request.description}
+              shortDescription={request.shortDescription}
+            />
           </div>
 
-          {/* Right Action Sidebar (4 Cols) */}
-          <div className="lg:col-span-4 sticky top-20 space-y-4">
-            <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs space-y-4 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-primary-50 text-primary-600 font-black text-xl flex items-center justify-center mx-auto shadow-xs">
-                {(request.learnerName || 'H').charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <h4 className="text-base font-black text-gray-900">{request.learnerName || 'Học viên UniTime'}</h4>
-                <p className="text-xs font-semibold text-gray-500">Đang tìm Mentor hướng dẫn</p>
-              </div>
-
-              <div className="pt-2 border-t border-gray-100 space-y-2">
-                <Button
-                  type="button"
-                  variant="primary"
-                  fullWidth
-                  size="md"
-                  onClick={() => toast.success('Đã gửi thông báo đề nghị dạy', 'Learner sẽ xem profile của bạn để chốt lịch!')}
-                  leftIcon={<Handshake className="w-4 h-4" />}
-                  className="rounded-xl font-bold text-xs"
-                >
-                  <span>Tôi Có Thể Dạy Môn Này</span>
-                </Button>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  fullWidth
-                  size="md"
-                  onClick={() => toast.info('Nhắn tin với Học viên', 'Tính năng trò chuyện trực tiếp đang phát triển')}
-                  leftIcon={<MessageSquare className="w-4 h-4 text-gray-500" />}
-                  className="rounded-xl font-bold text-xs"
-                >
-                  <span>Gửi tin nhắn</span>
-                </Button>
-              </div>
-            </div>
+          {/* Right Column (4 Cols - 30%) */}
+          <div className="lg:col-span-4">
+            {/* Learner Desired Schedule & Action Sidebar */}
+            <LearnerRequestDetailSidebar
+              title="Khung giờ học viên rảnh"
+              slots={request.desiredSlots}
+              expectedCreditAmount={request.expectedCreditAmount || durationMinutes}
+              expectedDurationMinutes={durationMinutes}
+              learnerName={learnerName}
+              primaryButtonText="Nhận dạy yêu cầu này"
+              onPrimaryAction={(slot) => {
+                toast.success(
+                  'Đã gửi đề nghị nhận dạy!',
+                  `Khung giờ: ${slot.dayOfWeek} (${slot.startTime} - ${slot.endTime}) cho ${learnerName}`,
+                );
+              }}
+            />
           </div>
         </div>
-      </div>
+
+        {/* Bottom Section: Related/Suggested Posts */}
+        <RelatedPostsSection currentPostId={request._id} title="Các bài đăng gợi ý khác" />
+
+        {/* Page Footer */}
+        <footer className="pt-8 pb-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500 font-medium">
+          <div>© 2024 UniTimeBank. Nền tảng trao đổi tri thức học thuật.</div>
+          <div className="flex items-center gap-6">
+            <a href="#privacy" className="hover:text-gray-800 transition-colors">
+              Chính sách
+            </a>
+            <a href="#terms" className="hover:text-gray-800 transition-colors">
+              Điều khoản
+            </a>
+            <a href="#help" className="hover:text-gray-800 transition-colors">
+              Trợ giúp
+            </a>
+          </div>
+        </footer>
+      </main>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Calendar as CalendarIcon,
   Trash2,
@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { TimeInput, DateInput } from '@/shared/components/ui';
 import type { ExceptionType, ScheduleException } from '../types';
+import { findFirstAvailableSlotOnDate, formatLocalDate } from '../utils';
 
 interface ScheduleExceptionsTabProps {
   exceptionsList: ScheduleException[];
@@ -33,23 +34,41 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
   onDelete,
   isCreating,
 }) => {
-  const getTodayLocalDate = () => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const todayStr = getTodayLocalDate();
+  const todayStr = formatLocalDate(new Date());
 
   const [date, setDate] = useState(todayStr);
   const [type, setType] = useState<ExceptionType>('BLOCKED');
-  const [startTime, setStartTime] = useState('07:57');
-  const [endTime, setEndTime] = useState('08:00');
+  const [startTime, setStartTime] = useState('08:00');
+  const [endTime, setEndTime] = useState('09:00');
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Tự động tìm khung giờ trống đầu tiên khi danh sách ngoại lệ được tải hoặc có thay đổi xung đột
+  useEffect(() => {
+    if (!isLoading && exceptionsList.length > 0) {
+      const isConflict = exceptionsList.some((s) => {
+        if (s.exceptionDate !== date) return false;
+        return startTime < s.endTime && s.startTime < endTime;
+      });
+
+      if (isConflict) {
+        const nextSlot = findFirstAvailableSlotOnDate(date, exceptionsList, '08:00');
+        setStartTime(nextSlot.startTime);
+        setEndTime(nextSlot.endTime);
+      }
+    }
+  }, [isLoading, exceptionsList, date]);
+
+  // Xử lý khi người dùng đổi ngày: tự động tìm khung giờ không trùng cho ngày mới
+  const handleDateChange = (newDate: string) => {
+    setError('');
+    setSuccessMsg('');
+    setDate(newDate);
+    const nextSlot = findFirstAvailableSlotOnDate(newDate, exceptionsList, '08:00');
+    setStartTime(nextSlot.startTime);
+    setEndTime(nextSlot.endTime);
+  };
 
   // Lấy các khoảng thời gian đã bận / đã có ngoại lệ trên ngày đang chọn
   const occupiedIntervalsOnDate = useMemo(() => {
@@ -131,6 +150,18 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
       setReason('');
       setSuccessMsg('Đã lưu lịch đặc biệt thành công!');
       setTimeout(() => setSuccessMsg(''), 4000);
+
+      // Tự động chọn khung giờ trống kế tiếp
+      const nextSlot = findFirstAvailableSlotOnDate(
+        date,
+        [
+          ...exceptionsList,
+          { id: 'new', mentorId: '', exceptionDate: date, type, startTime, endTime },
+        ],
+        endTime,
+      );
+      setStartTime(nextSlot.startTime);
+      setEndTime(nextSlot.endTime);
     } catch (err: any) {
       setError(err?.data?.message || err?.message || 'Không thể tạo lịch đặc biệt');
     }
@@ -177,11 +208,7 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
               <DateInput
                 label="NGÀY"
                 value={date}
-                onChange={(val) => {
-                  setError('');
-                  setSuccessMsg('');
-                  setDate(val);
-                }}
+                onChange={handleDateChange}
               />
             </div>
 

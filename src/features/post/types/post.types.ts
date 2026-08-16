@@ -49,6 +49,7 @@ export interface MentorPost {
   mentorId: string;
   mentorName?: string;
   mentorAvatar?: string;
+  coverImage?: string;
   title: string;
   description?: string;
   shortDescription?: string;
@@ -69,11 +70,16 @@ export interface LearnerRequest {
   learnerId: string;
   learnerName?: string;
   learnerAvatar?: string;
+  coverImage?: string;
   skillNeeded: string;
   category: string;
   description?: string;
   shortDescription?: string;
   sessionType: SessionType;
+  scheduleType?: PostScheduleType;
+  startDate?: string;
+  endDate?: string;
+  deadline?: string;
   expectedDurationMinutes: number;
   expectedCreditAmount: number;
   desiredSlots: TimeSlot[];
