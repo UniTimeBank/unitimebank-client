@@ -18,6 +18,7 @@ import {
   PublicStatsGrid,
   PeerReviewsSection,
   ExpertiseTrackCard,
+  RegisteredSkillsSection,
 } from '../components';
 import { useUserProfile, useUserSkills, useDailyCheckin } from '../hooks';
 
@@ -326,50 +327,13 @@ export const UserProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Bottom section: Real Skills Tags integrated seamlessly */}
+            {/* Bottom section: Real Skills Tags categorized seamlessly */}
             <div id="skills-section" className="mt-6 pt-5 border-t border-gray-100">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-xs font-extrabold text-gray-900 uppercase tracking-wider">
-                  Kỹ năng & Bài dạy của tôi
-                </span>
-                <span className="px-2 py-0.5 text-[10px] font-bold bg-primary-50 text-primary-700 rounded-full">
-                  {skills.length} kỹ năng
-                </span>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {skills.length > 0 ? (
-                  skills.map((skill) => (
-                    <span
-                      key={skill.id || skill.skillName}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-gray-50 hover:bg-primary-50 text-gray-800 hover:text-primary-800 text-xs font-semibold rounded-xl border border-gray-200/70 hover:border-primary-200 group transition-all"
-                    >
-                      <span className="max-w-[220px] truncate">{skill.skillName}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteSkill(skill.id)}
-                        className="text-gray-400 hover:text-red-500 font-bold p-0.5 rounded-full hover:bg-red-50 transition-colors cursor-pointer"
-                        title={`Xóa kỹ năng ${skill.skillName}`}
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-xs text-gray-400 italic">
-                    Bạn chưa có kỹ năng nào. Hãy bấm nút "+ Thêm" để đăng ký kỹ năng thế mạnh của mình.
-                  </span>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setIsAddSkillModalOpen(true)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 border border-dashed border-primary-300 text-primary-600 hover:bg-primary-50/80 text-xs font-semibold rounded-xl transition-all cursor-pointer ml-1"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Thêm</span>
-                </button>
-              </div>
+              <RegisteredSkillsSection
+                skills={skills}
+                onOpenAddSkillModal={() => setIsAddSkillModalOpen(true)}
+                onDeleteSkill={handleDeleteSkill}
+              />
             </div>
           </div>
 
@@ -471,7 +435,7 @@ export const UserProfilePage: React.FC = () => {
                 userName={userName}
                 avatarUrl={avatarUrl}
                 bio={bio}
-                skillsList={skills.map((s) => s.skillName)}
+                skills={skills}
                 isLiked={isLiked}
                 onToggleLike={() => setIsLiked(!isLiked)}
               />

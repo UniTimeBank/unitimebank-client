@@ -16,6 +16,7 @@ export const OpenRequestsPage: React.FC = () => {
 
   const [mentorPreview, setMentorPreview] = useState<MentorOfferFormState>({
     title: '',
+    category: 'PROGRAMMING' as any,
     coverImage: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600',
     skillsText: '',
     shortDescription: '',
@@ -57,6 +58,7 @@ export const OpenRequestsPage: React.FC = () => {
             <div className="lg:col-span-5 sticky top-20">
               <MentorPostPreview
                 title={mentorPreview.title}
+                category={mentorPreview.category}
                 shortDescription={mentorPreview.shortDescription}
                 description={mentorPreview.description}
                 coverImage={mentorPreview.coverImage}

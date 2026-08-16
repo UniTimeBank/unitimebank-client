@@ -14,7 +14,7 @@ import {
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react';
-import { Button, Input, DateInput } from '@/shared/components/ui';
+import { Button, Input, DateInput, Select } from '@/shared/components/ui';
 import { useMentorSchedule, QuickAddScheduleModal, ALL_DAYS, formatLocalDate } from '@/features/schedule';
 import { useUserSkills } from '@/features/user';
 import { useCreateMentorPostMutation } from '@/core/api/post/postApi';
@@ -23,6 +23,18 @@ import { SkillMultiSelectCombobox } from './SkillMultiSelectCombobox';
 import { RichTextEditor } from './RichTextEditor';
 import type { SkillCategoryEnum } from '@/features/user/types';
 import { PRESET_COVER_IMAGES } from '../../constants';
+
+const CATEGORY_OPTIONS = [
+  { label: 'Lập trình', value: SkillCategoryName.PROGRAMMING },
+  { label: 'Ngoại ngữ', value: SkillCategoryName.LANGUAGE },
+  { label: 'Thiết kế', value: SkillCategoryName.DESIGN },
+  { label: 'Học thuật', value: SkillCategoryName.ACADEMIC },
+  { label: 'Kinh doanh', value: SkillCategoryName.BUSINESS },
+  { label: 'Kỹ năng mềm', value: SkillCategoryName.SOFT_SKILLS },
+  { label: 'Âm nhạc', value: SkillCategoryName.MUSIC },
+  { label: 'Thể thao', value: SkillCategoryName.SPORTS },
+  { label: 'Khác', value: SkillCategoryName.OTHER },
+];
 
 const DAY_ORDER: Record<string, number> = {
   MON: 1,
@@ -46,6 +58,7 @@ const DAY_MAP_TO_BACKEND: Record<string, string> = {
 
 export interface MentorOfferFormState {
   title: string;
+  category: SkillCategoryName;
   coverImage: string;
   skillsText: string;
   shortDescription: string;
@@ -77,6 +90,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
 
   // Internal Form State
   const [title, setTitle] = useState('');
+  const [category, setCategory] = useState<SkillCategoryName>(SkillCategoryName.PROGRAMMING);
   const [coverImage, setCoverImage] = useState(
     'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600'
   );
@@ -98,6 +112,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
   useEffect(() => {
     onPreviewChange?.({
       title,
+      category,
       coverImage,
       skillsText,
       shortDescription,
@@ -109,6 +124,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
     });
   }, [
     title,
+    category,
     coverImage,
     skillsText,
     shortDescription,
@@ -452,22 +468,16 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
       return;
     }
 
-    let tags = skillsList.map((skillName) => {
-      const matched = profileSkills?.find(
-        (ps) => ps.skillName.toLowerCase() === skillName.toLowerCase()
-      );
-      const cat = (matched?.category as SkillCategoryName) || SkillCategoryName.PROGRAMMING;
-      return {
-        skillName,
-        category: cat,
-      };
-    });
+    let tags = skillsList.map((skillName) => ({
+      skillName,
+      category,
+    }));
 
     if (tags.length === 0) {
       tags = [
         {
           skillName: title.trim().slice(0, 30),
-          category: SkillCategoryName.PROGRAMMING,
+          category,
         },
       ];
     }
@@ -631,13 +641,27 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
           </div>
         </div>
 
-        {/* ------------------------------------------------------------- */}
-        {/* COMBOBOX CHỌN NHIỀU KỸ NĂNG + ĐỒNG BỘ TRỰC TIẾP VỚI PROFILE */}
-        {/* ------------------------------------------------------------- */}
+        {/* Category Selector */}
+        <div id="field-mentor-category">
+          <Select
+            label="DANH MỤC LĨNH VỰC *"
+            options={CATEGORY_OPTIONS}
+            value={category}
+            onChange={(val) => {
+              const newCat = val as SkillCategoryName;
+              if (newCat !== category) {
+                setCategory(newCat);
+                setSkillsText(''); // Tự động reset kỹ năng khi đổi danh mục
+                setErrors((prev) => ({ ...prev, skills: '' }));
+              }
+            }}
+          />
+        </div>
+
         <div id="field-mentor-skills">
           <SkillMultiSelectCombobox
-            label="KỸ NĂNG TRUYỀN ĐẠT CỦA BÀI DẠY *"
-            placeholder="Nhấp để chọn kỹ năng từ hồ sơ hoặc thêm mới..."
+            category={category}
+            label="KỸ NĂNG BÀI DẠY *"
             selectedSkills={selectedSkills}
             availableSkills={profileSkills}
             onToggleSkill={handleToggleSkill}

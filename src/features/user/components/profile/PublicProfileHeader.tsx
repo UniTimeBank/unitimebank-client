@@ -1,12 +1,14 @@
 import React from 'react';
 import { toast } from 'react-hot-toast';
 import { Share2, Heart } from 'lucide-react';
+import type { UserSkill } from '../../types';
+import { RegisteredSkillsSection } from './RegisteredSkillsSection';
 
 interface PublicProfileHeaderProps {
   userName: string;
   avatarUrl: string;
   bio: string;
-  skillsList: string[];
+  skills: UserSkill[];
   isLiked: boolean;
   onToggleLike: () => void;
 }
@@ -15,12 +17,12 @@ export const PublicProfileHeader: React.FC<PublicProfileHeaderProps> = ({
   userName,
   avatarUrl,
   bio,
-  skillsList,
+  skills,
   isLiked,
   onToggleLike,
 }) => {
   return (
-    <div className="bg-white rounded-3xl p-6 sm:p-7 border border-primary-100/80 shadow-xs relative">
+    <div className="bg-white rounded-3xl p-6 sm:p-7 border border-primary-100/80 shadow-xs relative space-y-6">
       <div className="flex flex-col md:flex-row items-start gap-6">
         {/* Avatar Standalone */}
         <div className="relative flex-shrink-0">
@@ -39,7 +41,6 @@ export const PublicProfileHeader: React.FC<PublicProfileHeaderProps> = ({
 
             {/* Public Actions (Share & Heart) */}
             <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-
               <button
                 type="button"
                 onClick={() => {
@@ -57,10 +58,11 @@ export const PublicProfileHeader: React.FC<PublicProfileHeaderProps> = ({
               <button
                 type="button"
                 onClick={onToggleLike}
-                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-colors cursor-pointer ${isLiked
-                  ? 'border-red-200 bg-red-50 text-red-500'
-                  : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-                  }`}
+                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-colors cursor-pointer ${
+                  isLiked
+                    ? 'border-red-200 bg-red-50 text-red-500'
+                    : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                }`}
                 title={isLiked ? 'Bỏ yêu thích' : 'Yêu thích người dạy này'}
               >
                 <Heart className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
@@ -69,23 +71,19 @@ export const PublicProfileHeader: React.FC<PublicProfileHeaderProps> = ({
           </div>
 
           <div className="mt-2.5 pl-3.5 border-l-2 border-primary-500/70 py-0.5 max-w-xl">
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-              {bio}
-            </p>
-          </div>
-
-          {/* Skills tags - READ ONLY */}
-          <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-gray-100">
-            {skillsList.map((skill) => (
-              <span
-                key={skill}
-                className="inline-flex items-center px-3 py-1 bg-gray-100 text-gray-700 text-[11px] font-semibold rounded-xl"
-              >
-                {skill}
-              </span>
-            ))}
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">{bio}</p>
           </div>
         </div>
+      </div>
+
+      {/* Categorized Skills Section - Read Only for Public Guest View */}
+      <div className="pt-4 border-t border-gray-100">
+        <RegisteredSkillsSection
+          skills={skills}
+          onOpenAddSkillModal={() => {}}
+          onDeleteSkill={() => {}}
+          isReadOnly={true}
+        />
       </div>
     </div>
   );

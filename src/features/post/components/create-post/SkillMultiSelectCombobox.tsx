@@ -1,6 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, Check, Plus, X, Search } from 'lucide-react';
-import { Button } from '@/shared/components/ui';
+import React, { useState, useMemo } from 'react';
+import { Plus, X, Check } from 'lucide-react';
 import { AddSkillModal } from '@/features/user';
 import type { SkillCategoryEnum } from '@/features/user/types';
 
@@ -11,6 +10,7 @@ export interface SkillOption {
 }
 
 interface SkillMultiSelectComboboxProps {
+  category: string;
   selectedSkills: string[];
   availableSkills: SkillOption[];
   onToggleSkill: (skillName: string) => void;
@@ -21,89 +21,35 @@ interface SkillMultiSelectComboboxProps {
   error?: string;
 }
 
-// Helper lấy key duy nhất cho từng kỹ năng (ưu tiên id từ DB)
-const getSkillKey = (item: SkillOption): string => {
-  return item.id ? item.id : `${item.skillName.trim().toLowerCase()}`;
-};
-
 export const SkillMultiSelectCombobox: React.FC<SkillMultiSelectComboboxProps> = ({
+  category,
   selectedSkills,
   availableSkills,
   onToggleSkill,
   onRemoveSkill,
   onAddNewSkillToProfile,
-  label = 'KỸ NĂNG TRUYỀN ĐẠT CỦA BÀI DẠY *',
-  placeholder = 'Chọn kỹ năng từ hồ sơ của bạn...',
+  label = 'KỸ NĂNG & BÀI DẠY CỦA TÔI *',
   error,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Quản lý danh sách các Key duy nhất được chọn
-  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
-  const isInitializedRef = useRef(false);
+  // Lọc danh sách kỹ năng trong hồ sơ thuộc đúng danh mục đang chọn
+  const profileSkillsForCategory = useMemo(() => {
+    const normCat = category?.toUpperCase();
+    return availableSkills.filter((s) => {
+      if (!s.category) return true;
+      return s.category?.toUpperCase() === normCat;
+    });
+  }, [availableSkills, category]);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Khởi tạo ban đầu chỉ 1 lần duy nhất khi availableSkills tải xong
-  useEffect(() => {
-    if (!isInitializedRef.current && availableSkills.length > 0 && selectedSkills.length > 0) {
-      const initialKeys: string[] = [];
-      selectedSkills.forEach((name) => {
-        const match = availableSkills.find(
-          (s) => s.skillName.toLowerCase() === name.toLowerCase() && !initialKeys.includes(getSkillKey(s))
-        );
-        if (match) {
-          initialKeys.push(getSkillKey(match));
-        }
-      });
-      setSelectedKeys(initialKeys);
-      isInitializedRef.current = true;
-    }
-  }, [availableSkills, selectedSkills]);
-
-  // Click outside to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Focus search input when dropdown opens
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => {
-        searchInputRef.current?.focus();
-      }, 50);
-    }
-  }, [isOpen]);
-
-  const filteredSkills = availableSkills.filter((s) =>
-    s.skillName.toLowerCase().includes(searchQuery.trim().toLowerCase())
-  );
-
-  const handleToggleItem = (item: SkillOption) => {
-    const key = getSkillKey(item);
-    const isCurrentlySelected = selectedKeys.includes(key);
-
-    if (isCurrentlySelected) {
-      setSelectedKeys((prev) => prev.filter((k) => k !== key));
-      onRemoveSkill(item.skillName);
+  const handleToggle = (skillName: string) => {
+    const trimmed = skillName.trim();
+    if (!trimmed) return;
+    if (selectedSkills.includes(trimmed)) {
+      onRemoveSkill(trimmed);
     } else {
-      setSelectedKeys((prev) => [...prev, key]);
-      onToggleSkill(item.skillName);
+      onToggleSkill(trimmed);
     }
-  };
-
-  const handleRemoveByKey = (key: string, skillName: string) => {
-    setSelectedKeys((prev) => prev.filter((k) => k !== key));
-    onRemoveSkill(skillName);
   };
 
   const handleModalAddSuccess = async (name: string, cat: SkillCategoryEnum, isStrong: boolean) => {
@@ -113,23 +59,10 @@ export const SkillMultiSelectCombobox: React.FC<SkillMultiSelectComboboxProps> =
     }
   };
 
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      e.stopPropagation();
-      if (filteredSkills.length === 1) {
-        handleToggleItem(filteredSkills[0]);
-        setSearchQuery('');
-      }
-    }
-  };
-
-  // Danh sách các item thực tế đang được chọn dựa trên selectedKeys
-  const selectedItemsList = availableSkills.filter((s) => selectedKeys.includes(getSkillKey(s)));
-
   return (
-    <div className="relative w-full space-y-2" ref={containerRef}>
-      <div className="flex items-center justify-between">
+    <div className="w-full">
+      {/* 1. Header Label (Đồng bộ 100% với Select và Input UI, căn phải số lượng) */}
+      <div className="flex items-center justify-between mb-1">
         <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
           {typeof label === 'string' && label.includes('*') ? (
             <>
@@ -139,142 +72,74 @@ export const SkillMultiSelectCombobox: React.FC<SkillMultiSelectComboboxProps> =
             label
           )}
         </label>
-        <span className="text-[11px] text-gray-400 font-medium">
-          Đã chọn {selectedKeys.length} kỹ năng
-        </span>
+        {selectedSkills.length > 0 && (
+          <span className="text-[11px] font-normal text-gray-400">
+            Đã chọn {selectedSkills.length} kỹ năng
+          </span>
+        )}
       </div>
 
-      {/* Main Combobox Trigger Field */}
-      <div
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full min-h-[46px] px-3.5 py-2 rounded-xl border text-sm flex items-center justify-between gap-2 bg-white transition-all duration-150 cursor-pointer ${
-          error
-            ? 'border-red-500 ring-2 ring-red-100 shadow-xs'
-            : isOpen
-            ? 'border-primary-500 ring-2 ring-primary-100 shadow-xs'
-            : 'border-gray-200 hover:border-gray-300'
-        }`}
-      >
-        <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-          {selectedItemsList.length > 0 ? (
-            selectedItemsList.map((item) => {
-              const key = getSkillKey(item);
+      {/* 2. Chips Container: Nền trắng clean */}
+      <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-white border border-gray-200 hover:border-gray-300 min-h-[48px] transition-all duration-200">
+        {/* Render các kỹ năng thuộc danh mục này trong hồ sơ */}
+        {profileSkillsForCategory.map((item) => {
+          const isSelected = selectedSkills.includes(item.skillName);
 
-              return (
-                <span
-                  key={key}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#005F4F] text-white text-xs font-bold rounded-lg shadow-2xs animate-in fade-in zoom-in-95 duration-100"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <span>{item.skillName}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveByKey(key, item.skillName)}
-                    className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-0.5 transition-colors cursor-pointer ml-0.5"
-                    title={`Gỡ bỏ ${item.skillName}`}
-                  >
-                    <X className="w-3 h-3 stroke-[2.5]" />
-                  </button>
-                </span>
-              );
-            })
-          ) : (
-            <span className="text-gray-400 text-xs font-medium">{placeholder}</span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1 text-gray-400 shrink-0">
-          <ChevronDown
-            className={`w-4 h-4 transition-transform duration-200 ${
-              isOpen ? 'rotate-180 text-primary-600' : ''
-            }`}
-          />
-        </div>
-      </div>
-
-      {error && (
-        <p className="mt-1 text-xs text-red-500">{error}</p>
-      )}
-
-      {/* Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute z-50 left-0 right-0 top-full mt-1.5 bg-white rounded-2xl border border-gray-200 shadow-xl overflow-hidden p-2 space-y-2 animate-in fade-in zoom-in-95 duration-150">
-          {/* Search Box inside dropdown */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              placeholder="Tìm kỹ năng từ hồ sơ..."
-              className="w-full pl-8.5 pr-3.5 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-hidden focus:border-primary-500 font-medium"
-            />
-          </div>
-
-          {/* Skills List */}
-          <div className="max-h-56 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
-            {filteredSkills.length > 0 ? (
-              filteredSkills.map((item) => {
-                const key = getSkillKey(item);
-                const isSelected = selectedKeys.includes(key);
-
-                return (
-                  <div
-                    key={key}
-                    onClick={() => handleToggleItem(item)}
-                    className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium cursor-pointer transition-colors ${
-                      isSelected
-                        ? 'bg-primary-50 text-primary-800 font-bold'
-                        : 'hover:bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-4 h-4 rounded flex items-center justify-center border transition-colors ${
-                          isSelected
-                            ? 'bg-primary-600 border-primary-600 text-white'
-                            : 'border-gray-300 bg-white'
-                        }`}
-                      >
-                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                      </div>
-                      <span>{item.skillName}</span>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="p-3 text-center text-xs text-gray-400 font-medium">
-                Không tìm thấy kỹ năng phù hợp. Bấm "+ Thêm kỹ năng mới" bên dưới để thêm vào hồ sơ.
-              </div>
-            )}
-          </div>
-
-          {/* Bottom Action to Open Full Add Skill Modal */}
-          <div className="pt-2 border-t border-gray-100 flex items-center justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setIsOpen(false);
-                setIsAddModalOpen(true);
-              }}
-              leftIcon={<Plus className="w-3.5 h-3.5" />}
-              className="text-xs font-bold rounded-xl py-1.5 px-3 h-auto text-primary-700 hover:bg-primary-50"
+          return isSelected ? (
+            // Chip Đã Chọn: có nút X
+            <span
+              key={item.id || item.skillName}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200/90 text-slate-800 text-xs font-medium animate-in fade-in zoom-in-95 duration-100"
             >
-              Thêm kỹ năng mới
-            </Button>
-          </div>
-        </div>
-      )}
+              <span className="leading-none">{item.skillName}</span>
+              <button
+                type="button"
+                onClick={() => onRemoveSkill(item.skillName)}
+                className="inline-flex items-center justify-center w-4 h-4 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors cursor-pointer shrink-0 -mr-0.5"
+                title={`Bỏ chọn ${item.skillName}`}
+              >
+                <X className="w-3 h-3 stroke-[2.5]" />
+              </button>
+            </span>
+          ) : (
+            // Chip Chưa Chọn: bấm vào để chọn
+            <button
+              key={item.id || item.skillName}
+              type="button"
+              onClick={() => handleToggle(item.skillName)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-dashed border-gray-300 text-gray-600 hover:border-emerald-500 hover:text-emerald-700 hover:bg-emerald-50/40 text-xs font-medium transition-all cursor-pointer"
+            >
+              <Plus className="w-3 h-3 shrink-0" />
+              <span className="leading-none">{item.skillName}</span>
+            </button>
+          );
+        })}
+
+        {/* Nút "+ Thêm" viền nét đứt bo tròn */}
+        <button
+          type="button"
+          onClick={() => setIsAddModalOpen(true)}
+          className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full border border-dashed border-emerald-500 text-emerald-700 bg-emerald-50/50 hover:bg-emerald-100/60 text-xs font-bold transition-all cursor-pointer"
+        >
+          <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+          <span>Thêm</span>
+        </button>
+
+        {profileSkillsForCategory.length === 0 && selectedSkills.length === 0 && (
+          <span className="text-xs text-gray-400 font-normal pl-1">
+            Chưa có kỹ năng nào thuộc danh mục này trong hồ sơ.
+          </span>
+        )}
+      </div>
+
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
 
       {/* Add Skill Modal from User Feature */}
       <AddSkillModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
+        defaultCategory={category as SkillCategoryEnum}
+        hideCategorySelect={true}
         title="Thêm Kỹ Năng Mới Vào Hồ Sơ"
         onAddSkill={handleModalAddSuccess}
       />
