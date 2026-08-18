@@ -26,7 +26,7 @@ const CustomToastCard: React.FC<CustomToastProps> = ({
     <div
       style={{
         opacity: t.visible ? 1 : 0,
-        transform: t.visible ? 'translateX(0) scale(1)' : 'translateX(18px) scale(0.97)',
+        transform: t.visible ? 'translateX(0) scale(1)' : 'translateX(-18px) scale(0.97)',
         transition: 'all 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
         display: 'flex',
         alignItems: 'flex-start',

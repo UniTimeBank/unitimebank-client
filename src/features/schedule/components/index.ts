@@ -1,3 +1,4 @@
+export * from './MyScheduleAgendaTab';
 export * from './RecurringScheduleTab';
 export * from './ScheduleExceptionsTab';
 export * from './MentorScheduleManager';

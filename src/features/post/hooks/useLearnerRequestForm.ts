@@ -24,8 +24,8 @@ export const useLearnerRequestForm = (
   const navigate = useNavigate();
   const [createLearnerRequest, { isLoading }] = useCreateLearnerRequestMutation();
   const { data: walletData, isLoading: isWalletLoading } = useGetMyWalletQuery();
-  const userBalance = walletData?.availableBalance ?? (walletData as any)?.balance ?? 0;
-  const isInsufficientBalance = !isWalletLoading && walletData !== undefined && userBalance < 30;
+  const userBalance = Number(walletData?.availableBalance ?? (walletData as any)?.balance ?? 0);
+  const isInsufficientBalance = !isWalletLoading && userBalance < 30;
 
   const [subject, setSubject] = useState('');
   const [category, setCategory] = useState<SkillCategoryName>(SkillCategoryName.PROGRAMMING);
@@ -237,6 +237,7 @@ export const useLearnerRequestForm = (
     goals,
     durationMinutes,
     userBalance,
+    isWalletLoading,
     isInsufficientBalance,
     timeline,
     desiredSlots,

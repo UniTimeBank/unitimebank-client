@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Search, Clock, Gift, Bell } from 'lucide-react';
 import { NAV_LINKS } from '@/shared/config';
 import { UserRoleDropdown } from './UserRoleDropdown';
+import LogoImage from '@/assets/images/Logo.png';
 
 interface HeaderProps {
   userCredits?: number;
@@ -34,16 +35,17 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xs border-b border-gray-100 px-4 sm:px-6 py-3 shadow-2xs">
-      <div
-        className={`mx-auto flex items-center justify-between gap-3 md:gap-6 ${
-          isManagePage ? 'max-w-[1536px]' : 'max-w-7xl'
-        }`}
-      >
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 md:gap-6">
         {/* Brand Logo & Nav */}
         <div className="flex items-center gap-6 lg:gap-8 shrink-0">
-          <Link to="/explore" className="flex items-center gap-2.5 shrink-0">
+          <Link to="/explore" className="flex items-center shrink-0 group">
+            <img
+              src={LogoImage}
+              alt="UniTimeBank Logo"
+              className="h-10 sm:h-11 w-auto object-contain transition-transform duration-200"
+            />
             <span className="text-xl font-black tracking-tight text-gray-900 whitespace-nowrap">
-              UniTime<span className="text-primary-500">Bank</span>
+              UniTime<span className="text-primary-600">Bank</span>
             </span>
           </Link>
 

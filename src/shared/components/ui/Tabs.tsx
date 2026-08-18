@@ -3,6 +3,7 @@ import React from 'react';
 export interface TabOption<T extends string = string> {
   value: T;
   label: string;
+  count?: number;
   subLabel?: string;
   icon?: React.ReactNode;
   badge?: string | number;
@@ -13,7 +14,7 @@ export interface TabsProps<T extends string = string> {
   options: TabOption<T>[];
   value: T;
   onChange: (value: T) => void;
-  variant?: 'segmented' | 'pills' | 'underline' | 'cards';
+  variant?: 'underline' | 'segmented' | 'pills' | 'cards';
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
   className?: string;
@@ -23,7 +24,7 @@ export function Tabs<T extends string = string>({
   options,
   value,
   onChange,
-  variant = 'segmented',
+  variant = 'underline',
   size = 'md',
   fullWidth = false,
   className = '',
@@ -34,6 +35,57 @@ export function Tabs<T extends string = string>({
     lg: 'text-sm py-2.5 px-5 rounded-xl gap-2.5',
   }[size];
 
+  // 1. VARIANT: UNDERLINE (Default for Management & Dashboard pages)
+  // Fix: Zero-jitter + full 3px prominent active bar + scrollbar-none
+  if (variant === 'underline') {
+    return (
+      <div
+        className={`flex items-center border-b border-gray-200 gap-6 sm:gap-8 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${className}`}
+      >
+        {options.map((opt) => {
+          const isActive = opt.value === value;
+
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              disabled={opt.disabled}
+              onClick={() => !opt.disabled && onChange(opt.value)}
+              className={`relative pb-3 inline-flex items-center gap-2 text-xs sm:text-sm font-bold transition-colors duration-150 cursor-pointer whitespace-nowrap select-none ${
+                isActive
+                  ? 'text-slate-900'
+                  : 'text-slate-500 hover:text-slate-800'
+              } ${opt.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
+            >
+              {opt.icon && <span className="shrink-0">{opt.icon}</span>}
+              <span>
+                {opt.label}
+                {opt.count !== undefined && ` (${opt.count})`}
+              </span>
+              {opt.badge !== undefined && (
+                <span
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded-full transition-colors ${
+                    isActive
+                      ? 'bg-primary-50 text-primary-700 border border-primary-200/60'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {opt.badge}
+                </span>
+              )}
+
+              {/* Bold 3px Active Indicator Bar sitting firmly on the border line */}
+              {isActive && (
+                <span className="absolute -bottom-[1px] left-0 right-0 h-[3px] bg-primary-700 rounded-t-sm z-10" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // 2. VARIANT: SEGMENTED
   if (variant === 'segmented') {
     return (
       <div
@@ -59,7 +111,10 @@ export function Tabs<T extends string = string>({
             >
               {opt.icon && <span className="shrink-0">{opt.icon}</span>}
               <div className="flex items-center gap-1.5">
-                <span>{opt.label}</span>
+                <span>
+                  {opt.label}
+                  {opt.count !== undefined && ` (${opt.count})`}
+                </span>
                 {opt.subLabel && (
                   <span
                     className={`text-[11px] font-normal ${
@@ -86,6 +141,7 @@ export function Tabs<T extends string = string>({
     );
   }
 
+  // 3. VARIANT: PILLS
   if (variant === 'pills') {
     return (
       <div className={`inline-flex flex-wrap gap-2 ${fullWidth ? 'w-full' : ''} ${className}`}>
@@ -105,7 +161,10 @@ export function Tabs<T extends string = string>({
               } ${opt.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
             >
               {opt.icon && <span className="shrink-0">{opt.icon}</span>}
-              <span>{opt.label}</span>
+              <span>
+                {opt.label}
+                {opt.count !== undefined && ` (${opt.count})`}
+              </span>
               {opt.badge !== undefined && (
                 <span className="ml-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full bg-white/20">
                   {opt.badge}
@@ -118,43 +177,7 @@ export function Tabs<T extends string = string>({
     );
   }
 
-  if (variant === 'underline') {
-    return (
-      <div className={`flex border-b border-gray-200 gap-6 ${className}`}>
-        {options.map((opt) => {
-          const isActive = opt.value === value;
-
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              disabled={opt.disabled}
-              onClick={() => !opt.disabled && onChange(opt.value)}
-              className={`pb-2.5 inline-flex items-center gap-2 text-sm font-bold border-b-2 transition-all cursor-pointer ${
-                isActive
-                  ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300'
-              } ${opt.disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
-            >
-              {opt.icon && <span className="shrink-0">{opt.icon}</span>}
-              <span>{opt.label}</span>
-              {opt.badge !== undefined && (
-                <span
-                  className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
-                    isActive ? 'bg-primary-50 text-primary-600' : 'bg-gray-100 text-gray-600'
-                  }`}
-                >
-                  {opt.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
-
-  // Cards Variant
+  // 4. VARIANT: CARDS
   return (
     <div
       className={`grid gap-3 ${fullWidth ? 'w-full' : ''} ${className}`}
@@ -192,7 +215,10 @@ export function Tabs<T extends string = string>({
               )}
             </div>
             <div className="mt-3">
-              <span className="block text-sm font-bold text-gray-900">{opt.label}</span>
+              <span className="block text-sm font-bold text-gray-900">
+                {opt.label}
+                {opt.count !== undefined && ` (${opt.count})`}
+              </span>
               {opt.subLabel && (
                 <span className="block text-xs text-gray-500 mt-0.5">{opt.subLabel}</span>
               )}

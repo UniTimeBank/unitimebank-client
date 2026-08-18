@@ -5,12 +5,14 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  AlertTriangle,
 } from 'lucide-react';
 import { useMentorSchedule } from '../hooks/useMentorSchedule';
 import { formatLocalDate } from '../utils';
 import type { TimeSlot, PostScheduleType } from '@/features/post/types';
 import { Button } from '@/shared/components/ui';
 import { toast } from '@/shared/utils';
+import { useGetMyWalletQuery } from '@/core/api';
 
 export interface SidebarBookingCardProps {
   // Option A: Profile Mode (fetches from API)
@@ -306,12 +308,35 @@ export const SidebarBookingCard: React.FC<SidebarBookingCardProps> = ({
   const selectedDateObj = selectedDate ? new Date(selectedDate + 'T00:00:00') : today;
   const dayMonthLabel = `${selectedDateObj.getDate()} THG ${selectedDateObj.getMonth() + 1}`;
 
+  // Query current user's wallet balance
+  const { data: myWallet } = useGetMyWalletQuery();
+  const availableCredit = myWallet?.availableBalance ?? 0;
+
+  const selectedSlotDuration = useMemo(() => {
+    if (!selectedSlot) return 0;
+    const [startH, startM] = selectedSlot.startTime.split(':').map(Number);
+    const [endH, endM] = selectedSlot.endTime.split(':').map(Number);
+    const diff = (endH * 60 + endM) - (startH * 60 + startM);
+    return diff > 0 ? diff : 60;
+  }, [selectedSlot]);
+
+  const requiredCredit = selectedSlotDuration; // 1 credit / phút
+  const isInsufficientCredit = Boolean(selectedSlot && availableCredit < requiredCredit);
+
   const isPrevMonthDisabled =
     currentYear === today.getFullYear() && currentMonth <= today.getMonth();
 
   const handleBooking = () => {
     if (!selectedSlot) {
       toast.error('Chưa chọn khung giờ', 'Vui lòng chọn 1 khung giờ rảnh bên dưới');
+      return;
+    }
+
+    if (isInsufficientCredit) {
+      toast.error(
+        'Số dư Credit không đủ!',
+        `Buổi học ${requiredCredit} phút cần ${requiredCredit} Credit (Ví của bạn hiện có: ${availableCredit} Credit). Vui lòng nạp hoặc tích lũy thêm Credit.`,
+      );
       return;
     }
 
@@ -571,6 +596,33 @@ export const SidebarBookingCard: React.FC<SidebarBookingCardProps> = ({
           )}
         </div>
 
+        {/* Credit Breakdown & Insufficient Balance Warning */}
+        {selectedSlot && (
+          <div className="pt-2 space-y-2">
+            <div className="flex items-center justify-between text-xs px-1">
+              <span className="text-gray-500 font-medium">Chi phí ({requiredCredit} phút):</span>
+              <span className="font-extrabold text-gray-900">{requiredCredit} Credit</span>
+            </div>
+
+            {isInsufficientCredit ? (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-[11px] font-semibold flex items-start gap-2 animate-in fade-in">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">Số dư ví không đủ ({availableCredit}/{requiredCredit} Credit)</p>
+                  <p className="text-[10px] text-rose-600 font-normal mt-0.5">
+                    Cần thêm {requiredCredit - availableCredit} Credit để đặt lịch học này.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
+                <span>Số dư khả dụng:</span>
+                <span className="font-extrabold text-emerald-700">{availableCredit} Credit</span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Action Button */}
         <div className="pt-2">
           <Button
@@ -578,11 +630,11 @@ export const SidebarBookingCard: React.FC<SidebarBookingCardProps> = ({
             variant="primary"
             fullWidth
             size="md"
-            disabled={!selectedSlot}
+            disabled={!selectedSlot || isInsufficientCredit}
             onClick={handleBooking}
             className="rounded-xl bg-primary-700 hover:bg-primary-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs py-3 shadow-xs"
           >
-            <span>{primaryButtonText}</span>
+            <span>{isInsufficientCredit ? 'Số dư không đủ' : primaryButtonText}</span>
           </Button>
         </div>
       </div>

@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Award } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Award, AlertTriangle } from 'lucide-react';
 import { useGetMentorPostByIdQuery } from '@/core/api/post/postApi';
 import { useGetPublicProfileQuery } from '@/core/api/user/userApi';
 import { useCreateMentorPostBookingMutation } from '@/core/api/booking/bookingApi';
+import { useGetMyWalletQuery } from '@/core/api/wallet/walletApi';
 import {
   PostHero,
   PostAuthorCard,
@@ -72,6 +73,19 @@ export const MentorPostDetailPage: React.FC = () => {
     );
   }
 
+  const { data: myWallet } = useGetMyWalletQuery();
+  const availableBalance = myWallet?.availableBalance ?? 0;
+
+  const durationMinutes = useMemo(() => {
+    if (!bookingModal) return 0;
+    const [startH, startM] = bookingModal.slot.startTime.split(':').map(Number);
+    const [endH, endM] = bookingModal.slot.endTime.split(':').map(Number);
+    const diff = (endH * 60 + endM) - (startH * 60 + startM);
+    return diff > 0 ? diff : 60;
+  }, [bookingModal]);
+
+  const isInsufficientCredit = Boolean(bookingModal && availableBalance < durationMinutes);
+
   const mentorName = mentorProfile?.displayName || post.mentorName || 'Mentor';
   const categoryCode = post.tags?.[0]?.category || 'PROGRAMMING';
   const categoryLabel = SKILL_CATEGORY_LABELS[categoryCode] || post.tags?.[0]?.skillName || 'CÔNG NGHỆ THÔNG TIN';
@@ -82,6 +96,14 @@ export const MentorPostDetailPage: React.FC = () => {
   // Handle Submit Booking
   const handleConfirmBooking = async () => {
     if (!bookingModal || !post) return;
+
+    if (isInsufficientCredit) {
+      toast.error(
+        'Số dư Credit không đủ!',
+        `Buổi học ${durationMinutes} phút cần ký quỹ ${durationMinutes} Credit. Số dư ví khả dụng của bạn hiện có: ${availableBalance} Credit.`,
+      );
+      return;
+    }
 
     try {
       const { date, slot, note } = bookingModal;
@@ -96,8 +118,8 @@ export const MentorPostDetailPage: React.FC = () => {
       }).unwrap();
 
       toast.success(
-        'Đặt lịch thành công!',
-        `Yêu cầu học đã được gửi tới ${mentorName}. Vui lòng theo dõi trong mục Quản lý Booking.`,
+        'Đặt lịch và ký quỹ thành công!',
+        `Yêu cầu học đã được gửi tới ${mentorName}. ${durationMinutes} Credit đã được tạm giữ an toàn trong Escrow.`,
       );
 
       setBookingModal(null);
@@ -137,6 +159,7 @@ export const MentorPostDetailPage: React.FC = () => {
 
             {/* Card 2: Mentor Profile Card */}
             <PostAuthorCard
+              authorId={post.mentorId}
               authorName={mentorName}
               authorAvatar={mentorProfile?.avatarUrl || post.mentorAvatar}
               trustScore={trustScore}
@@ -154,7 +177,7 @@ export const MentorPostDetailPage: React.FC = () => {
           </div>
 
           {/* Right Column (4 Cols - 30%) */}
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-4 lg:sticky lg:top-20 z-10">
             {/* Mentor Available Schedule & Action Sidebar */}
             <PostScheduleSidebar
               title="Lịch rảnh"
@@ -252,13 +275,31 @@ export const MentorPostDetailPage: React.FC = () => {
               />
             </div>
 
-            {/* Escrow Guarantee Note */}
-            <div className="flex items-start gap-2 p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-[11px] text-emerald-800 font-medium">
-              <Award className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <span>
-                Credit chỉ được trừ tạm giữ (ký quỹ an toàn) sau khi Mentor chấp nhận yêu cầu của bạn.
-              </span>
+            {/* Credit Breakdown Box */}
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs">
+              <span className="text-slate-600 font-medium">Chi phí ký quỹ ({durationMinutes} phút):</span>
+              <span className="font-extrabold text-slate-900">{durationMinutes} Credit</span>
             </div>
+
+            {/* Insufficient Credit Warning vs Escrow Guarantee Note */}
+            {isInsufficientCredit ? (
+              <div className="flex items-start gap-2 p-3 bg-rose-50 rounded-xl border border-rose-200 text-[11px] text-rose-800 font-medium animate-in fade-in">
+                <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Số dư ví không đủ ({availableBalance}/{durationMinutes} Credit).</span>
+                  <p className="text-[10px] text-rose-600 font-normal mt-0.5">
+                    Hệ thống sẽ thực hiện ký quỹ ngay khi gửi yêu cầu. Vui lòng nạp thêm Credit để tiếp tục.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2 p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-[11px] text-emerald-800 font-medium">
+                <Award className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span>
+                  Số Credit ({durationMinutes} Credit) sẽ được <strong>tạm giữ ký quỹ an toàn</strong> ngay khi bạn gửi yêu cầu. Nếu Gia sư từ chối hoặc bạn hủy trước buổi học, Credit sẽ được hoàn trả 100%.
+                </span>
+              </div>
+            )}
 
             {/* Modal Actions */}
             <div className="flex items-center justify-end gap-3 pt-2">
@@ -277,10 +318,14 @@ export const MentorPostDetailPage: React.FC = () => {
                 variant="primary"
                 size="md"
                 onClick={handleConfirmBooking}
-                disabled={isBookingLoading}
-                className="rounded-xl bg-primary-700 hover:bg-primary-800 text-white font-bold text-xs px-6 shadow-xs"
+                disabled={isBookingLoading || isInsufficientCredit}
+                className="rounded-xl bg-primary-700 hover:bg-primary-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs px-6 shadow-xs"
               >
-                {isBookingLoading ? 'Đang gửi...' : 'Xác nhận Đặt lịch'}
+                {isBookingLoading
+                  ? 'Đang gửi...'
+                  : isInsufficientCredit
+                  ? 'Số dư không đủ'
+                  : 'Xác nhận Đặt lịch & Ký quỹ'}
               </Button>
             </div>
           </div>

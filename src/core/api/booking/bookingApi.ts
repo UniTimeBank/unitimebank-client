@@ -75,7 +75,20 @@ export const bookingApi = baseApi.injectEndpoints({
       ],
     }),
 
-    // 6. Từ chối booking
+    // 6. Hoàn thành buổi học (+ Giải phóng Credit ký quỹ sang Mentor)
+    completeBooking: builder.mutation<BookingItem, string>({
+      query: (id) => ({
+        url: `/bookings/${id}/complete`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_result, _error, id) => [
+        { type: 'Booking', id },
+        { type: 'Booking', id: 'LIST' },
+        'Wallet',
+      ],
+    }),
+
+    // 7. Từ chối booking
     rejectBooking: builder.mutation<BookingItem, { id: string; reason?: string }>({
       query: ({ id, reason }) => ({
         url: `/bookings/${id}/reject`,
@@ -88,7 +101,7 @@ export const bookingApi = baseApi.injectEndpoints({
       ],
     }),
 
-    // 7. Hủy booking
+    // 8. Hủy booking
     cancelBooking: builder.mutation<BookingItem, { id: string; reason?: string }>({
       query: ({ id, reason }) => ({
         url: `/bookings/${id}/cancel`,
@@ -102,7 +115,7 @@ export const bookingApi = baseApi.injectEndpoints({
       ],
     }),
 
-    // 8. Đánh dấu không đến
+    // 9. Đánh dấu không đến
     markNoShow: builder.mutation<void, string>({
       query: (id) => ({
         url: `/bookings/${id}/no-show`,
@@ -122,6 +135,7 @@ export const {
   useCreateMentorPostBookingMutation,
   useApplyLearnerRequestMutation,
   useAcceptBookingMutation,
+  useCompleteBookingMutation,
   useRejectBookingMutation,
   useCancelBookingMutation,
   useMarkNoShowMutation,

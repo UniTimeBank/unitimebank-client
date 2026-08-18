@@ -30,6 +30,7 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
     goals,
     durationMinutes,
     userBalance,
+    isWalletLoading,
     isInsufficientBalance,
     timeline,
     desiredSlots,
@@ -62,6 +63,15 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
     value: opt.label,
     label: opt.label,
   }));
+
+  if (isWalletLoading) {
+    return (
+      <div className="bg-white rounded-3xl p-12 border border-slate-200/80 shadow-xs flex flex-col items-center justify-center space-y-3">
+        <div className="w-8 h-8 border-3 border-primary-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-bold text-slate-500">Đang kiểm tra số dư ví...</p>
+      </div>
+    );
+  }
 
   if (isInsufficientBalance) {
     const isCompleted7DaysCheckin = Boolean(
