@@ -36,11 +36,11 @@ export function Tabs<T extends string = string>({
   }[size];
 
   // 1. VARIANT: UNDERLINE (Default for Management & Dashboard pages)
-  // Fix: Zero-jitter + full 3px prominent active bar + scrollbar-none
+  // Fix: Zero-jitter + sitting seamlessly on the bottom border line
   if (variant === 'underline') {
     return (
       <div
-        className={`flex items-center border-b border-gray-200 gap-6 sm:gap-8 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] ${className}`}
+        className={`flex items-center gap-6 sm:gap-8 overflow-x-auto scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] -mb-px ${className}`}
       >
         {options.map((opt) => {
           const isActive = opt.value === value;
@@ -51,7 +51,7 @@ export function Tabs<T extends string = string>({
               type="button"
               disabled={opt.disabled}
               onClick={() => !opt.disabled && onChange(opt.value)}
-              className={`relative pb-3 inline-flex items-center gap-2 text-xs sm:text-sm font-bold transition-colors duration-150 cursor-pointer whitespace-nowrap select-none ${
+              className={`relative pb-3 pt-1 inline-flex items-center gap-2 text-xs sm:text-sm font-bold transition-colors duration-150 cursor-pointer whitespace-nowrap select-none ${
                 isActive
                   ? 'text-slate-900'
                   : 'text-slate-500 hover:text-slate-800'
@@ -74,9 +74,9 @@ export function Tabs<T extends string = string>({
                 </span>
               )}
 
-              {/* Bold 3px Active Indicator Bar sitting firmly on the border line */}
+              {/* Bold 2.5px Active Indicator Bar sitting exactly flush on the border line */}
               {isActive && (
-                <span className="absolute -bottom-[1px] left-0 right-0 h-[3px] bg-primary-700 rounded-t-sm z-10" />
+                <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-primary-700 rounded-t-sm z-10" />
               )}
             </button>
           );

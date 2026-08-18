@@ -62,12 +62,11 @@ export const BookingManagementPage: React.FC = () => {
       {/* ════════════════════════════════════════════════════════════════ */}
       {/* 2. TABS & SEARCH BAR */}
       {/* ════════════════════════════════════════════════════════════════ */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-gray-200">
         <Tabs<BookingTabType>
           value={activeTab}
           onChange={setActiveTab}
           variant="underline"
-          className="border-b-0"
           options={[
             { value: 'PENDING', label: 'Đang chờ', count: pendingBookings.length },
             { value: 'UPCOMING', label: 'Sắp tới', count: upcomingBookings.length },
@@ -76,7 +75,7 @@ export const BookingManagementPage: React.FC = () => {
         />
 
         {/* Quick Search with Breathing Room & Standard Sizing */}
-        <div className="w-full sm:w-80 pb-3 sm:pb-2.5 shrink-0">
+        <div className="w-full sm:w-80 pb-2.5 shrink-0">
           <div className="relative">
             <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
