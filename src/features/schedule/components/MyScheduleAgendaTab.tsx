@@ -137,7 +137,7 @@ export const MyScheduleAgendaTab: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={handleToday}
-            className="text-xs font-bold px-3 py-1.5 rounded-xl border-slate-200 hover:bg-white bg-white/70"
+            className="text-xs font-semibold px-3 py-1.5 rounded-xl border-slate-200 hover:bg-white bg-white/70 text-slate-700"
           >
             Hôm nay
           </Button>
@@ -151,7 +151,7 @@ export const MyScheduleAgendaTab: React.FC = () => {
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="px-3 text-xs font-extrabold text-slate-800 tracking-tight whitespace-nowrap">
+            <span className="px-3 text-xs font-semibold text-slate-700 tracking-tight whitespace-nowrap">
               {formatWeekRange()}
             </span>
             <button
@@ -170,9 +170,9 @@ export const MyScheduleAgendaTab: React.FC = () => {
           <button
             type="button"
             onClick={() => setViewMode('WEEK')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
               viewMode === 'WEEK'
-                ? 'bg-primary-700 text-white shadow-xs'
+                ? 'bg-primary-700 text-white shadow-xs font-semibold'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -182,9 +182,9 @@ export const MyScheduleAgendaTab: React.FC = () => {
           <button
             type="button"
             onClick={() => setViewMode('TIMELINE')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
               viewMode === 'TIMELINE'
-                ? 'bg-primary-700 text-white shadow-xs'
+                ? 'bg-primary-700 text-white shadow-xs font-semibold'
                 : 'text-slate-500 hover:text-slate-800'
             }`}
           >
@@ -207,7 +207,7 @@ export const MyScheduleAgendaTab: React.FC = () => {
           <div className="w-14 h-14 bg-primary-100 text-primary-700 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-xs">
             <CalendarIcon className="w-7 h-7" />
           </div>
-          <h3 className="text-base font-extrabold text-slate-800 mb-1">
+          <h3 className="text-base font-semibold text-slate-800 mb-1">
             Bạn chưa có lịch học nào được xác nhận
           </h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto mb-5 leading-relaxed">
@@ -219,7 +219,7 @@ export const MyScheduleAgendaTab: React.FC = () => {
                 type="button"
                 variant="primary"
                 size="sm"
-                className="rounded-xl bg-primary-700 hover:bg-primary-800 text-white font-bold text-xs px-4 py-2"
+                className="rounded-xl bg-primary-700 hover:bg-primary-800 text-white font-medium text-xs px-4 py-2"
               >
                 Khám phá lớp học ngay
               </Button>
@@ -229,7 +229,7 @@ export const MyScheduleAgendaTab: React.FC = () => {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="rounded-xl border-slate-200 font-bold text-xs px-4 py-2"
+                className="rounded-xl border-slate-200 font-medium text-xs px-4 py-2"
               >
                 Xem bài đăng của bạn
               </Button>
@@ -254,27 +254,27 @@ export const MyScheduleAgendaTab: React.FC = () => {
                   key={day.dateStr}
                   className={`rounded-2xl p-3 min-h-[260px] flex flex-col justify-between border transition-all ${
                     day.isToday
-                      ? 'bg-primary-50/40 border-primary-300 ring-2 ring-primary-500/20'
+                      ? 'bg-primary-50/30 border-primary-200 ring-1 ring-primary-500/20'
                       : 'bg-white border-slate-200/90'
                   }`}
                 >
                   {/* Day Header (Single Horizontal Row) */}
                   <div className="flex items-center justify-between gap-1 pb-2 border-b border-slate-100 mb-2.5">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">
+                      <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
                         {shortLabel}
                       </span>
-                      <span className="text-xs font-bold text-slate-300">·</span>
+                      <span className="text-xs text-slate-300">·</span>
                       <span
-                        className={`text-sm font-black leading-none ${
-                          day.isToday ? 'text-primary-700' : 'text-slate-900'
+                        className={`text-xs font-bold leading-none ${
+                          day.isToday ? 'text-primary-700' : 'text-slate-700'
                         }`}
                       >
                         {day.dayNumber}/{day.monthNumber}
                       </span>
                     </div>
                     {day.isToday && (
-                      <span className="px-1.5 py-0.5 rounded-md bg-primary-700 text-white text-[9px] font-extrabold shrink-0">
+                      <span className="px-1.5 py-0.5 rounded-md bg-primary-700 text-white text-[9px] font-semibold shrink-0">
                         Hôm nay
                       </span>
                     )}
@@ -284,7 +284,7 @@ export const MyScheduleAgendaTab: React.FC = () => {
                   <div className="flex-1 space-y-2.5">
                     {dayBookings.length === 0 ? (
                       <div className="h-full flex items-center justify-center text-center py-6">
-                        <span className="text-[11px] text-slate-300 font-medium italic">
+                        <span className="text-[11px] text-slate-300 font-normal italic">
                           Trống
                         </span>
                       </div>
@@ -307,18 +307,18 @@ export const MyScheduleAgendaTab: React.FC = () => {
                             key={b.id}
                             className={`p-2.5 rounded-xl border text-left flex flex-col justify-between gap-2 transition-all shadow-2xs ${
                               isMentorRole
-                                ? 'bg-blue-50/50 border-blue-200/90 border-l-4 border-l-blue-600'
-                                : 'bg-emerald-50/50 border-emerald-200/90 border-l-4 border-l-emerald-600'
+                                ? 'bg-blue-50/40 border-blue-200/80 border-l-4 border-l-blue-600'
+                                : 'bg-emerald-50/40 border-emerald-200/80 border-l-4 border-l-emerald-600'
                             }`}
                           >
                             <div>
                               {/* 1. Header: Time & Role Pill */}
                               <div className="flex items-center justify-between gap-1 mb-1.5">
-                                <span className="text-[11px] font-black text-slate-800 tracking-tight whitespace-nowrap">
+                                <span className="text-[11px] font-semibold text-slate-700 tracking-tight whitespace-nowrap">
                                   {startTime} - {endTime}
                                 </span>
                                 <span
-                                  className={`px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase shrink-0 ${
+                                  className={`px-1.5 py-0.2 rounded text-[9px] font-semibold uppercase shrink-0 ${
                                     isMentorRole
                                       ? 'bg-blue-600 text-white'
                                       : 'bg-emerald-600 text-white'
@@ -329,7 +329,7 @@ export const MyScheduleAgendaTab: React.FC = () => {
                               </div>
 
                               {/* 2. Session Title */}
-                              <h4 className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug mb-2">
+                              <h4 className="text-xs font-medium text-slate-800 line-clamp-2 leading-snug mb-1.5">
                                 {b.title}
                               </h4>
 
@@ -346,7 +346,7 @@ export const MyScheduleAgendaTab: React.FC = () => {
                                     {partnerName?.charAt(0) || 'U'}
                                   </div>
                                 )}
-                                <span className="text-[11px] text-slate-600 truncate font-medium">
+                                <span className="text-[11px] text-slate-500 truncate font-normal">
                                   {partnerName}
                                 </span>
                               </div>
@@ -356,7 +356,7 @@ export const MyScheduleAgendaTab: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => handleJoinClass(b.id)}
-                              className={`w-full mt-1 flex items-center justify-center gap-1.5 rounded-xl text-[11px] font-extrabold py-1.5 transition-all duration-200 cursor-pointer shadow-2xs active:scale-[0.98] ${
+                              className={`w-full mt-1 flex items-center justify-center gap-1.5 rounded-xl text-[11px] font-semibold py-1.5 transition-all duration-200 cursor-pointer shadow-2xs active:scale-[0.98] ${
                                 isMentorRole
                                   ? 'bg-blue-600 hover:bg-blue-700 text-white'
                                   : 'bg-emerald-600 hover:bg-emerald-700 text-white'
