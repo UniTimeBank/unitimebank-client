@@ -1,134 +1,38 @@
-import React, { useState, useMemo } from 'react';
-import {
-  SlidersHorizontal,
-  Plus,
-  CalendarCheck,
-  Search,
-} from 'lucide-react';
-import {
-  useGetMyBookingsQuery,
-  useAcceptBookingMutation,
-  useRejectBookingMutation,
-  useCancelBookingMutation,
-  BookingStatus,
-} from '@/core/api/booking/bookingApi';
-import { useUserProfile } from '@/features/user/hooks';
-import { BookingCard } from '../components/BookingCard';
-import { Button } from '@/shared/components/ui';
-import { toast } from '@/shared/utils';
-import { useNavigate } from 'react-router-dom';
-
-type TabType = 'PENDING' | 'UPCOMING' | 'HISTORY';
+import React from 'react';
+import { Plus, CalendarCheck, Search, X } from 'lucide-react';
+import { BookingCard, CancelBookingModal } from '../components';
+import { Button, Tabs } from '@/shared/components/ui';
+import { useManageBookings, type BookingTabType } from '../hooks';
 
 export const BookingManagementPage: React.FC = () => {
-  const { profile } = useUserProfile();
-  const navigate = useNavigate();
-
-  const [activeTab, setActiveTab] = useState<TabType>('PENDING');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'ALL' | 'AS_MENTOR' | 'AS_LEARNER'>('ALL');
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
-
-  // 100% Dynamic RTK Query API
-  const { data: apiResponse, isLoading, refetch } = useGetMyBookingsQuery({
-    role: roleFilter === 'ALL' ? undefined : roleFilter,
-  });
-
-  const [acceptBooking, { isLoading: isAccepting }] = useAcceptBookingMutation();
-  const [rejectBooking, { isLoading: isRejecting }] = useRejectBookingMutation();
-  const [cancelBooking, { isLoading: isCancelling }] = useCancelBookingMutation();
-
-  const allBookings = useMemo(() => {
-    return apiResponse?.items || [];
-  }, [apiResponse]);
-
-  // Group bookings by Tab dynamically
-  const pendingBookings = useMemo(() => {
-    return allBookings.filter(
-      (b) =>
-        b.status === BookingStatus.PENDING_MENTOR_APPROVAL ||
-        b.status === BookingStatus.PENDING_LEARNER_APPROVAL,
-    );
-  }, [allBookings]);
-
-  const upcomingBookings = useMemo(() => {
-    return allBookings.filter(
-      (b) => b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.STARTED,
-    );
-  }, [allBookings]);
-
-  const historyBookings = useMemo(() => {
-    return allBookings.filter(
-      (b) =>
-        b.status === BookingStatus.COMPLETED ||
-        b.status === BookingStatus.CANCELLED ||
-        b.status === BookingStatus.REJECTED ||
-        b.status === BookingStatus.NO_SHOW,
-    );
-  }, [allBookings]);
-
-  // Filter current tab items by search query
-  const currentTabBookings = useMemo(() => {
-    let list =
-      activeTab === 'PENDING'
-        ? pendingBookings
-        : activeTab === 'UPCOMING'
-        ? upcomingBookings
-        : historyBookings;
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(
-        (b) =>
-          b.title?.toLowerCase().includes(q) ||
-          b.mentorName?.toLowerCase().includes(q) ||
-          b.learnerName?.toLowerCase().includes(q) ||
-          b.category?.toLowerCase().includes(q),
-      );
-    }
-
-    return list;
-  }, [activeTab, pendingBookings, upcomingBookings, historyBookings, searchQuery]);
-
-  // Handlers for real mutations
-  const handleAccept = async (id: string) => {
-    try {
-      await acceptBooking(id).unwrap();
-      toast.success('Đã chấp nhận buổi học!', 'Khóa học đã được chuyển vào mục Sắp tới.');
-      refetch();
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Không thể chấp nhận yêu cầu đặt lịch');
-    }
-  };
-
-  const handleReject = async (id: string) => {
-    try {
-      await rejectBooking({ id, reason: 'Lịch bận đột xuất' }).unwrap();
-      toast.success('Đã từ chối yêu cầu đặt lịch.');
-      refetch();
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Không thể từ chối yêu cầu đặt lịch');
-    }
-  };
-
-  const handleCancel = async (id: string) => {
-    try {
-      await cancelBooking({ id, reason: 'Hủy theo yêu cầu người dùng' }).unwrap();
-      toast.success('Đã hủy lịch đặt học thành công.');
-      refetch();
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Không thể hủy lịch học');
-    }
-  };
-
-  const handleJoinRoom = (id: string) => {
-    toast.success('Đang kết nối phòng học 1-1...', `Mã buổi học: ${id}`);
-  };
+  const {
+    currentUserId,
+    activeTab,
+    setActiveTab,
+    searchQuery,
+    setSearchQuery,
+    cancelModalBooking,
+    pendingBookings,
+    upcomingBookings,
+    historyBookings,
+    currentTabBookings,
+    isLoading,
+    isAccepting,
+    isRejecting,
+    isCancelling,
+    handleAccept,
+    handleReject,
+    handleOpenCancelModal,
+    handleCloseCancelModal,
+    handleConfirmCancel,
+    handleJoinRoom,
+    navigate,
+  } = useManageBookings();
 
   return (
     <div className="bg-white rounded-3xl border border-gray-100 shadow-xs p-6 sm:p-8 relative space-y-6 animate-in fade-in duration-200">
       {/* ════════════════════════════════════════════════════════════════ */}
-      {/* 1. HEADER BAR INSIDE CARD */}
+      {/* 1. HEADER BAR */}
       {/* ════════════════════════════════════════════════════════════════ */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
         <div>
@@ -136,31 +40,18 @@ export const BookingManagementPage: React.FC = () => {
             Quản lý Booking
           </h2>
           <p className="text-xs text-slate-500">
-            Quản lý các yêu cầu cố vấn và lịch trình sắp tới của bạn.
+            Quản lý các yêu cầu cố vấn, ký quỹ an toàn và lịch trình sắp tới của bạn.
           </p>
         </div>
 
-        {/* Action Buttons on Right */}
+        {/* Action Button on Right */}
         <div className="flex items-center gap-2.5 shrink-0">
-          {/* Nút Lọc hiển thị */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsFilterModalOpen(!isFilterModalOpen)}
-            className="rounded-xl border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-bold text-xs py-2 px-3.5 shadow-2xs"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>LỌC HIỂN THỊ</span>
-          </Button>
-
-          {/* Nút Tạo lịch trống mới */}
           <Button
             type="button"
             variant="primary"
             size="sm"
             onClick={() => navigate('/manage/schedule')}
-            className="rounded-xl bg-primary-700 hover:bg-primary-800 text-white font-bold text-xs py-2 px-4 shadow-xs whitespace-nowrap"
+            className="rounded-xl bg-primary-700 hover:bg-primary-800 text-white font-bold text-xs py-2 px-4 shadow-xs whitespace-nowrap cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>Tạo lịch trống mới</span>
@@ -171,112 +62,41 @@ export const BookingManagementPage: React.FC = () => {
       {/* ════════════════════════════════════════════════════════════════ */}
       {/* 2. TABS & SEARCH BAR */}
       {/* ════════════════════════════════════════════════════════════════ */}
-      <div className="space-y-4">
-        {/* Tabs Bar */}
-        <div className="flex items-center justify-between border-b border-gray-200 gap-4 overflow-x-auto pb-0.5">
-          <div className="flex items-center gap-6 sm:gap-8 min-w-max">
-            {/* Tab 1: Đang chờ */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('PENDING')}
-              className={`pb-3 text-xs sm:text-sm transition-all cursor-pointer select-none relative ${
-                activeTab === 'PENDING'
-                  ? 'font-extrabold text-gray-900'
-                  : 'font-semibold text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              <span>Đang chờ ({pendingBookings.length})</span>
-              {activeTab === 'PENDING' && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-700 rounded-full" />
-              )}
-            </button>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200">
+        <Tabs<BookingTabType>
+          value={activeTab}
+          onChange={setActiveTab}
+          variant="underline"
+          className="border-b-0"
+          options={[
+            { value: 'PENDING', label: 'Đang chờ', count: pendingBookings.length },
+            { value: 'UPCOMING', label: 'Sắp tới', count: upcomingBookings.length },
+            { value: 'HISTORY', label: 'Lịch sử', count: historyBookings.length },
+          ]}
+        />
 
-            {/* Tab 2: Sắp tới */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('UPCOMING')}
-              className={`pb-3 text-xs sm:text-sm transition-all cursor-pointer select-none relative ${
-                activeTab === 'UPCOMING'
-                  ? 'font-extrabold text-gray-900'
-                  : 'font-semibold text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              <span>Sắp tới ({upcomingBookings.length})</span>
-              {activeTab === 'UPCOMING' && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-700 rounded-full" />
-              )}
-            </button>
-
-            {/* Tab 3: Lịch sử */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('HISTORY')}
-              className={`pb-3 text-xs sm:text-sm transition-all cursor-pointer select-none relative ${
-                activeTab === 'HISTORY'
-                  ? 'font-extrabold text-gray-900'
-                  : 'font-semibold text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              <span>Lịch sử ({historyBookings.length})</span>
-              {activeTab === 'HISTORY' && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-700 rounded-full" />
-              )}
-            </button>
-          </div>
-
-          {/* Quick Search */}
-          <div className="relative w-56 sm:w-64 shrink-0">
-            <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+        {/* Quick Search with Breathing Room & Standard Sizing */}
+        <div className="w-full sm:w-80 pb-3 sm:pb-2.5 shrink-0">
+          <div className="relative">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo tên, môn học..."
-              className="w-full pl-9 pr-3 py-1.5 bg-gray-50/80 hover:bg-white border border-gray-200 rounded-xl text-xs font-medium placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
+              placeholder="Tìm theo bài đăng, gia sư, học viên..."
+              className="w-full pl-10 pr-9 py-2 bg-gray-50/90 hover:bg-white focus:bg-white border border-gray-200 rounded-xl text-xs sm:text-sm font-medium placeholder:text-gray-400 placeholder:text-xs focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100 transition-all shadow-2xs"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
-
-        {/* Filter Toolbar (if expanded) */}
-        {isFilterModalOpen && (
-          <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 shadow-2xs flex flex-wrap items-center justify-between gap-4 animate-in fade-in duration-150">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-600">Lọc theo vai trò:</span>
-              <div className="flex items-center gap-1.5">
-                {(['ALL', 'AS_MENTOR', 'AS_LEARNER'] as const).map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => setRoleFilter(r)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
-                      roleFilter === r
-                        ? 'bg-primary-700 text-white'
-                        : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200/80'
-                    }`}
-                  >
-                    {r === 'ALL'
-                      ? 'Tất cả'
-                      : r === 'AS_MENTOR'
-                      ? 'Tôi là Người dạy'
-                      : 'Tôi là Người học'}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setRoleFilter('ALL');
-                setSearchQuery('');
-                setIsFilterModalOpen(false);
-              }}
-              className="text-xs font-bold text-gray-400 hover:text-gray-700 cursor-pointer"
-            >
-              Đặt lại bộ lọc
-            </button>
-          </div>
-        )}
       </div>
 
       {/* ════════════════════════════════════════════════════════════════ */}
@@ -313,22 +133,22 @@ export const BookingManagementPage: React.FC = () => {
               variant="primary"
               size="sm"
               onClick={() => navigate('/explore')}
-              className="bg-primary-700 hover:bg-primary-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-xs"
+              className="bg-primary-700 hover:bg-primary-800 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-xs cursor-pointer"
             >
               Khám phá lớp học ngay
             </Button>
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {currentTabBookings.map((booking) => (
             <BookingCard
               key={booking.id}
               booking={booking}
-              currentUserId={profile?.userId}
+              currentUserId={currentUserId}
               onAccept={handleAccept}
               onReject={handleReject}
-              onCancel={handleCancel}
+              onCancel={handleOpenCancelModal}
               onJoinRoom={handleJoinRoom}
               isAccepting={isAccepting}
               isRejecting={isRejecting}
@@ -337,6 +157,18 @@ export const BookingManagementPage: React.FC = () => {
           ))}
         </div>
       )}
+
+      {/* ════════════════════════════════════════════════════════════════ */}
+      {/* 4. MODAL XÁC NHẬN HỦY BUỔI HỌC VÀ CẢNH BÁO PHÍ / ĐIỂM UY TÍN */}
+      {/* ════════════════════════════════════════════════════════════════ */}
+      <CancelBookingModal
+        booking={cancelModalBooking}
+        isOpen={Boolean(cancelModalBooking)}
+        onClose={handleCloseCancelModal}
+        onConfirmCancel={handleConfirmCancel}
+        isCancelling={isCancelling}
+        currentUserId={currentUserId}
+      />
     </div>
   );
 };

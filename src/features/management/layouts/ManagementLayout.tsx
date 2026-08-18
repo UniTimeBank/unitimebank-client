@@ -17,7 +17,7 @@ export const ManagementLayout: React.FC = () => {
       icon: LayoutDashboard,
     },
     {
-      label: 'Quản lý Lịch rảnh',
+      label: 'Lịch trình & Lịch rảnh',
       path: '/manage/schedule',
       icon: Calendar,
     },

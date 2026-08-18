@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User, Calendar, ReceiptText, LogOut, CalendarCheck, LayoutDashboard } from 'lucide-react';
 import { useActiveRole } from '@/shared/hooks/useActiveRole';
 import LogoImage from '@/assets/images/Logo.png';
@@ -19,6 +19,7 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
   avatarUrl,
   onLogout,
 }) => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -35,6 +36,14 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
     timeoutRef.current = setTimeout(() => {
       setIsOpen(false);
     }, 180);
+  };
+
+  const handleAvatarClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setIsOpen(false);
+    navigate('/profile');
   };
 
   useEffect(() => {
@@ -54,10 +63,11 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
       onMouseLeave={handleMouseLeave}
       className="relative shrink-0"
     >
-      {/* Avatar Button Tinh Gọn */}
+      {/* Avatar Button Tinh Gọn: Click trực tiếp chuyển đến /profile */}
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={handleAvatarClick}
+        title="Trang cá nhân & Hồ sơ"
         className="flex items-center p-0.5 rounded-full hover:ring-2 hover:ring-slate-300 transition-all cursor-pointer select-none outline-none group"
       >
         <img
@@ -74,8 +84,12 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
       {/* Menu Dropdown Clean & Minimal */}
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl border border-slate-200/90 shadow-xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150 origin-top-right text-slate-800">
-          {/* User Info Header */}
-          <div className="flex items-center gap-3 px-2 py-2 border-b border-slate-100 pb-3">
+          {/* User Info Header: Click vào cũng sang /profile */}
+          <Link
+            to="/profile"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center gap-3 px-2 py-2 border-b border-slate-100 pb-3 rounded-xl hover:bg-slate-50 transition-colors"
+          >
             <img
               src={displayAvatar}
               alt={userName}
@@ -89,7 +103,7 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
                 {userEmail || 'Sinh viên UniTime'}
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Clean Role Switcher (Segmented Control Tinh Gọn) */}
           <div className="py-3 px-1 border-b border-slate-100">

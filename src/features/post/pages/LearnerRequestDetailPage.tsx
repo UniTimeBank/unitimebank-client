@@ -175,6 +175,7 @@ export const LearnerRequestDetailPage: React.FC = () => {
 
             {/* Card 2: Learner Profile Card */}
             <PostAuthorCard
+              authorId={request.learnerId}
               authorName={learnerName}
               authorAvatar={learnerProfile?.avatarUrl || request.learnerAvatar}
               trustScore={trustScore}
@@ -192,7 +193,7 @@ export const LearnerRequestDetailPage: React.FC = () => {
           </div>
 
           {/* Right Column (4 Cols - 30%) */}
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-4 lg:sticky lg:top-20 z-10">
             {/* Learner Desired Schedule & Action Sidebar */}
             <LearnerRequestDetailSidebar
               title="Khung giờ học viên rảnh"

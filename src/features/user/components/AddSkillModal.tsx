@@ -161,7 +161,6 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
   const handleSelectSuggestion = (name: string) => {
     setSkillName(name);
     setIsDropdownOpen(false);
-    inputRef.current?.focus();
   };
 
   const handleSave = async (e?: React.FormEvent) => {
@@ -186,6 +185,20 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
     if (e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();
+
+      // Nếu dropdown đang mở và có gợi ý khớp chính xác hoặc đang có gợi ý duy nhất
+      if (isDropdownOpen) {
+        if (filteredSuggestions.length > 0) {
+          const exactOrFirst =
+            filteredSuggestions.find((s) => s.toLowerCase() === skillName.trim().toLowerCase()) ||
+            filteredSuggestions[0];
+          setSkillName(exactOrFirst);
+          setIsDropdownOpen(false);
+          return;
+        }
+        setIsDropdownOpen(false);
+      }
+
       handleSave();
     } else if (e.key === 'Escape') {
       setIsDropdownOpen(false);
@@ -218,7 +231,6 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
 
           <div
             onClick={() => {
-              if (!isDropdownOpen) setIsDropdownOpen(true);
               inputRef.current?.focus();
             }}
             className={`w-full px-3.5 py-2.5 rounded-xl border text-sm flex items-center justify-between bg-white transition-all duration-200 cursor-text ${
@@ -231,11 +243,13 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
               ref={inputRef}
               type="text"
               value={skillName}
+              onClick={() => {
+                if (!isDropdownOpen) setIsDropdownOpen(true);
+              }}
               onChange={(e) => {
                 setSkillName(e.target.value);
                 if (!isDropdownOpen) setIsDropdownOpen(true);
               }}
-              onFocus={() => setIsDropdownOpen(true)}
               placeholder="VD: Python, Figma, Giải tích 1, Tiếng Nhật..."
               className="w-full text-sm text-gray-900 placeholder:text-gray-400 placeholder:font-normal font-normal bg-transparent focus:outline-hidden pr-2"
               autoFocus

@@ -7,3 +7,4 @@ export * from './TimeInput';
 export * from './DateInput';
 export * from './Checkbox';
 export * from './Tabs';
+export * from './Radio';

@@ -422,15 +422,6 @@ export const PostExplorePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. Footer Mini chuẩn phong cách Mockup */}
-      <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20 pt-8 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-        <p>© 2026 UniTime Bank. Academic Excellence.</p>
-        <div className="flex items-center gap-6">
-          <span className="hover:text-slate-600 cursor-pointer transition-colors">Quy tắc cộng đồng</span>
-          <span className="hover:text-slate-600 cursor-pointer transition-colors">Bảo mật</span>
-          <span className="hover:text-slate-600 cursor-pointer transition-colors">Trợ giúp</span>
-        </div>
-      </footer>
 
       {/* 5. Modal Bộ Lọc Thêm */}
       {isFilterModalOpen && (

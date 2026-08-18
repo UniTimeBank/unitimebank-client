@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Eye, Pencil, Share2, Plus, TrendingUp, Sprout, Gift, X, ArrowLeft } from 'lucide-react';
+import { Eye, Pencil, Share2, Plus, TrendingUp, Sprout, ArrowLeft, Loader2 } from 'lucide-react';
 
-import { TrustScoreGauge } from '@/shared/components';
-import { SidebarBookingCard, MentorScheduleManager } from '@/features/schedule';
+import { SidebarBookingCard } from '@/features/schedule';
 import { useActiveRole } from '@/shared/hooks/useActiveRole';
 
 import {
@@ -21,24 +20,45 @@ import {
   RegisteredSkillsSection,
 } from '../components';
 import { useUserProfile, useUserSkills, useDailyCheckin } from '../hooks';
+import { useGetPublicProfileQuery } from '@/core/api/user/userApi';
 
 import LogoImage from '@/assets/images/Logo.png';
 
 export const UserProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { userId } = useParams<{ userId?: string }>();
+
   const { profile, updateProfile, uploadAvatar } = useUserProfile();
   const { skills, addSkill, deleteSkill } = useUserSkills();
   const { currentStreak, hasCheckedInToday, rewardMessage, checkin, isCheckinLoading } = useDailyCheckin();
-  const { isMentor, isLearner, activeRole, switchRole } = useActiveRole();
+  const { isMentor } = useActiveRole();
+
+  // Detect if viewing another user's public profile
+  const isOtherUser = Boolean(
+    userId && userId !== profile?.userId && userId !== profile?.id,
+  );
+
+  const { data: targetPublicProfile, isLoading: isTargetLoading } = useGetPublicProfileQuery(
+    userId || '',
+    { skip: !isOtherUser },
+  );
 
   // 2 View Modes: 'MYSELF' (Student Dashboard / My Profile) vs 'PUBLIC' (Mentor Profile / How Others See Me)
-  const [viewMode, setViewMode] = useState<'MYSELF' | 'PUBLIC'>('MYSELF');
+  const [viewMode, setViewMode] = useState<'MYSELF' | 'PUBLIC'>(
+    isOtherUser ? 'PUBLIC' : 'MYSELF',
+  );
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddSkillModalOpen, setIsAddSkillModalOpen] = useState(false);
   const [isCreditTasksOpen, setIsCreditTasksOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+
+  useEffect(() => {
+    if (isOtherUser) {
+      setViewMode('PUBLIC');
+    }
+  }, [isOtherUser]);
 
   const handleProfileAction = (actionType: 'EDIT_PROFILE' | 'CREATE_SCHEDULE' | 'ADD_SKILL') => {
     if (actionType === 'EDIT_PROFILE') {
@@ -68,12 +88,26 @@ export const UserProfilePage: React.FC = () => {
     }
   }, [location.state]);
 
-  const userName = profile?.displayName || 'Sinh viên UniTime';
-  const bio = profile?.bio || 'Chưa cập nhật phần giới thiệu bản thân.';
-  const avatarUrl = profile?.avatarUrl || LogoImage;
+  const userName = isOtherUser
+    ? targetPublicProfile?.displayName || 'Thành viên UniTime'
+    : profile?.displayName || 'Sinh viên UniTime';
+
+  const bio = isOtherUser
+    ? targetPublicProfile?.bio || 'Chưa cập nhật phần giới thiệu bản thân.'
+    : profile?.bio || 'Chưa cập nhật phần giới thiệu bản thân.';
+
+  const avatarUrl = isOtherUser
+    ? targetPublicProfile?.avatarUrl || LogoImage
+    : profile?.avatarUrl || LogoImage;
+
+  const displaySkills = isOtherUser
+    ? (targetPublicProfile?.skills as any) || []
+    : skills;
 
   const credits = 120;
-  const trustScoreMax100 = profile?.trustScore || 100;
+  const trustScoreMax100 = isOtherUser
+    ? targetPublicProfile?.trustScore || 100
+    : profile?.trustScore || 100;
 
   const handleDeleteSkill = async (skillId: string) => {
     await deleteSkill(skillId);
@@ -181,74 +215,50 @@ export const UserProfilePage: React.FC = () => {
 
   const isCompleted7Days = currentStreak >= 7 && hasCheckedInToday;
 
+  if (isOtherUser && isTargetLoading) {
+    return (
+      <div className="py-20 flex flex-col items-center justify-center space-y-3">
+        <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+        <p className="text-xs font-bold text-gray-500">Đang tải thông tin hồ sơ...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 pb-12">
-      {/* 1. TOP BANNER: DAILY CHECKIN (Khi chưa xong 7 ngày) HOẶC STUDENT MILESTONE BANNER (Khi đã hoàn thành đủ 7 ngày) */}
-      {!isCompleted7Days ? (
-        <DailyCheckinWidget
-          currentStreak={currentStreak}
-          hasCheckedInToday={hasCheckedInToday}
-          rewardMessage={rewardMessage}
-          onCheckin={checkin}
-          isCheckinLoading={isCheckinLoading}
-        />
-      ) : (
-        <div className="bg-[#0B654D] text-white rounded-2xl py-7 sm:py-8 px-7 sm:px-9 shadow-xs border border-emerald-700/30 animate-in fade-in duration-200">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="space-y-2">
-              <span className="inline-flex items-center px-3 py-1 bg-white/10 text-emerald-100/90 font-medium text-xs rounded-full border border-white/15">
-                {isMentor ? 'Chế độ Người Dạy' : 'Chế độ Người Học'}
-              </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                {isMentor ? `Chào mừng, ${userName}!` : `Chào mừng trở lại, ${userName}!`}
-              </h2>
-              <p className="text-xs sm:text-sm text-emerald-100/80 font-normal max-w-2xl leading-relaxed">
-                {isMentor
-                  ? `Bạn đang sở hữu ${credits} Credit và Điểm Uy Tín đạt ${trustScoreMax100}/100. Sẵn sàng mở lịch nhận dạy kèm 1:1 để chia sẻ tri thức!`
-                  : `Bạn đang sở hữu ${credits} Credit sẵn sàng kết nối trao đổi kỹ năng 1:1 hoặc tham gia lớp nhóm cùng cộng đồng sinh viên.`}
-              </p>
+      {/* 1. TOP BANNER: DAILY CHECKIN (Khi xem profile cá nhân) HOẶC STUDENT MILESTONE BANNER */}
+      {!isOtherUser && (
+        <>
+          {!isCompleted7Days ? (
+            <DailyCheckinWidget
+              currentStreak={currentStreak}
+              hasCheckedInToday={hasCheckedInToday}
+              rewardMessage={rewardMessage}
+              onCheckin={checkin}
+              isCheckinLoading={isCheckinLoading}
+            />
+          ) : (
+            <div className="bg-[#0B654D] text-white rounded-2xl py-7 sm:py-8 px-7 sm:px-9 shadow-xs border border-emerald-700/30 animate-in fade-in duration-200">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="space-y-2">
+                  <span className="inline-flex items-center px-3 py-1 bg-white/10 text-emerald-100/90 font-medium text-xs rounded-full border border-white/15">
+                    {isMentor ? 'Chế độ Người Dạy' : 'Chế độ Người Học'}
+                  </span>
+                  <h2 className="text-xl sm:text-2xl font-black tracking-tight">
+                    Xin chào, {userName}!
+                  </h2>
+                  <p className="text-xs sm:text-sm text-emerald-100/80 font-normal leading-relaxed max-w-xl">
+                    Bạn đã hoàn thành xuất sắc chuỗi 7 ngày điểm danh liên tiếp. Hãy tiếp tục chia sẻ tri thức và tham gia các buổi học mới!
+                  </p>
+                </div>
+              </div>
             </div>
-
-            <div className="flex items-center gap-3 shrink-0 self-stretch sm:self-auto flex-wrap">
-              {isMentor ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => handleProfileAction('CREATE_SCHEDULE')}
-                    className="flex-1 sm:flex-initial inline-flex items-center justify-center px-5 py-2.5 bg-white hover:bg-emerald-50 text-[#0B654D] rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
-                  >
-                    Quản lý lịch rảnh
-                  </button>
-                  <Link
-                    to="/requests"
-                    className="flex-1 sm:flex-initial inline-flex items-center justify-center px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-medium transition-all border border-white/20 active:scale-95 cursor-pointer"
-                  >
-                    Nhận dạy học viên
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/explore"
-                    className="flex-1 sm:flex-initial inline-flex items-center justify-center px-5 py-2.5 bg-white hover:bg-emerald-50 text-[#0B654D] rounded-xl text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
-                  >
-                    Khám phá Mentor
-                  </Link>
-                  <Link
-                    to="/requests"
-                    className="flex-1 sm:flex-initial inline-flex items-center justify-center px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-medium transition-all border border-white/20 active:scale-95 cursor-pointer"
-                  >
-                    Tìm gia sư kèm 1:1
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+          )}
+        </>
       )}
 
       {/* VIEW MODE 1: MYSELF (Student Dashboard - Clean Unified Profile Section) */}
-      {viewMode === 'MYSELF' && (
+      {!isOtherUser && viewMode === 'MYSELF' && (
         <div className="space-y-8 animate-in fade-in duration-200">
           {/* 2. UNIFIED PROFILE & SKILLS HERO CARD */}
           <div className="bg-white rounded-3xl border border-primary-100/80 shadow-xs p-6 sm:p-8 relative">
@@ -366,10 +376,10 @@ export const UserProfilePage: React.FC = () => {
 
               <div className="mt-6 flex items-center gap-2">
                 <Link
-                  to="/ledger"
+                  to="/manage/wallet"
                   className="flex-1 text-center py-2.5 bg-primary-50/60 hover:bg-primary-100/80 text-primary-700 text-xs font-bold rounded-xl transition-colors block border border-primary-200/50"
                 >
-                  Xem lịch sử
+                  Xem ví credit & sổ cái
                 </Link>
               </div>
             </div>
@@ -378,54 +388,81 @@ export const UserProfilePage: React.FC = () => {
             <div className="bg-white rounded-3xl p-6 sm:p-7 border border-primary-100/80 shadow-xs flex flex-col items-center justify-between text-center">
               <div className="w-full flex items-center justify-between">
                 <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">
-                  Điểm uy tín
+                  Điểm Uy Tín
                 </span>
-                <span className="text-[11px] font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full">
-                  XUẤT SẮC
+                <span className="text-xs font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full">
+                  Top 5%
                 </span>
               </div>
-
-              <div className="py-2 scale-90 sm:scale-95">
-                <TrustScoreGauge score={trustScoreMax100} size={130} />
+              <div className="py-4">
+                <span className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight">
+                  {trustScoreMax100}
+                </span>
+                <span className="text-sm text-gray-400 font-bold block mt-1">/ 100 Điểm</span>
               </div>
-
-              <span className="text-xs text-gray-500 font-medium">
-                Dựa trên đánh giá buổi học và tỷ lệ hoàn thành
-              </span>
+              <p className="text-[11px] text-gray-500 font-medium">
+                Dựa trên đánh giá và mức độ hoàn thành các buổi học
+              </p>
             </div>
 
-            {/* Card 3: Lộ trình chuyên môn */}
-            <ExpertiseTrackCard />
+            {/* Card 3: Nhiệm vụ Onboarding */}
+            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-primary-100/80 shadow-xs flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">
+                    Nhiệm vụ nhận thưởng
+                  </span>
+                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    +40 CR
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 font-medium mt-3 leading-relaxed">
+                  Hoàn thành các nhiệm vụ khởi đầu để nhận ngay Credit học tập miễn phí.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreditTasksOpen(true)}
+                className="mt-6 w-full py-2.5 bg-primary-700 hover:bg-primary-800 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-xs text-center"
+              >
+                Xem danh sách nhiệm vụ
+              </button>
+            </div>
           </div>
 
-          {/* 4. QUẢN LÝ LỊCH RẢNH DẠY HÀNG TUẦN & NGÀY NGHỈ ĐẶC BIỆT */}
-          <div id="schedule-section">
-            <MentorScheduleManager />
-          </div>
-
-          {/* 5. GỢI Ý KỸ NĂNG NỔI BẬT TRONG CỘNG ĐỒNG */}
+          {/* 4. GỢI Ý KỸ NĂNG NỔI BẬT TRONG CỘNG ĐỒNG */}
           <RecommendedSkillsSection recommendedSkills={recommendedSkills} />
 
-          {/* 6. SỔ CÁI GIAO DỊCH VÍ CREDIT */}
+          {/* 5. SỔ CÁI GIAO DỊCH VÍ CREDIT */}
           <CreditLedgerTable ledgerTransactions={ledgerTransactions} />
         </div>
       )}
 
       {/* VIEW MODE 2: PUBLIC (Guest / Mentor Public View) */}
-      {viewMode === 'PUBLIC' && (
+      {(isOtherUser || viewMode === 'PUBLIC') && (
         <div className="space-y-8 animate-in fade-in duration-200">
-          {/* Nút quay lại Chế độ Dashboard của tôi */}
+          {/* Top Bar for Back / Switch */}
           <div className="flex items-center justify-between bg-primary-50/70 border border-primary-200/80 p-4 rounded-2xl">
             <div className="flex items-center gap-2 text-xs font-bold text-primary-900">
-              <span>Đang xem ở Chế độ Khách (Người khác thấy hồ sơ của bạn như thế này)</span>
+              <span>
+                {isOtherUser
+                  ? `Hồ sơ công khai của ${userName}`
+                  : 'Đang xem ở Chế độ Khách (Người khác thấy hồ sơ của bạn như thế này)'}
+              </span>
             </div>
             <button
               type="button"
-              onClick={() => setViewMode('MYSELF')}
+              onClick={() => {
+                if (isOtherUser) {
+                  navigate(-1);
+                } else {
+                  setViewMode('MYSELF');
+                }
+              }}
               className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold bg-white text-primary-700 rounded-xl border border-primary-200 hover:bg-primary-100/50 shadow-2xs transition-colors cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Quay lại Chỉnh sửa</span>
+              <span>{isOtherUser ? 'Quay lại' : 'Quay lại Chỉnh sửa'}</span>
             </button>
           </div>
 
@@ -437,7 +474,7 @@ export const UserProfilePage: React.FC = () => {
                 userName={userName}
                 avatarUrl={avatarUrl}
                 bio={bio}
-                skills={skills}
+                skills={displaySkills}
                 isLiked={isLiked}
                 onToggleLike={() => setIsLiked(!isLiked)}
               />
@@ -453,7 +490,7 @@ export const UserProfilePage: React.FC = () => {
             <div className="lg:col-span-4 space-y-6 sticky top-20">
               {/* Mentorship Cost & Booking Card */}
               <SidebarBookingCard
-                mentorId={profile?.userId || profile?.id || 'sample-id'}
+                mentorId={isOtherUser ? userId : profile?.userId || profile?.id || 'sample-id'}
                 mentorName={userName}
               />
 

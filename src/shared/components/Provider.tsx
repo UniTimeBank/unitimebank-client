@@ -11,7 +11,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     <Provider store={store}>
       {children}
       <Toaster
-        position="top-right"
+        position="bottom-left"
         reverseOrder={false}
         toastOptions={{
           duration: 3500,
