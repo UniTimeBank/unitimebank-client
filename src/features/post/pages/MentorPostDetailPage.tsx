@@ -32,6 +32,9 @@ export const MentorPostDetailPage: React.FC = () => {
     skip: !post?.mentorId,
   });
 
+  const { data: myWallet } = useGetMyWalletQuery();
+  const availableBalance = myWallet?.availableBalance ?? 0;
+
   const [createBooking, { isLoading: isBookingLoading }] = useCreateMentorPostBookingMutation();
 
   // Booking Modal State
@@ -41,6 +44,16 @@ export const MentorPostDetailPage: React.FC = () => {
     slot: { startTime: string; endTime: string };
     note: string;
   } | null>(null);
+
+  const durationMinutes = useMemo(() => {
+    if (!bookingModal) return 0;
+    const [startH, startM] = bookingModal.slot.startTime.split(':').map(Number);
+    const [endH, endM] = bookingModal.slot.endTime.split(':').map(Number);
+    const diff = (endH * 60 + endM) - (startH * 60 + startM);
+    return diff > 0 ? diff : 60;
+  }, [bookingModal]);
+
+  const isInsufficientCredit = Boolean(bookingModal && availableBalance < durationMinutes);
 
   if (isLoading) {
     return (
@@ -72,19 +85,6 @@ export const MentorPostDetailPage: React.FC = () => {
       </div>
     );
   }
-
-  const { data: myWallet } = useGetMyWalletQuery();
-  const availableBalance = myWallet?.availableBalance ?? 0;
-
-  const durationMinutes = useMemo(() => {
-    if (!bookingModal) return 0;
-    const [startH, startM] = bookingModal.slot.startTime.split(':').map(Number);
-    const [endH, endM] = bookingModal.slot.endTime.split(':').map(Number);
-    const diff = (endH * 60 + endM) - (startH * 60 + startM);
-    return diff > 0 ? diff : 60;
-  }, [bookingModal]);
-
-  const isInsufficientCredit = Boolean(bookingModal && availableBalance < durationMinutes);
 
   const mentorName = mentorProfile?.displayName || post.mentorName || 'Mentor';
   const categoryCode = post.tags?.[0]?.category || 'PROGRAMMING';
