@@ -7,3 +7,4 @@ export * from './PublicProfileHeader';
 export * from './PublicStatsGrid';
 export * from './PeerReviewsSection';
 export * from './ExpertiseTrackCard';
+export * from './LearnerSidebarCard';

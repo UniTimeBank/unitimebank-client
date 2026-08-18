@@ -11,6 +11,7 @@ interface PublicProfileHeaderProps {
   skills: UserSkill[];
   isLiked: boolean;
   onToggleLike: () => void;
+  persona?: 'MENTOR' | 'LEARNER';
 }
 
 export const PublicProfileHeader: React.FC<PublicProfileHeaderProps> = ({
@@ -20,7 +21,9 @@ export const PublicProfileHeader: React.FC<PublicProfileHeaderProps> = ({
   skills,
   isLiked,
   onToggleLike,
+  persona = 'MENTOR',
 }) => {
+  const isMentor = persona === 'MENTOR';
   return (
     <div className="bg-white rounded-3xl p-6 sm:p-7 border border-primary-100/80 shadow-xs relative space-y-6">
       <div className="flex flex-col md:flex-row items-start gap-6">
@@ -83,6 +86,12 @@ export const PublicProfileHeader: React.FC<PublicProfileHeaderProps> = ({
           onOpenAddSkillModal={() => {}}
           onDeleteSkill={() => {}}
           isReadOnly={true}
+          title={isMentor ? 'KỸ NĂNG & MÔN NHẬN DẠY' : 'KỸ NĂNG QUAN TÂM & CẦN HỌC'}
+          emptyMessage={
+            isMentor
+              ? 'Thành viên chưa đăng ký kỹ năng nhận dạy.'
+              : 'Thành viên chưa thêm kỹ năng quan tâm học tập.'
+          }
         />
       </div>
     </div>

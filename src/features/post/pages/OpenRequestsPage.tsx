@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useActiveRole } from '@/shared/hooks/useActiveRole';
+import { GraduationCap, BookOpen } from 'lucide-react';
 import {
   CreatePostHeader,
   MentorOfferForm,
@@ -11,8 +11,7 @@ import type { MentorOfferFormState } from '../components/create-post/MentorOffer
 import type { LearnerRequestFormState } from '../components/create-post/LearnerRequestForm';
 
 export const OpenRequestsPage: React.FC = () => {
-  const { isMentor } = useActiveRole();
-  const postType = isMentor ? 'MENTOR_OFFER' : 'LEARNER_REQUEST';
+  const [postType, setPostType] = useState<'MENTOR_OFFER' | 'LEARNER_REQUEST'>('MENTOR_OFFER');
 
   const [mentorPreview, setMentorPreview] = useState<MentorOfferFormState>({
     title: '',
@@ -41,21 +40,58 @@ export const OpenRequestsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header Banner */}
-        <CreatePostHeader
-          postType={postType}
-        />
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* 1. Header Banner */}
+        <CreatePostHeader />
 
-        {/* FORM TYPE 1: ĐĂNG BÀI DẠY (MENTOR OFFER) */}
-        {postType === 'MENTOR_OFFER' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">
-            <div className="lg:col-span-7">
+        {/* 2. Main 2-Column Content: Left Form, Right Preview with Tab on Top */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">
+          {/* LEFT COLUMN: Active Form */}
+          <div className="lg:col-span-7">
+            {/* FORM 1: MENTOR OFFER */}
+            {postType === 'MENTOR_OFFER' && (
               <MentorOfferForm onPreviewChange={setMentorPreview} />
+            )}
+
+            {/* FORM 2: LEARNER REQUEST */}
+            {postType === 'LEARNER_REQUEST' && (
+              <LearnerRequestForm onPreviewChange={setLearnerPreview} />
+            )}
+          </div>
+
+          {/* RIGHT COLUMN: Tab Switcher directly on top of Live Preview Card */}
+          <div className="lg:col-span-5 sticky top-20 space-y-4">
+            {/* Tab Switcher - Clean Segmented Control */}
+            <div className="grid grid-cols-2 p-1 bg-slate-100/90 rounded-2xl gap-1 border border-slate-200/60 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setPostType('MENTOR_OFFER')}
+                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  postType === 'MENTOR_OFFER'
+                    ? 'bg-white text-slate-900 shadow-xs ring-1 ring-black/5 font-black'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <GraduationCap className={`w-4 h-4 stroke-[2.25] ${postType === 'MENTOR_OFFER' ? 'text-primary-700' : 'text-slate-400'}`} />
+                <span>Bài Nhận Dạy</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPostType('LEARNER_REQUEST')}
+                className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  postType === 'LEARNER_REQUEST'
+                    ? 'bg-white text-slate-900 shadow-xs ring-1 ring-black/5 font-black'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                <BookOpen className={`w-4 h-4 stroke-[2.25] ${postType === 'LEARNER_REQUEST' ? 'text-primary-700' : 'text-slate-400'}`} />
+                <span>Yêu Cầu Học</span>
+              </button>
             </div>
 
-            {/* Sticky Right Preview Sidebar */}
-            <div className="lg:col-span-5 sticky top-20">
+            {/* Live Preview Card */}
+            {postType === 'MENTOR_OFFER' ? (
               <MentorPostPreview
                 title={mentorPreview.title}
                 category={mentorPreview.category}
@@ -68,19 +104,7 @@ export const OpenRequestsPage: React.FC = () => {
                 endDate={mentorPreview.endDate}
                 selectedSlotCount={mentorPreview.selectedSlotCount}
               />
-            </div>
-          </div>
-        )}
-
-        {/* FORM TYPE 2: BÀI TÌM MENTOR (LEARNER REQUEST) */}
-        {postType === 'LEARNER_REQUEST' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-in fade-in duration-200">
-            <div className="lg:col-span-7">
-              <LearnerRequestForm onPreviewChange={setLearnerPreview} />
-            </div>
-
-            {/* Sticky Right Preview Sidebar */}
-            <div className="lg:col-span-5 sticky top-20">
+            ) : (
               <LearnerRequestSidebar
                 subject={learnerPreview.subject}
                 category={learnerPreview.category}
@@ -90,9 +114,9 @@ export const OpenRequestsPage: React.FC = () => {
                 durationMinutes={learnerPreview.durationMinutes}
                 timeline={learnerPreview.timeline}
               />
-            </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

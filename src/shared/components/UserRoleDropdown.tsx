@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Calendar, ReceiptText, LogOut, CalendarCheck, LayoutDashboard } from 'lucide-react';
-import { useActiveRole } from '@/shared/hooks/useActiveRole';
+import { User, Calendar, ReceiptText, LogOut, CalendarCheck, LayoutDashboard, FileText } from 'lucide-react';
 import LogoImage from '@/assets/images/Logo.png';
 
 interface UserRoleDropdownProps {
@@ -24,7 +23,6 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { isMentor, switchRole } = useActiveRole();
   const displayAvatar = avatarUrl || LogoImage;
 
   const handleMouseEnter = () => {
@@ -105,42 +103,6 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
             </div>
           </Link>
 
-          {/* Clean Role Switcher (Segmented Control Tinh Gọn) */}
-          <div className="py-3 px-1 border-b border-slate-100">
-            <div className="flex items-center justify-between mb-2 px-1">
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-                Vai trò hiện tại
-              </span>
-            </div>
-
-            {/* Segmented Buttons */}
-            <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl gap-1">
-              <button
-                type="button"
-                onClick={() => switchRole('LEARNER')}
-                className={`py-1.5 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer text-center ${
-                  !isMentor
-                    ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                Người học
-              </button>
-
-              <button
-                type="button"
-                onClick={() => switchRole('MENTOR')}
-                className={`py-1.5 px-3 rounded-lg text-xs font-medium transition-all cursor-pointer text-center ${
-                  isMentor
-                    ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                Người dạy
-              </button>
-            </div>
-          </div>
-
           {/* Quick Menu Links */}
           <div className="pt-2 space-y-0.5">
             <Link
@@ -150,6 +112,15 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
             >
               <User className="w-4 h-4 text-slate-400 stroke-[1.75]" />
               <span>Trang cá nhân & Hồ sơ</span>
+            </Link>
+
+            <Link
+              to="/manage/posts"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+            >
+              <FileText className="w-4 h-4 text-slate-400 stroke-[1.75]" />
+              <span>Quản lý Bài đăng</span>
             </Link>
 
             <Link

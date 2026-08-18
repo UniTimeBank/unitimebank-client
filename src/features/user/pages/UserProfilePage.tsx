@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Eye, Pencil, Share2, Plus, TrendingUp, Sprout, ArrowLeft, Loader2 } from 'lucide-react';
+import { Eye, Pencil, Share2, Plus, TrendingUp, Sprout, ArrowLeft, Loader2, GraduationCap, BookOpen, Sparkles, ShieldCheck } from 'lucide-react';
 
 import { SidebarBookingCard } from '@/features/schedule';
-import { useActiveRole } from '@/shared/hooks/useActiveRole';
 
 import {
   EditProfileModal,
@@ -18,6 +17,7 @@ import {
   PeerReviewsSection,
   ExpertiseTrackCard,
   RegisteredSkillsSection,
+  LearnerSidebarCard,
 } from '../components';
 import { useUserProfile, useUserSkills, useDailyCheckin } from '../hooks';
 import { useGetPublicProfileQuery } from '@/core/api/user/userApi';
@@ -32,7 +32,6 @@ export const UserProfilePage: React.FC = () => {
   const { profile, updateProfile, uploadAvatar } = useUserProfile();
   const { skills, addSkill, deleteSkill } = useUserSkills();
   const { currentStreak, hasCheckedInToday, rewardMessage, checkin, isCheckinLoading } = useDailyCheckin();
-  const { isMentor } = useActiveRole();
 
   // Detect if viewing another user's public profile
   const isOtherUser = Boolean(
@@ -48,6 +47,9 @@ export const UserProfilePage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'MYSELF' | 'PUBLIC'>(
     isOtherUser ? 'PUBLIC' : 'MYSELF',
   );
+
+  // Persona for Guest Mode: 'MENTOR' vs 'LEARNER'
+  const [guestPersona, setGuestPersona] = useState<'MENTOR' | 'LEARNER'>('MENTOR');
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddSkillModalOpen, setIsAddSkillModalOpen] = useState(false);
@@ -242,7 +244,7 @@ export const UserProfilePage: React.FC = () => {
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div className="space-y-2">
                   <span className="inline-flex items-center px-3 py-1 bg-white/10 text-emerald-100/90 font-medium text-xs rounded-full border border-white/15">
-                    {isMentor ? 'Chế độ Người Dạy' : 'Chế độ Người Học'}
+                    Thành viên UniTime
                   </span>
                   <h2 className="text-xl sm:text-2xl font-black tracking-tight">
                     Xin chào, {userName}!
@@ -384,24 +386,55 @@ export const UserProfilePage: React.FC = () => {
               </div>
             </div>
 
-            {/* Card 2: Điểm uy tín */}
-            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-primary-100/80 shadow-xs flex flex-col items-center justify-between text-center">
+            {/* Card 2: Điểm Uy Tín 2 Chiều (Dual Trust Score) */}
+            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-primary-100/80 shadow-xs flex flex-col justify-between">
               <div className="w-full flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">
-                  Điểm Uy Tín
+                <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-primary-600" />
+                  <span>Điểm Uy Tín 2 Chiều</span>
                 </span>
                 <span className="text-xs font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full">
-                  Top 5%
+                  Chuẩn 360°
                 </span>
               </div>
-              <div className="py-4">
-                <span className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight">
-                  {trustScoreMax100}
-                </span>
-                <span className="text-sm text-gray-400 font-bold block mt-1">/ 100 Điểm</span>
+
+              {/* 2 Cột Điểm: Người Dạy & Người Học */}
+              <div className="grid grid-cols-2 gap-2 my-auto py-2 divide-x divide-slate-100">
+                {/* Cột 1: Người Dạy */}
+                <div className="text-center pr-2">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    🧑‍🏫 Người Dạy
+                  </span>
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                      {trustScoreMax100}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-bold">/100</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded-md inline-block mt-1">
+                    Chất lượng dạy
+                  </span>
+                </div>
+
+                {/* Cột 2: Người Học */}
+                <div className="text-center pl-2">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                    🎓 Người Học
+                  </span>
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                      100
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-bold">/100</span>
+                  </div>
+                  <span className="text-[10px] text-primary-700 font-bold bg-primary-50 px-1.5 py-0.5 rounded-md inline-block mt-1">
+                    Đúng giờ & Cam kết
+                  </span>
+                </div>
               </div>
-              <p className="text-[11px] text-gray-500 font-medium">
-                Dựa trên đánh giá và mức độ hoàn thành các buổi học
+
+              <p className="text-[11px] text-gray-500 font-medium text-center pt-2 border-t border-slate-100">
+                Đánh giá tách biệt giúp bạn giữ trọn uy tín ở cả 2 vai trò
               </p>
             </div>
 
@@ -440,16 +473,23 @@ export const UserProfilePage: React.FC = () => {
 
       {/* VIEW MODE 2: PUBLIC (Guest / Mentor Public View) */}
       {(isOtherUser || viewMode === 'PUBLIC') && (
-        <div className="space-y-8 animate-in fade-in duration-200">
-          {/* Top Bar for Back / Switch */}
-          <div className="flex items-center justify-between bg-primary-50/70 border border-primary-200/80 p-4 rounded-2xl">
-            <div className="flex items-center gap-2 text-xs font-bold text-primary-900">
-              <span>
-                {isOtherUser
-                  ? `Hồ sơ công khai của ${userName}`
-                  : 'Đang xem ở Chế độ Khách (Người khác thấy hồ sơ của bạn như thế này)'}
-              </span>
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Top Bar for Guest Status - Modern Clean Block */}
+          <div className="flex items-center justify-between bg-white border border-slate-200/90 px-5 py-3.5 rounded-2xl shadow-2xs">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
+                <Eye className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 leading-none">
+                  {isOtherUser ? `Hồ sơ công khai của ${userName}` : 'Chế độ xem trước hồ sơ'}
+                </h4>
+                <p className="text-[11px] text-slate-400 font-medium mt-1 leading-none">
+                  {isOtherUser ? 'Đang xem thông tin công khai' : 'Giao diện hiển thị với các thành viên khác trên hệ thống'}
+                </p>
+              </div>
             </div>
+
             <button
               type="button"
               onClick={() => {
@@ -459,10 +499,10 @@ export const UserProfilePage: React.FC = () => {
                   setViewMode('MYSELF');
                 }
               }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold bg-white text-primary-700 rounded-xl border border-primary-200 hover:bg-primary-100/50 shadow-2xs transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200/80 rounded-xl transition-all shadow-2xs cursor-pointer shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>{isOtherUser ? 'Quay lại' : 'Quay lại Chỉnh sửa'}</span>
+              <span>{isOtherUser ? 'Quay lại' : 'Quay lại chỉnh sửa'}</span>
             </button>
           </div>
 
@@ -477,25 +517,68 @@ export const UserProfilePage: React.FC = () => {
                 skills={displaySkills}
                 isLiked={isLiked}
                 onToggleLike={() => setIsLiked(!isLiked)}
+                persona={guestPersona}
               />
 
               {/* 2. Stats Grid (2 Cards) */}
-              <PublicStatsGrid trustScoreMax100={trustScoreMax100} />
-
-              {/* 3. Peer Reviews Section */}
-              <PeerReviewsSection reviews={reviews} />
-            </div>
-
-            {/* RIGHT COLUMN (Sidebar 4 cols) */}
-            <div className="lg:col-span-4 space-y-6 sticky top-20">
-              {/* Mentorship Cost & Booking Card */}
-              <SidebarBookingCard
-                mentorId={isOtherUser ? userId : profile?.userId || profile?.id || 'sample-id'}
-                mentorName={userName}
+              <PublicStatsGrid
+                trustScoreMax100={trustScoreMax100}
+                persona={guestPersona}
               />
 
-              {/* Expertise Track Card */}
-              <ExpertiseTrackCard />
+              {/* 3. Peer Reviews Section */}
+              <PeerReviewsSection
+                reviews={reviews}
+                persona={guestPersona}
+              />
+            </div>
+
+            {/* RIGHT COLUMN (Sidebar 4 cols) - Sticky with Tab Switcher on Top */}
+            <div className="lg:col-span-4 space-y-4 sticky top-20">
+              {/* Tab Switcher - Clean Segmented Control */}
+              <div className="grid grid-cols-2 p-1 bg-slate-100/90 rounded-2xl gap-1 border border-slate-200/60 shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setGuestPersona('MENTOR')}
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                    guestPersona === 'MENTOR'
+                      ? 'bg-white text-slate-900 shadow-xs ring-1 ring-black/5 font-black'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <GraduationCap className={`w-4 h-4 stroke-[2.25] ${guestPersona === 'MENTOR' ? 'text-primary-700' : 'text-slate-400'}`} />
+                  <span>Người Dạy</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setGuestPersona('LEARNER')}
+                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                    guestPersona === 'LEARNER'
+                      ? 'bg-white text-slate-900 shadow-xs ring-1 ring-black/5 font-black'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <BookOpen className={`w-4 h-4 stroke-[2.25] ${guestPersona === 'LEARNER' ? 'text-primary-700' : 'text-slate-400'}`} />
+                  <span>Người Học</span>
+                </button>
+              </div>
+
+              {guestPersona === 'MENTOR' ? (
+                <>
+                  {/* Mentorship Cost & Booking Card */}
+                  <SidebarBookingCard
+                    mentorId={isOtherUser ? userId : profile?.userId || profile?.id || 'sample-id'}
+                    mentorName={userName}
+                  />
+
+                  {/* Expertise Track Card */}
+                  <ExpertiseTrackCard />
+                </>
+              ) : (
+                /* Learner Persona Sidebar Card */
+                <LearnerSidebarCard learnerName={userName} />
+              )}
             </div>
           </div>
         </div>
