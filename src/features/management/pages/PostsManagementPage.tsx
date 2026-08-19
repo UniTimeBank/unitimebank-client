@@ -8,7 +8,7 @@ import {
   X,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Button, Tabs } from '@/shared/components/ui';
+import { Button, Tabs, Pagination } from '@/shared/components/ui';
 import { ManagePostCard, DeletePostModal } from '../components';
 import { useManagePosts } from '../hooks';
 
@@ -22,6 +22,13 @@ export const PostsManagementPage: React.FC = () => {
     mentorPosts,
     learnerRequests,
     currentList,
+    paginatedList,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalItems,
     isLoading,
     isToggling,
     isDeleting,
@@ -155,30 +162,45 @@ export const PostsManagementPage: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {activeTab === 'MENTOR'
-            ? (currentList as typeof mentorPosts).map((post) => (
-                <ManagePostCard
-                  key={post._id}
-                  type="MENTOR"
-                  mentorPost={post}
-                  onToggleStatus={handleToggleStatus}
-                  onDelete={handleOpenDeleteModal}
-                  isToggling={isToggling}
-                  isDeleting={isDeleting}
-                />
-              ))
-            : (currentList as typeof learnerRequests).map((req) => (
-                <ManagePostCard
-                  key={req._id}
-                  type="LEARNER"
-                  learnerRequest={req}
-                  onToggleStatus={handleToggleStatus}
-                  onDelete={handleOpenDeleteModal}
-                  isToggling={isToggling}
-                  isDeleting={isDeleting}
-                />
-              ))}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {activeTab === 'MENTOR'
+              ? (paginatedList as typeof mentorPosts).map((post) => (
+                  <ManagePostCard
+                    key={post._id}
+                    type="MENTOR"
+                    mentorPost={post}
+                    onToggleStatus={handleToggleStatus}
+                    onDelete={handleOpenDeleteModal}
+                    isToggling={isToggling}
+                    isDeleting={isDeleting}
+                  />
+                ))
+              : (paginatedList as typeof learnerRequests).map((req) => (
+                  <ManagePostCard
+                    key={req._id}
+                    type="LEARNER"
+                    learnerRequest={req}
+                    onToggleStatus={handleToggleStatus}
+                    onDelete={handleOpenDeleteModal}
+                    isToggling={isToggling}
+                    isDeleting={isDeleting}
+                  />
+                ))}
+          </div>
+
+          {/* Reusable Pagination */}
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            showPageSizeSelector={true}
+            pageSizeOptions={[6, 12, 24]}
+            itemLabel="bài đăng"
+          />
         </div>
       )}
 

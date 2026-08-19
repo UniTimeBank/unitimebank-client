@@ -33,7 +33,6 @@ export const getEndDate = (startStr: string, days = 6): string => {
   return formatLocalDate(d);
 };
 
-export const WEEK_DAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 export const ALL_WEEK_DAYS: DayOfWeek[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
 /**

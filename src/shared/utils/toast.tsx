@@ -22,6 +22,8 @@ const CustomToastCard: React.FC<CustomToastProps> = ({
   title,
   message,
 }) => {
+  const hasMessage = Boolean(message && message.trim());
+
   return (
     <div
       style={{
@@ -29,16 +31,16 @@ const CustomToastCard: React.FC<CustomToastProps> = ({
         transform: t.visible ? 'translateX(0) scale(1)' : 'translateX(-18px) scale(0.97)',
         transition: 'all 0.32s cubic-bezier(0.34, 1.56, 0.64, 1)',
         display: 'flex',
-        alignItems: 'flex-start',
+        alignItems: hasMessage ? 'flex-start' : 'center',
         gap: '12px',
         background: 'rgba(15, 23, 42, 0.96)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         border: `1px solid rgba(255,255,255,0.08)`,
         borderRadius: '18px',
-        padding: '14px 16px',
+        padding: hasMessage ? '13px 16px' : '10px 14px',
         minWidth: '280px',
-        maxWidth: '360px',
+        maxWidth: '380px',
         boxShadow: `0 8px 32px -8px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)`,
         position: 'relative',
         overflow: 'hidden',
@@ -49,8 +51,8 @@ const CustomToastCard: React.FC<CustomToastProps> = ({
         style={{
           position: 'absolute',
           left: 0,
-          top: '14%',
-          bottom: '14%',
+          top: hasMessage ? '14%' : '20%',
+          bottom: hasMessage ? '14%' : '20%',
           width: '3px',
           borderRadius: '0 3px 3px 0',
           background: accentColor,
@@ -62,22 +64,22 @@ const CustomToastCard: React.FC<CustomToastProps> = ({
       <div
         style={{
           flexShrink: 0,
-          width: '36px',
-          height: '36px',
-          borderRadius: '12px',
+          width: hasMessage ? '36px' : '32px',
+          height: hasMessage ? '36px' : '32px',
+          borderRadius: hasMessage ? '12px' : '10px',
           background: `linear-gradient(135deg, ${glowColor}22, ${glowColor}11)`,
           border: `1px solid ${glowColor}33`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          marginLeft: '4px',
+          marginLeft: '2px',
         }}
       >
         {icon}
       </div>
 
       {/* Text */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         <p
           style={{
             margin: 0,
@@ -90,7 +92,7 @@ const CustomToastCard: React.FC<CustomToastProps> = ({
         >
           {title}
         </p>
-        {message && (
+        {hasMessage && (
           <p
             style={{
               margin: '3px 0 0',
@@ -119,7 +121,7 @@ const CustomToastCard: React.FC<CustomToastProps> = ({
           fontSize: '14px',
           borderRadius: '6px',
           transition: 'color 0.15s',
-          alignSelf: 'flex-start',
+          alignSelf: hasMessage ? 'flex-start' : 'center',
         }}
         onMouseEnter={(e) => ((e.target as HTMLElement).style.color = '#CBD5E1')}
         onMouseLeave={(e) => ((e.target as HTMLElement).style.color = '#475569')}

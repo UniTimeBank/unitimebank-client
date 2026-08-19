@@ -1,16 +1,21 @@
 import React, { useState, useMemo } from 'react';
-import { Clock, Calendar, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Clock, Calendar, Zap, Info, FileText, Lock } from 'lucide-react';
 import type { TimeSlot } from '@/features/post/types';
 import { Button } from '@/shared/components/ui';
 import { toast } from '@/shared/utils';
+import { useAppSelector } from '@/shared/hooks';
+import { selectCurrentUser } from '@/core/store';
 
 export interface LearnerRequestDetailSidebarProps {
   title?: string;
+  learnerId?: string;
   slots: TimeSlot[];
   expectedCreditAmount?: number;
   expectedDurationMinutes?: number;
   deadlineText?: string;
   learnerName?: string;
+  status?: string;
   primaryButtonText?: string;
   onPrimaryAction?: (slot: TimeSlot) => void;
   className?: string;
@@ -72,15 +77,20 @@ const formatSlotDay = (rawDay: string): string => {
 
 export const LearnerRequestDetailSidebar: React.FC<LearnerRequestDetailSidebarProps> = ({
   title = 'Khung giờ học viên rảnh',
+  learnerId,
   slots = [],
   expectedCreditAmount = 60,
   expectedDurationMinutes = 60,
   deadlineText,
   learnerName = 'Học viên',
+  status,
   primaryButtonText = 'Nhận dạy yêu cầu này',
   onPrimaryAction,
   className = '',
 }) => {
+  const authUser = useAppSelector(selectCurrentUser);
+  const isOwner = Boolean(authUser?.id && learnerId && authUser.id === learnerId);
+  const isClosed = status === 'CANCELLED' || status === 'MATCHED';
   // Normalize slots or provide fallback
   const rawSlots: TimeSlot[] =
     slots && slots.length > 0
@@ -225,17 +235,49 @@ export const LearnerRequestDetailSidebar: React.FC<LearnerRequestDetailSidebarPr
 
         {/* Nút hành động Nhận dạy */}
         <div className="pt-1">
-          <Button
-            type="button"
-            variant="primary"
-            fullWidth
-            size="md"
-            disabled={!selectedSlot}
-            onClick={handleAcceptRequest}
-            className="rounded-xl bg-primary-700 hover:bg-primary-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs py-3 shadow-xs"
-          >
-            <span>{primaryButtonText}</span>
-          </Button>
+          {isOwner ? (
+            <Link to="/manage/posts" className="block w-full">
+              <Button
+                type="button"
+                variant="outline"
+                fullWidth
+                size="md"
+                className="rounded-xl border-slate-300 hover:border-slate-400 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold text-xs py-3 flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+              >
+                <FileText className="w-4 h-4 text-slate-600" />
+                <span>Quản lý yêu cầu của bạn</span>
+              </Button>
+            </Link>
+          ) : isClosed ? (
+            <div className="space-y-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                fullWidth
+                size="md"
+                disabled
+                className="rounded-xl border-amber-200 bg-amber-50/80 text-amber-800 font-bold text-xs py-3 flex items-center justify-center gap-1.5 shadow-2xs opacity-90 cursor-not-allowed"
+              >
+                <Lock className="w-4 h-4 text-amber-600" />
+                <span>{status === 'MATCHED' ? 'Yêu cầu đã có gia sư' : 'Yêu cầu học đã đóng'}</span>
+              </Button>
+              <p className="text-[11px] text-amber-700 font-medium text-center">
+                Học viên hiện đang tạm ngưng nhận thêm đề nghị dạy mới.
+              </p>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="primary"
+              fullWidth
+              size="md"
+              disabled={!selectedSlot}
+              onClick={handleAcceptRequest}
+              className="rounded-xl bg-primary-700 hover:bg-primary-800 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs py-3 shadow-xs cursor-pointer"
+            >
+              <span>{primaryButtonText}</span>
+            </Button>
+          )}
         </div>
       </div>
     </div>

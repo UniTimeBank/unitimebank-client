@@ -44,12 +44,14 @@ export interface ExploreCardItem {
   tagSkill?: string;
   secondaryTag?: string;
   authorName: string;
+  authorId?: string;
   authorAvatar?: string;
   authorUniversity?: string;
   rateCreditText?: string;
   trustScore?: number;
   sessionType?: string;
   detailUrl: string;
+  createdAt?: string | Date;
 }
 
 export interface PostTag {

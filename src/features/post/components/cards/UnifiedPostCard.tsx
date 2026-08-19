@@ -7,6 +7,9 @@ import {
   FALLBACK_CATEGORY_IMAGES,
   DEFAULT_POST_COVER,
 } from '../../constants';
+import { useAppSelector } from '@/shared/hooks';
+import { selectCurrentUser } from '@/core/store';
+import { formatTimeAgo } from '@/shared/utils';
 
 export interface UnifiedPostCardData {
   id?: string;
@@ -17,6 +20,7 @@ export interface UnifiedPostCardData {
   coverImage?: string;
   primaryTag?: string;
   secondaryTags?: string[];
+  authorId?: string;
   authorName: string;
   authorAvatar?: string;
   authorSubtitle?: string;
@@ -31,27 +35,6 @@ export interface UnifiedPostCardData {
   createdAt?: string | Date;
   timeAgoText?: string;
 }
-
-const formatTimeAgo = (dateInput?: string | Date, fallback: string = 'Vừa xong'): string => {
-  if (!dateInput) return fallback;
-  const date = new Date(dateInput);
-  if (isNaN(date.getTime())) return fallback;
-
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  if (diffInSeconds < 60) return 'Vừa xong';
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours} giờ trước`;
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays < 7) return `${diffInDays} ngày trước`;
-  const diffInWeeks = Math.floor(diffInDays / 7);
-  if (diffInWeeks < 4) return `${diffInWeeks} tuần trước`;
-
-  return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
-};
 
 export const UnifiedPostCard: React.FC<{
   data: UnifiedPostCardData;
@@ -119,6 +102,9 @@ export const UnifiedPostCard: React.FC<{
         )
     )
   );
+
+  const authUser = useAppSelector(selectCurrentUser);
+  const isMyPost = Boolean(authUser?.id && data.authorId && authUser.id === data.authorId);
 
   return (
     <div
@@ -188,10 +174,17 @@ export const UnifiedPostCard: React.FC<{
               </div>
             </div>
 
-            {/* Trust Score */}
-            <div className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/70 text-[11px] font-bold flex items-center gap-1 shrink-0">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>{trustScore}</span>
+            {/* Trust Score & My Post Tag */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isMyPost && (
+                <span className="px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">
+                  Bài của bạn
+                </span>
+              )}
+              <div className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/70 text-[11px] font-bold flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{trustScore}</span>
+              </div>
             </div>
           </div>
 

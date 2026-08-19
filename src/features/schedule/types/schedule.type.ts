@@ -78,3 +78,33 @@ export interface GetAvailabilityParams {
   from: string;
   to: string;
 }
+
+export interface CalendarDayItem {
+  dateStr: string;
+  dayNum: number;
+  isCurrentMonth: boolean;
+}
+
+export interface SidebarBookingCardProps {
+  // Option A: Profile Mode (fetches from API)
+  mentorId?: string;
+  // Option B: Post Detail Mode (uses post's specific slots)
+  slots?: import('@/features/post/types').TimeSlot[];
+  scheduleType?: import('@/features/post/types').PostScheduleType | string;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
+
+  // Customization & Meta Props
+  title?: string;
+  creditCost?: number | string;
+  creditRateText?: string;
+  freeTrialText?: string;
+  mentorName?: string;
+  authorName?: string;
+  primaryButtonText?: string;
+  onBookSession?: (date: string, startTime: string, endTime: string) => void;
+  onPrimaryAction?: (date: string, slot: import('@/features/post/types').TimeSlot) => void;
+  className?: string;
+}
+

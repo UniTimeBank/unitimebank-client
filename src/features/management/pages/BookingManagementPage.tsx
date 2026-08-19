@@ -1,7 +1,7 @@
 import React from 'react';
 import { Plus, CalendarCheck, Search, X } from 'lucide-react';
 import { BookingCard, CancelBookingModal } from '../components';
-import { Button, Tabs } from '@/shared/components/ui';
+import { Button, Tabs, Pagination } from '@/shared/components/ui';
 import { useManageBookings, type BookingTabType } from '../hooks';
 
 export const BookingManagementPage: React.FC = () => {
@@ -16,6 +16,13 @@ export const BookingManagementPage: React.FC = () => {
     upcomingBookings,
     historyBookings,
     currentTabBookings,
+    paginatedBookings,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalItems,
     isLoading,
     isAccepting,
     isRejecting,
@@ -139,21 +146,36 @@ export const BookingManagementPage: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="space-y-3">
-          {currentTabBookings.map((booking) => (
-            <BookingCard
-              key={booking.id}
-              booking={booking}
-              currentUserId={currentUserId}
-              onAccept={handleAccept}
-              onReject={handleReject}
-              onCancel={handleOpenCancelModal}
-              onJoinRoom={handleJoinRoom}
-              isAccepting={isAccepting}
-              isRejecting={isRejecting}
-              isCancelling={isCancelling}
-            />
-          ))}
+        <div className="space-y-4">
+          <div className="space-y-3">
+            {paginatedBookings.map((booking) => (
+              <BookingCard
+                key={booking.id}
+                booking={booking}
+                currentUserId={currentUserId}
+                onAccept={handleAccept}
+                onReject={handleReject}
+                onCancel={handleOpenCancelModal}
+                onJoinRoom={handleJoinRoom}
+                isAccepting={isAccepting}
+                isRejecting={isRejecting}
+                isCancelling={isCancelling}
+              />
+            ))}
+          </div>
+
+          {/* Reusable Pagination */}
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            showPageSizeSelector={true}
+            pageSizeOptions={[5, 10, 20]}
+            itemLabel="buổi học"
+          />
         </div>
       )}
 

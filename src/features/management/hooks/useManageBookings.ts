@@ -27,13 +27,13 @@ export const useManageBookings = () => {
   // Cancellation Modal State
   const [cancelModalBooking, setCancelModalBooking] = useState<BookingItem | null>(null);
 
-  // RTK Query API with Realtime Polling & Window Focus Sync
+  // RTK Query API with Smart Targeted Polling (10s) & Window Focus Sync
   const {
     data: apiResponse,
     isLoading,
     refetch,
   } = useGetMyBookingsQuery(undefined, {
-    pollingInterval: 2500,
+    pollingInterval: 10000,
     refetchOnFocus: true,
     refetchOnReconnect: true,
     refetchOnMountOrArgChange: true,
@@ -68,7 +68,8 @@ export const useManageBookings = () => {
         b.status === BookingStatus.COMPLETED ||
         b.status === BookingStatus.CANCELLED ||
         b.status === BookingStatus.REJECTED ||
-        b.status === BookingStatus.NO_SHOW,
+        b.status === BookingStatus.NO_SHOW ||
+        b.status === BookingStatus.EXPIRED,
     );
   }, [allBookings]);
 
@@ -158,18 +159,45 @@ export const useManageBookings = () => {
     toast.success('Đang kết nối phòng học 1-1...', `Mã buổi học: ${id}`);
   };
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+
+  const handleTabChange = (tab: BookingTabType) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+  };
+
+  const totalPages = Math.ceil(currentTabBookings.length / pageSize);
+
+  const paginatedBookings = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return currentTabBookings.slice(start, start + pageSize);
+  }, [currentTabBookings, page, pageSize]);
+
   return {
     currentUserId,
     activeTab,
-    setActiveTab,
+    setActiveTab: handleTabChange,
     searchQuery,
-    setSearchQuery,
+    setSearchQuery: handleSearchChange,
     cancelModalBooking,
     allBookings,
     pendingBookings,
     upcomingBookings,
     historyBookings,
     currentTabBookings,
+    paginatedBookings,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalItems: currentTabBookings.length,
     isLoading,
     isAccepting,
     isRejecting,

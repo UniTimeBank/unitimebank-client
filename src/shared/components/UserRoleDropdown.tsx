@@ -20,10 +20,13 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
 }) => {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const displayAvatar = avatarUrl || LogoImage;
+  useEffect(() => {
+    setImageError(false);
+  }, [avatarUrl]);
 
   const handleMouseEnter = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -54,6 +57,8 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const firstLetter = userName?.trim().charAt(0)?.toUpperCase() || 'U';
+
   return (
     <div
       ref={dropdownRef}
@@ -68,15 +73,28 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
         title="Trang cá nhân & Hồ sơ"
         className="flex items-center p-0.5 rounded-full hover:ring-2 hover:ring-slate-300 transition-all cursor-pointer select-none outline-none group"
       >
-        <img
-          src={displayAvatar}
-          alt={userName}
-          className={`w-8.5 h-8.5 rounded-full object-cover ring-1 transition-all ${
-            isOpen
-              ? 'ring-slate-900 shadow-xs'
-              : 'ring-slate-200 group-hover:ring-slate-400'
-          }`}
-        />
+        {avatarUrl && !imageError ? (
+          <img
+            src={avatarUrl}
+            alt={userName}
+            onError={() => setImageError(true)}
+            className={`w-8.5 h-8.5 rounded-full object-cover ring-1 transition-all ${
+              isOpen
+                ? 'ring-slate-900 shadow-xs'
+                : 'ring-slate-200 group-hover:ring-slate-400'
+            }`}
+          />
+        ) : (
+          <div
+            className={`w-8.5 h-8.5 rounded-full bg-primary-100 text-primary-700 font-bold text-xs flex items-center justify-center ring-1 transition-all shrink-0 ${
+              isOpen
+                ? 'ring-slate-900 shadow-xs'
+                : 'ring-primary-200 group-hover:ring-primary-400'
+            }`}
+          >
+            {firstLetter}
+          </div>
+        )}
       </button>
 
       {/* Menu Dropdown Clean & Minimal */}
@@ -88,11 +106,18 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-3 px-2 py-2 border-b border-slate-100 pb-3 rounded-xl hover:bg-slate-50 transition-colors"
           >
-            <img
-              src={displayAvatar}
-              alt={userName}
-              className="w-10 h-10 rounded-full object-cover ring-1 ring-slate-200 shrink-0"
-            />
+            {avatarUrl && !imageError ? (
+              <img
+                src={avatarUrl}
+                alt={userName}
+                onError={() => setImageError(true)}
+                className="w-10 h-10 rounded-full object-cover ring-1 ring-slate-200 shrink-0"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 font-bold text-sm flex items-center justify-center ring-1 ring-primary-200 shrink-0">
+                {firstLetter}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <h4 className="text-sm font-semibold text-slate-900 truncate leading-snug">
                 {userName}

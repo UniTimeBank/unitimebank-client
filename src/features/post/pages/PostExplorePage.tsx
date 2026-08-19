@@ -62,6 +62,7 @@ export const PostExplorePage: React.FC = () => {
         coverImage: (req as any).coverImage,
         tagSkill: req.skillNeeded?.toUpperCase().slice(0, 16) || 'HỌC TẬP',
         secondaryTag: 'Cần hỗ trợ',
+        authorId: req.learnerId,
         authorName: req.learnerName || 'Học viên UniTime',
         authorAvatar: req.learnerAvatar,
         authorUniversity: 'Sinh viên UniTime',
@@ -69,6 +70,7 @@ export const PostExplorePage: React.FC = () => {
         trustScore: 100,
         sessionType: req.sessionType || 'ONE_ON_ONE',
         detailUrl: `/posts/learner/${req._id}`,
+        createdAt: (req as any).createdAt || (req as any).created_at,
       }));
     } else {
       // Hiển thị các bài dạy của Mentor
@@ -90,6 +92,7 @@ export const PostExplorePage: React.FC = () => {
           tagSkill: categoryLabel,
           secondaryTag: allSkills.join(', '),
           allSkills,
+          authorId: post.mentorId,
           authorName: post.mentorName || 'Mentor UniTime',
           authorAvatar: post.mentorAvatar,
           authorUniversity: 'Mentor UniTime',
@@ -98,6 +101,7 @@ export const PostExplorePage: React.FC = () => {
           sessionType: post.sessionType || 'BOTH',
           scheduleType: (post.scheduleType as 'ALWAYS_OPEN' | 'LIMITED_TIME') || 'ALWAYS_OPEN',
           detailUrl: `/posts/mentor/${post._id}`,
+          createdAt: (post as any).createdAt || (post as any).created_at,
         };
       });
     }
@@ -369,6 +373,7 @@ export const PostExplorePage: React.FC = () => {
                       : item.secondaryTag
                       ? [item.secondaryTag]
                       : [],
+                  authorId: item.authorId,
                   authorName: item.authorName,
                   authorAvatar: item.authorAvatar,
                   authorSubtitle: item.authorUniversity,
@@ -383,6 +388,7 @@ export const PostExplorePage: React.FC = () => {
                       : 'Lớp 1:1',
                   scheduleType: (item as any).scheduleType,
                   timelineText: 'Trong 3 ngày',
+                  createdAt: item.createdAt,
                 }}
               />
             ))}

@@ -13,7 +13,7 @@ export const MentorScheduleManager: React.FC = () => {
 
   // Query confirmed bookings count
   const { data: bookingsData } = useGetMyBookingsQuery(undefined, {
-    pollingInterval: 5000,
+    refetchOnFocus: true,
   });
 
   const confirmedCount = (bookingsData?.items || []).filter(

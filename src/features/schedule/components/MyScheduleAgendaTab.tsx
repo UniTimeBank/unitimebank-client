@@ -56,9 +56,9 @@ export const MyScheduleAgendaTab: React.FC = () => {
   const [viewMode, setViewMode] = useState<'WEEK' | 'TIMELINE'>('WEEK');
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => getMonday(new Date()));
 
-  // Query realtime confirmed bookings
+  // Query confirmed bookings (Smart 15s polling while calendar is open)
   const { data: apiResponse, isLoading } = useGetMyBookingsQuery(undefined, {
-    pollingInterval: 3000,
+    pollingInterval: 15000,
     refetchOnFocus: true,
   });
 

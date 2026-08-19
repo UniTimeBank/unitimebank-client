@@ -54,3 +54,47 @@ export const SAMPLE_LEDGER_TRANSACTIONS: LedgerSummaryItem[] = [
     type: 'plus',
   },
 ];
+
+export interface TrendingExchangeItem {
+  id: string;
+  category: string;
+  duration: string;
+  title: string;
+  description: string;
+  mentorName: string;
+  avatar: string;
+  rating: number | string;
+}
+
+export const DEFAULT_TRENDING: TrendingExchangeItem[] = [
+  {
+    id: 't1',
+    category: 'Lập trình',
+    duration: '60 phút',
+    title: 'Hướng dẫn xây dựng RESTful API với NestJS & MongoDB',
+    description: 'Chia sẻ kinh nghiệm thiết kế kiến trúc chuẩn Clean Architecture, xử lý validation và auth JWT.',
+    mentorName: 'Nguyễn Văn Hùng',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=120',
+    rating: '4.9',
+  },
+  {
+    id: 't2',
+    category: 'Thiết kế',
+    duration: '45 phút',
+    title: 'Review Portfolio & Tư vấn CV ứng tuyển UI/UX Intern',
+    description: 'Góp ý chi tiết về layout, typography, case study và cách trình bày dự án để gây ấn tượng với nhà tuyển dụng.',
+    mentorName: 'Lê Thảo My',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=120',
+    rating: '5.0',
+  },
+  {
+    id: 't3',
+    category: 'Ngoại ngữ',
+    duration: '60 phút',
+    title: 'Mock Interview Speaking IELTS & Sửa lỗi phát âm',
+    description: 'Luyện tập các chủ đề Part 2, Part 3 thường gặp trong quý này, hướng dẫn mở rộng ý và từ vựng band 7.0+.',
+    mentorName: 'Phạm Hoàng Nam',
+    avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=120',
+    rating: '4.8',
+  },
+];

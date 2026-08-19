@@ -53,8 +53,17 @@ export const useManagePosts = () => {
   const [updateLearnerRequest, { isLoading: isUpdatingLearner }] = useUpdateLearnerRequestMutation();
   const [cancelLearnerRequest, { isLoading: isCancellingLearner }] = useCancelLearnerRequestMutation();
 
-  const mentorPosts = mentorPostsData?.items || [];
-  const learnerRequests = learnerRequestsData?.items || [];
+  const mentorPosts = useMemo(() => {
+    return (mentorPostsData?.items || []).filter(
+      (p) => p.status !== ('ARCHIVED' as any) && !(p as any).removedAt,
+    );
+  }, [mentorPostsData]);
+
+  const learnerRequests = useMemo(() => {
+    return (learnerRequestsData?.items || []).filter(
+      (r) => !(r as any).removedAt,
+    );
+  }, [learnerRequestsData]);
 
   // Filter items by search query
   const filteredMentorPosts = useMemo(() => {
@@ -138,20 +147,47 @@ export const useManagePosts = () => {
     }
   };
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
+
+  // Reset page to 1 when changing tab or search query
+  const handleTabChange = (tab: PostTabType) => {
+    setActiveTab(tab);
+    setPage(1);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+  };
+
   const isLoading = activeTab === 'MENTOR' ? isMentorLoading : isLearnerLoading;
   const currentList = activeTab === 'MENTOR' ? filteredMentorPosts : filteredLearnerRequests;
+  const totalPages = Math.ceil(currentList.length / pageSize);
+
+  const paginatedList = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return currentList.slice(start, start + pageSize);
+  }, [currentList, page, pageSize]);
 
   return {
     activeTab,
-    setActiveTab,
+    setActiveTab: handleTabChange,
     searchQuery,
-    setSearchQuery,
+    setSearchQuery: handleSearchChange,
     deleteModal,
     mentorPosts,
     learnerRequests,
     filteredMentorPosts,
     filteredLearnerRequests,
     currentList,
+    paginatedList,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalItems: currentList.length,
     isLoading,
     isMentorLoading,
     isLearnerLoading,

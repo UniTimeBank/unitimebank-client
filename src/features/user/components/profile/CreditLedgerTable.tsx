@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Download } from 'lucide-react';
+import { Pagination } from '@/shared/components/ui';
 
 interface LedgerTransaction {
   id: string;
@@ -20,15 +21,25 @@ interface CreditLedgerTableProps {
 export const CreditLedgerTable: React.FC<CreditLedgerTableProps> = ({
   ledgerTransactions,
 }) => {
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(8);
+
+  const totalPages = Math.ceil(ledgerTransactions.length / pageSize);
+
+  const paginatedTransactions = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return ledgerTransactions.slice(start, start + pageSize);
+  }, [ledgerTransactions, page, pageSize]);
+
   return (
     <section className="bg-white rounded-2xl border border-gray-100 p-6 shadow-xs">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-gray-900">Sổ cái Credit</h2>
         <div className="flex items-center gap-2">
           <select className="text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 font-medium text-gray-700">
+            <option>Tất cả thời gian</option>
             <option>30 ngày qua</option>
             <option>7 ngày qua</option>
-            <option>Tất cả thời gian</option>
           </select>
         </div>
       </div>
@@ -45,32 +56,56 @@ export const CreditLedgerTable: React.FC<CreditLedgerTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {ledgerTransactions.map((tx) => (
-              <tr key={tx.id} className="hover:bg-gray-50/50 transition-colors">
-                <td className="py-3.5 pl-2">
-                  <div className="font-bold text-gray-900">{tx.title}</div>
-                  <div className="text-[11px] text-gray-400">{tx.subtitle}</div>
-                </td>
-                <td className="py-3.5">
-                  <span className={`px-2.5 py-1 rounded-md font-semibold text-[10px] ${tx.typeBg}`}>
-                    {tx.type}
-                  </span>
-                </td>
-                <td className="py-3.5">
-                  <span className="inline-flex items-center gap-1.5 text-gray-700 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
-                    {tx.status}
-                  </span>
-                </td>
-                <td className="py-3.5 text-gray-500 font-medium">{tx.date}</td>
-                <td className={`py-3.5 pr-2 text-right text-xs ${tx.amountColor}`}>
-                  {tx.amount}
+            {paginatedTransactions.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-slate-400 text-xs font-medium">
+                  Chưa có giao dịch nào được ghi nhận
                 </td>
               </tr>
-            ))}
+            ) : (
+              paginatedTransactions.map((tx) => (
+                <tr key={tx.id} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="py-3.5 pl-2">
+                    <div className="font-bold text-gray-900">{tx.title}</div>
+                    <div className="text-[11px] text-gray-400">{tx.subtitle}</div>
+                  </td>
+                  <td className="py-3.5">
+                    <span className={`px-2.5 py-1 rounded-md font-semibold text-[10px] ${tx.typeBg}`}>
+                      {tx.type}
+                    </span>
+                  </td>
+                  <td className="py-3.5">
+                    <span className="inline-flex items-center gap-1.5 text-gray-700 font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary-500" />
+                      {tx.status}
+                    </span>
+                  </td>
+                  <td className="py-3.5 text-gray-500 font-medium">{tx.date}</td>
+                  <td className={`py-3.5 pr-2 text-right text-xs ${tx.amountColor}`}>
+                    {tx.amount}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {ledgerTransactions.length > 0 && (
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalItems={ledgerTransactions.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          showPageSizeSelector={true}
+          pageSizeOptions={[8, 16, 32]}
+          itemLabel="giao dịch"
+          className="mt-2"
+        />
+      )}
 
       <div className="mt-6 text-center border-t border-gray-50 pt-4">
         <button className="text-xs font-bold text-primary-500 hover:text-primary-600 flex items-center justify-center gap-1.5 mx-auto cursor-pointer">

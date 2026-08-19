@@ -186,6 +186,7 @@ export const MentorPostDetailPage: React.FC = () => {
               scheduleType={post.scheduleType}
               startDate={post.startDate}
               endDate={post.endDate}
+              status={post.status}
               creditCost="1"
               creditRateText="credit / phút"
               freeTrialText="Miễn phí 5 phút đầu"

@@ -5,6 +5,7 @@ import {
   Lock,
   Unlock,
   Eye,
+  Clock,
 } from 'lucide-react';
 import type { MentorPost, LearnerRequest } from '@/features/post/types';
 import { PostStatus, LearnerRequestStatus } from '@/features/post/types';
@@ -14,6 +15,7 @@ import {
   DEFAULT_POST_COVER,
 } from '@/features/post/constants';
 import { Button } from '@/shared/components/ui';
+import { toast } from '@/shared/utils';
 
 export interface ManagePostCardProps {
   type: 'MENTOR' | 'LEARNER';
@@ -55,13 +57,19 @@ export const ManagePostCard: React.FC<ManagePostCardProps> = ({
   const coverUrl =
     post.coverImage || FALLBACK_CATEGORY_IMAGES[categoryUpper] || DEFAULT_POST_COVER;
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isExpired =
+    isMentor &&
+    mentorPost?.scheduleType === 'LIMITED_TIME' &&
+    Boolean(mentorPost?.endDate && mentorPost.endDate < todayStr);
+
   // Status mapping
   const isPostOpen = isMentor
-    ? mentorPost?.status === PostStatus.PUBLISHED
+    ? mentorPost?.status === PostStatus.PUBLISHED && !isExpired
     : learnerRequest?.status === LearnerRequestStatus.OPEN;
 
   const isPostClosed = isMentor
-    ? mentorPost?.status === PostStatus.CLOSED
+    ? mentorPost?.status === PostStatus.CLOSED && !isExpired
     : learnerRequest?.status === LearnerRequestStatus.CANCELLED;
 
   const isMatched = !isMentor && learnerRequest?.status === LearnerRequestStatus.MATCHED;
@@ -95,6 +103,16 @@ export const ManagePostCard: React.FC<ManagePostCardProps> = ({
       })
     : '';
 
+  const handleToggleClick = () => {
+    if (!isPostOpen && isExpired) {
+      toast.error(
+        'Bài đăng đã hết thời hạn mở lớp. Vui lòng cập nhật ngày kết thúc mới để tiếp tục mở lớp.',
+      );
+      return;
+    }
+    onToggleStatus(id, isPostOpen ? 'OPEN' : 'CLOSED');
+  };
+
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 hover:border-primary-400 shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
       <div>
@@ -114,23 +132,26 @@ export const ManagePostCard: React.FC<ManagePostCardProps> = ({
 
           {/* Top Right: Status Badge */}
           <div className="absolute top-3 right-3">
-            {isPostOpen && (
+            {isExpired ? (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-amber-600/90 text-white font-bold text-[11px] shadow-xs backdrop-blur-xs">
+                <Clock className="w-3 h-3" />
+                Đã hết hạn
+              </span>
+            ) : isPostOpen ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/90 text-white font-extrabold text-[11px] shadow-xs backdrop-blur-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 Đang mở
               </span>
-            )}
-            {isPostClosed && (
+            ) : isPostClosed ? (
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-800/85 text-slate-200 font-bold text-[11px] shadow-xs backdrop-blur-xs">
                 <Lock className="w-3 h-3" />
                 Đã đóng
               </span>
-            )}
-            {isMatched && (
+            ) : isMatched ? (
               <span className="inline-flex items-center px-3 py-1 rounded-xl bg-sky-600/90 text-white font-bold text-[11px] shadow-xs backdrop-blur-xs">
                 Đã kết nối
               </span>
-            )}
+            ) : null}
           </div>
 
           {/* Bottom Left: Slots / Credit Info Overlay (Clean text) */}
@@ -183,32 +204,34 @@ export const ManagePostCard: React.FC<ManagePostCardProps> = ({
         </span>
 
         <div className="flex items-center gap-2">
-          {/* Toggle Close / Open Button */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onToggleStatus(id, isPostOpen ? 'OPEN' : 'CLOSED')}
-            disabled={isToggling}
-            className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              isPostOpen
-                ? 'text-slate-600 hover:text-amber-700 hover:bg-amber-50 border-slate-200 hover:border-amber-200'
-                : 'text-emerald-700 bg-emerald-50/80 hover:bg-emerald-100 border-emerald-200'
-            }`}
-            title={isPostOpen ? 'Đóng bài đăng này' : 'Mở lại bài đăng này'}
-          >
-            {isPostOpen ? (
-              <>
-                <Lock className="w-3.5 h-3.5" />
-                <span>Đóng bài</span>
-              </>
-            ) : (
-              <>
-                <Unlock className="w-3.5 h-3.5" />
-                <span>Mở lại</span>
-              </>
-            )}
-          </Button>
+          {/* Toggle Close / Open Button (Chỉ hiển thị khi bài chưa hết hạn) */}
+          {!isExpired && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleToggleClick}
+              disabled={isToggling}
+              className={`rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                isPostOpen
+                  ? 'text-slate-600 hover:text-amber-700 hover:bg-amber-50 border-slate-200 hover:border-amber-200'
+                  : 'text-emerald-700 bg-emerald-50/80 hover:bg-emerald-100 border-emerald-200'
+              }`}
+              title={isPostOpen ? 'Đóng bài đăng này' : 'Mở lại bài đăng này'}
+            >
+              {isPostOpen ? (
+                <>
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Đóng bài</span>
+                </>
+              ) : (
+                <>
+                  <Unlock className="w-3.5 h-3.5" />
+                  <span>Mở lại</span>
+                </>
+              )}
+            </Button>
+          )}
 
           {/* Delete Button */}
           <button

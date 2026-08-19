@@ -23,12 +23,10 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
   const { data: userProfile } = useGetMeQuery(undefined, { skip: !authUser });
   const { data: walletData } = useGetMyWalletQuery(undefined, {
     skip: !authUser,
-    pollingInterval: 3000,
     refetchOnFocus: true,
   });
   const { data: onboardingData } = useGetOnboardingTasksQuery(undefined, {
     skip: !authUser,
-    pollingInterval: 4000,
     refetchOnFocus: true,
   });
   useOnboardingTaskToastNotifier(onboardingData);

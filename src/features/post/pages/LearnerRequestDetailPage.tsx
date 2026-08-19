@@ -197,7 +197,9 @@ export const LearnerRequestDetailPage: React.FC = () => {
             {/* Learner Desired Schedule & Action Sidebar */}
             <LearnerRequestDetailSidebar
               title="Khung giờ học viên rảnh"
+              learnerId={request.learnerId}
               slots={request.desiredSlots}
+              status={request.status}
               expectedCreditAmount={request.expectedCreditAmount || durationMinutes}
               expectedDurationMinutes={durationMinutes}
               learnerName={learnerName}

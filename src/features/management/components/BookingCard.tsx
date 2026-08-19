@@ -40,10 +40,24 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   const isConfirmed =
     booking.status === BookingStatus.CONFIRMED || booking.status === BookingStatus.STARTED;
   const isCompleted = booking.status === BookingStatus.COMPLETED;
+  const isExpired = booking.status === BookingStatus.EXPIRED;
   const isCancelledOrRejected =
     booking.status === BookingStatus.CANCELLED ||
     booking.status === BookingStatus.REJECTED ||
     booking.status === BookingStatus.NO_SHOW;
+
+  // Tính thời gian còn lại trước khi hết hạn 24 giờ
+  const hoursLeft = React.useMemo(() => {
+    if (!isPendingForMe && !isWaitingOther) return null;
+    const createdAtMs = new Date(booking.createdAt).getTime();
+    const expiresAtMs = createdAtMs + 24 * 60 * 60 * 1000;
+    const diffMs = expiresAtMs - Date.now();
+    if (diffMs <= 0) return 'sắp hết hạn';
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 0) return `hết hạn sau ${hours}h`;
+    return `hết hạn sau ${mins}m`;
+  }, [isPendingForMe, isWaitingOther, booking.createdAt]);
 
   // Partner info
   const partnerName = isMentor
@@ -90,14 +104,16 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               </h3>
 
               {isPendingForMe && (
-                <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-                  Chờ bạn xác nhận
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
+                  <span>Chờ bạn xác nhận</span>
+                  {hoursLeft && <span className="text-[11px] font-normal text-amber-600">({hoursLeft})</span>}
                 </span>
               )}
 
               {isWaitingOther && (
-                <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
-                  Chờ phản hồi
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 flex items-center gap-1">
+                  <span>Chờ phản hồi</span>
+                  {hoursLeft && <span className="text-[11px] font-normal text-gray-500">({hoursLeft})</span>}
                 </span>
               )}
 
@@ -110,6 +126,12 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               {isCompleted && (
                 <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
                   Hoàn thành
+                </span>
+              )}
+
+              {isExpired && (
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">
+                  Đã quá hạn 
                 </span>
               )}
 
@@ -130,6 +152,13 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               <span>•</span>
               <span>{timeRange} ({booking.durationMinutes} phút)</span>
             </div>
+
+            {/* Cancellation / Expiration Reason */}
+            {booking.cancellationReason && (isCancelledOrRejected || isExpired) && (
+              <p className="text-xs text-rose-600 font-medium truncate pt-0.5">
+                Lý do: {booking.cancellationReason}
+              </p>
+            )}
 
             {/* Note if available */}
             {booking.note && (
