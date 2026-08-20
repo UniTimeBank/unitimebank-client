@@ -27,8 +27,13 @@ export const useManageBookings = () => {
   // Cancellation Modal State
   const [cancelModalBooking, setCancelModalBooking] = useState<BookingItem | null>(null);
 
+  // Chat & Detail Modal States
+  const [chatModalBooking, setChatModalBooking] = useState<BookingItem | null>(null);
+  const [detailModalBooking, setDetailModalBooking] = useState<BookingItem | null>(null);
+
   // RTK Query API with Smart Targeted Polling (10s) & Window Focus Sync
   const {
+
     data: apiResponse,
     isLoading,
     refetch,
@@ -159,6 +164,24 @@ export const useManageBookings = () => {
     toast.success('Đang kết nối phòng học 1-1...', `Mã buổi học: ${id}`);
   };
 
+  const handleOpenChat = (itemOrId: BookingItem | string) => {
+    const id = typeof itemOrId === 'string' ? itemOrId : itemOrId.id;
+    navigate(`/manage/messages?bookingId=${id}`);
+  };
+
+
+  const handleCloseChat = () => {
+    setChatModalBooking(null);
+  };
+
+  const handleOpenDetail = (booking: BookingItem) => {
+    setDetailModalBooking(booking);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailModalBooking(null);
+  };
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
 
@@ -186,6 +209,8 @@ export const useManageBookings = () => {
     searchQuery,
     setSearchQuery: handleSearchChange,
     cancelModalBooking,
+    chatModalBooking,
+    detailModalBooking,
     allBookings,
     pendingBookings,
     upcomingBookings,
@@ -207,8 +232,13 @@ export const useManageBookings = () => {
     handleOpenCancelModal,
     handleCloseCancelModal,
     handleConfirmCancel,
+    handleOpenChat,
+    handleCloseChat,
+    handleOpenDetail,
+    handleCloseDetail,
     handleJoinRoom,
     refetch,
     navigate,
   };
 };
+
