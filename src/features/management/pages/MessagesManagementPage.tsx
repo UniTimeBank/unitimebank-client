@@ -31,10 +31,8 @@ import { BookingDetailModal } from '@/features/booking';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import LogoImage from '@/assets/images/Logo.png';
 import { toast } from '@/shared/utils';
-import { getSocket } from '@/core/socket/socketClient';
 
 export type RoleFilterType = 'ALL' | 'MENTORS' | 'LEARNERS';
-
 
 export const MessagesManagementPage: React.FC = () => {
   const navigate = useNavigate();
@@ -50,12 +48,9 @@ export const MessagesManagementPage: React.FC = () => {
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(urlBookingId);
   const [inputText, setInputText] = useState('');
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const partnerTypingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
 
   // 1. Fetch user's bookings
   const { data: bookingsResponse, isLoading: isBookingsLoading } = useGetMyBookingsQuery(undefined, {
@@ -123,7 +118,7 @@ export const MessagesManagementPage: React.FC = () => {
     [allBookings, selectedBookingId],
   );
 
-  // 2. Fetch messages for selected booking (Poll every 2.5s for real-time messages & partner typing)
+  // 2. Fetch messages for selected booking (Redux RTK Query Cache & Auto-polling)
   const {
     data: messagesData,
     isLoading: isMessagesLoading,
@@ -132,77 +127,15 @@ export const MessagesManagementPage: React.FC = () => {
   } = useGetBookingMessagesQuery(selectedBookingId || '', {
     skip: !selectedBookingId,
     pollingInterval: 2500,
+    refetchOnFocus: true,
   });
 
   const messages = useMemo(() => messagesData?.items || [], [messagesData]);
-  const serverIsPartnerTyping = Boolean(messagesData?.isPartnerTyping);
+  const isPartnerTyping = Boolean(messagesData?.isPartnerTyping);
 
   const [sendMessage, { isLoading: isSending }] = useSendBookingMessageMutation();
-
-  // ⚡ 1. WebSocket Realtime Listeners (0ms Latency for Typing, Messages, Seen status)
-  useEffect(() => {
-    if (!selectedBookingId) return;
-
-    const socket = getSocket();
-
-    // Join room
-    socket.emit('chat:join', { bookingId: selectedBookingId });
-
-    // Mark seen on entrance
-    socket.emit('chat:mark_seen', { bookingId: selectedBookingId });
-
-    // Handle typing event from partner in real-time (0ms latency!)
-    const handlePartnerTyping = (data: {
-      bookingId: string;
-      userId?: string;
-      socketId?: string;
-      typing: boolean;
-    }) => {
-      if (
-        data.bookingId === selectedBookingId &&
-        (data.socketId ? data.socketId !== socket.id : true) &&
-        (data.userId && currentUserId ? data.userId !== currentUserId : true)
-      ) {
-        setIsPartnerTyping(Boolean(data.typing));
-        if (data.typing) {
-          if (partnerTypingTimeoutRef.current) {
-            clearTimeout(partnerTypingTimeoutRef.current);
-          }
-          partnerTypingTimeoutRef.current = setTimeout(() => {
-            setIsPartnerTyping(false);
-          }, 3500);
-        }
-      }
-    };
-
-
-    // Handle incoming new message (Instant 0ms delivery!)
-    const handleNewMessage = (data: { bookingId: string }) => {
-      if (data.bookingId === selectedBookingId) {
-        refetchMessages();
-        setIsPartnerTyping(false);
-      }
-    };
-
-    // Handle message seen status update
-    const handleMessageSeen = (data: { bookingId: string; seenBy: string }) => {
-      if (data.bookingId === selectedBookingId && data.seenBy !== currentUserId) {
-        refetchMessages();
-      }
-    };
-
-    socket.on('chat:user_typing', handlePartnerTyping);
-    socket.on('chat:new_message', handleNewMessage);
-    socket.on('chat:message_seen', handleMessageSeen);
-
-    return () => {
-      socket.emit('chat:leave', { bookingId: selectedBookingId });
-      socket.off('chat:user_typing', handlePartnerTyping);
-      socket.off('chat:new_message', handleNewMessage);
-      socket.off('chat:message_seen', handleMessageSeen);
-    };
-  }, [selectedBookingId, currentUserId, refetchMessages]);
-
+  const [setBookingTyping] = useSetBookingTypingMutation();
+  const typingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Scroll strictly inside the container
   const scrollToBottom = (smooth = true) => {
@@ -225,6 +158,13 @@ export const MessagesManagementPage: React.FC = () => {
     }
   }, [messages.length, isPartnerTyping]);
 
+  const clientId = useRef(
+    sessionStorage.getItem('unitime_client_id') || Math.random().toString(36).substring(2)
+  ).current;
+
+  useEffect(() => {
+    sessionStorage.setItem('unitime_client_id', clientId);
+  }, [clientId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -232,15 +172,14 @@ export const MessagesManagementPage: React.FC = () => {
 
     if (selectedBookingId) {
       const isTypingNow = val.trim().length > 0;
-
-      // ⚡ Broadcast tức thì 0ms qua Socket.io
-      try {
-        const socket = getSocket();
-        socket.emit('chat:typing', {
+      if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
+      typingDebounceRef.current = setTimeout(() => {
+        setBookingTyping({
           bookingId: selectedBookingId,
           typing: isTypingNow,
-        });
-      } catch {}
+          clientId,
+        }).catch(() => {});
+      }, 150);
     }
   };
 
@@ -252,34 +191,26 @@ export const MessagesManagementPage: React.FC = () => {
     setInputText('');
 
     if (selectedBookingId) {
-      try {
-        const socket = getSocket();
-        socket.emit('chat:typing', {
-          bookingId: selectedBookingId,
-          typing: false,
-        });
-      } catch {}
+      if (typingDebounceRef.current) clearTimeout(typingDebounceRef.current);
+      setBookingTyping({
+        bookingId: selectedBookingId,
+        typing: false,
+        clientId,
+      }).catch(() => {});
     }
+
 
     try {
       await sendMessage({
         bookingId: selectedBookingId,
         content,
       }).unwrap();
-
-      // Bắn event socket để người bên kia nhận ngay lập tức
-      try {
-        const socket = getSocket();
-        socket.emit('chat:new_message', {
-          bookingId: selectedBookingId,
-        });
-      } catch {}
-
-      refetchMessages();
     } catch (err: any) {
       toast.error(err?.data?.message || 'Không thể gửi tin nhắn. Vui lòng thử lại.');
     }
   };
+
+
 
 
 
@@ -731,8 +662,9 @@ export const MessagesManagementPage: React.FC = () => {
                         })
                       )}
 
-                      {/* Partner Typing Indicator Bubble (Luôn sẵn sàng hiển thị & tự động cuộn hiển thị đầy đủ) */}
+                      {/* Partner Typing Indicator Bubble (RTK Query onCacheEntryAdded Stream) */}
                       {isPartnerTyping && (
+
                         <div className="flex items-end gap-2 mt-2 mb-1.5 shrink-0 animate-in fade-in slide-in-from-bottom-1 duration-200">
                           <img
                             src={getPartnerInfo(activeBooking).avatar}
@@ -754,9 +686,10 @@ export const MessagesManagementPage: React.FC = () => {
                           </div>
                         </div>
                       )}
-
                     </>
                   )}
+
+
 
                 </div>
 

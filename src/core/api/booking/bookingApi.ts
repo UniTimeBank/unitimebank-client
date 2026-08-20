@@ -129,7 +129,7 @@ export const bookingApi = baseApi.injectEndpoints({
       ],
     }),
 
-    // 10. Lấy tin nhắn trao đổi của buổi học (kèm trạng thái đối tác đang soạn tin)
+    // 10. Lấy tin nhắn trao đổi của buổi học (kèm Streaming Cache Updates qua onCacheEntryAdded)
     getBookingMessages: builder.query<{ items: BookingMessage[]; isPartnerTyping: boolean }, string>({
       query: (bookingId) => `/bookings/${bookingId}/messages`,
       transformResponse: (response: any) => {
@@ -144,6 +144,67 @@ export const bookingApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, bookingId) => [
         { type: 'Booking', id: `MESSAGES_${bookingId}` },
       ],
+      async onCacheEntryAdded(
+        bookingId,
+        { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
+      ) {
+        if (!bookingId) return;
+        try {
+          // 1. Chờ dữ liệu ban đầu nạp xong
+          await cacheDataLoaded;
+
+          // 2. Mở Server-Sent Events (SSE) stream HTTP thuần túy
+          const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+          const eventSource = new EventSource(`${baseUrl}/bookings/${bookingId}/events`);
+
+          let typingTimeout: any = null;
+
+          eventSource.onmessage = (event) => {
+            try {
+              const payload = JSON.parse(event.data);
+              const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+              const currentUserId = currentUser?.id || currentUser?.userId;
+              const myClientId = sessionStorage.getItem('unitime_client_id');
+
+              if (payload.type === 'typing') {
+                // 🛑 BỎ QUA nếu sự kiện typing phát ra từ chính mình (theo userId hoặc clientId)
+                const isFromSelf =
+                  Boolean(payload.userId && currentUserId && payload.userId === currentUserId) ||
+                  Boolean(payload.clientId && myClientId && payload.clientId === myClientId);
+
+
+                if (!isFromSelf) {
+                  updateCachedData((draft) => {
+                    draft.isPartnerTyping = Boolean(payload.typing);
+                  });
+
+                  if (payload.typing) {
+                    if (typingTimeout) clearTimeout(typingTimeout);
+                    typingTimeout = setTimeout(() => {
+                      updateCachedData((draft) => {
+                        draft.isPartnerTyping = false;
+                      });
+                    }, 3500);
+                  }
+                }
+              } else if (payload.type === 'new_message' && payload.message) {
+                updateCachedData((draft) => {
+                  const exists = draft.items.some((m) => m.id === payload.message.id);
+                  if (!exists) {
+                    draft.items.push(payload.message);
+                  }
+                  draft.isPartnerTyping = false;
+                });
+              }
+            } catch {}
+          };
+
+          // 3. Tự động đóng EventSource stream khi component unmount / cache bị xóa
+          await cacheEntryRemoved;
+          if (typingTimeout) clearTimeout(typingTimeout);
+          eventSource.close();
+        } catch {}
+      },
     }),
 
     // 11. Gửi tin nhắn trao đổi trong buổi học
@@ -162,13 +223,14 @@ export const bookingApi = baseApi.injectEndpoints({
     }),
 
     // 12. Báo hiệu trạng thái đang soạn tin nhắn
-    setBookingTyping: builder.mutation<void, { bookingId: string; typing: boolean }>({
-      query: ({ bookingId, typing }) => ({
+    setBookingTyping: builder.mutation<void, { bookingId: string; typing: boolean; clientId?: string }>({
+      query: ({ bookingId, typing, clientId }) => ({
         url: `/bookings/${bookingId}/typing`,
         method: 'POST',
-        body: { typing },
+        body: { typing, clientId },
       }),
     }),
+
   }),
 });
 
