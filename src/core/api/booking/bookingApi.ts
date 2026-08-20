@@ -1,9 +1,11 @@
 import { baseApi } from '../baseApi';
 import type {
   BookingItem,
+  BookingMessage,
   GetBookingsParams,
   GetBookingsResponse,
 } from '@/features/management/types';
+
 
 export * from '@/features/management/types';
 
@@ -126,6 +128,47 @@ export const bookingApi = baseApi.injectEndpoints({
         { type: 'Booking', id: 'LIST' },
       ],
     }),
+
+    // 10. Lấy tin nhắn trao đổi của buổi học (kèm trạng thái đối tác đang soạn tin)
+    getBookingMessages: builder.query<{ items: BookingMessage[]; isPartnerTyping: boolean }, string>({
+      query: (bookingId) => `/bookings/${bookingId}/messages`,
+      transformResponse: (response: any) => {
+        if (Array.isArray(response)) {
+          return { items: response, isPartnerTyping: false };
+        }
+        return {
+          items: response?.items || [],
+          isPartnerTyping: Boolean(response?.isPartnerTyping),
+        };
+      },
+      providesTags: (_result, _error, bookingId) => [
+        { type: 'Booking', id: `MESSAGES_${bookingId}` },
+      ],
+    }),
+
+    // 11. Gửi tin nhắn trao đổi trong buổi học
+    sendBookingMessage: builder.mutation<
+      BookingMessage,
+      { bookingId: string; content: string; attachmentUrl?: string }
+    >({
+      query: ({ bookingId, ...body }) => ({
+        url: `/bookings/${bookingId}/messages`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { bookingId }) => [
+        { type: 'Booking', id: `MESSAGES_${bookingId}` },
+      ],
+    }),
+
+    // 12. Báo hiệu trạng thái đang soạn tin nhắn
+    setBookingTyping: builder.mutation<void, { bookingId: string; typing: boolean }>({
+      query: ({ bookingId, typing }) => ({
+        url: `/bookings/${bookingId}/typing`,
+        method: 'POST',
+        body: { typing },
+      }),
+    }),
   }),
 });
 
@@ -139,4 +182,9 @@ export const {
   useRejectBookingMutation,
   useCancelBookingMutation,
   useMarkNoShowMutation,
+  useGetBookingMessagesQuery,
+  useSendBookingMessageMutation,
+  useSetBookingTypingMutation,
 } = bookingApi;
+
+

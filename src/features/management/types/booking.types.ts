@@ -22,10 +22,13 @@ export interface BookingItem {
   mentorId: string;
   mentorName?: string;
   mentorAvatar?: string;
+  mentorTrustScore?: number;
   learnerId: string;
   learnerName?: string;
   learnerAvatar?: string;
+  learnerTrustScore?: number;
   title?: string;
+
   category?: string;
   note?: string;
   scheduledStart: string;
@@ -50,3 +53,22 @@ export interface GetBookingsResponse {
   items: BookingItem[];
   total: number;
 }
+
+export interface BookingMessage {
+  id: string;
+  bookingId: string;
+  senderId: string;
+  senderName?: string;
+  senderAvatar?: string;
+  content: string;
+  attachmentUrl?: string;
+  sentAt: string;
+  readAt?: string;
+}
+
+export interface SendBookingMessagePayload {
+  bookingId: string;
+  content: string;
+  attachmentUrl?: string;
+}
+

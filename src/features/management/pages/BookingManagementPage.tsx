@@ -1,6 +1,7 @@
 import React from 'react';
 import { Plus, CalendarCheck, Search, X } from 'lucide-react';
 import { BookingCard, CancelBookingModal } from '../components';
+import { BookingDetailModal } from '@/features/booking';
 import { Button, Tabs, Pagination } from '@/shared/components/ui';
 import { useManageBookings, type BookingTabType } from '../hooks';
 
@@ -12,6 +13,7 @@ export const BookingManagementPage: React.FC = () => {
     searchQuery,
     setSearchQuery,
     cancelModalBooking,
+    detailModalBooking,
     pendingBookings,
     upcomingBookings,
     historyBookings,
@@ -32,9 +34,14 @@ export const BookingManagementPage: React.FC = () => {
     handleOpenCancelModal,
     handleCloseCancelModal,
     handleConfirmCancel,
+    handleOpenChat,
+    handleOpenDetail,
+    handleCloseDetail,
     handleJoinRoom,
     navigate,
   } = useManageBookings();
+
+
 
   return (
     <div className="bg-white rounded-3xl border border-gray-100 shadow-xs p-6 sm:p-8 relative space-y-6 animate-in fade-in duration-200">
@@ -157,6 +164,8 @@ export const BookingManagementPage: React.FC = () => {
                 onReject={handleReject}
                 onCancel={handleOpenCancelModal}
                 onJoinRoom={handleJoinRoom}
+                onMessage={handleOpenChat}
+                onOpenDetail={handleOpenDetail}
                 isAccepting={isAccepting}
                 isRejecting={isRejecting}
                 isCancelling={isCancelling}
@@ -190,6 +199,25 @@ export const BookingManagementPage: React.FC = () => {
         isCancelling={isCancelling}
         currentUserId={currentUserId}
       />
+
+
+      {/* ════════════════════════════════════════════════════════════════ */}
+      {/* 6. MODAL XEM CHI TIẾT LỊCH TRÌNH VÀ KÝ QUỸ CREDIT */}
+      {/* ════════════════════════════════════════════════════════════════ */}
+      <BookingDetailModal
+        booking={detailModalBooking}
+        isOpen={Boolean(detailModalBooking)}
+        onClose={handleCloseDetail}
+        currentUserId={currentUserId}
+        onOpenChat={handleOpenChat}
+        onJoinRoom={handleJoinRoom}
+        onOpenCancel={handleOpenCancelModal}
+        onAccept={handleAccept}
+        onReject={handleReject}
+        isAccepting={isAccepting}
+        isRejecting={isRejecting}
+      />
     </div>
   );
 };
+
