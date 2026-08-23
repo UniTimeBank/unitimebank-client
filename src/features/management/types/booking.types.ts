@@ -54,14 +54,20 @@ export interface GetBookingsResponse {
   total: number;
 }
 
+export type MessageType = 'TEXT' | 'IMAGE' | 'FILE' | 'LINK' | 'SYSTEM';
+
 export interface BookingMessage {
   id: string;
   bookingId: string;
   senderId: string;
   senderName?: string;
   senderAvatar?: string;
+  type: MessageType;
   content: string;
   attachmentUrl?: string;
+  attachmentName?: string;
+  attachmentSize?: number;
+  attachmentMime?: string;
   sentAt: string;
   readAt?: string;
 }
@@ -69,6 +75,18 @@ export interface BookingMessage {
 export interface SendBookingMessagePayload {
   bookingId: string;
   content: string;
+  type?: MessageType;
   attachmentUrl?: string;
+  attachmentName?: string;
+  attachmentSize?: number;
+  attachmentMime?: string;
+}
+
+export interface UploadChatAttachmentResponse {
+  url: string;
+  name: string;
+  size: number;
+  mime: string;
+  type: 'IMAGE' | 'FILE';
 }
 

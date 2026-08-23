@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   useGetMyBookingsQuery,
   useAcceptBookingMutation,
@@ -17,11 +17,17 @@ export type BookingTabType = 'PENDING' | 'UPCOMING' | 'HISTORY';
 
 export const useManageBookings = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useUserProfile();
   const authUser = useAppSelector(selectCurrentUser);
   const currentUserId = profile?.userId || authUser?.id;
 
-  const [activeTab, setActiveTab] = useState<BookingTabType>('PENDING');
+  const urlTab = searchParams.get('tab')?.toUpperCase() as BookingTabType | undefined;
+  const urlBookingId = searchParams.get('bookingId');
+
+  const [activeTab, setActiveTab] = useState<BookingTabType>(
+    urlTab && ['PENDING', 'UPCOMING', 'HISTORY'].includes(urlTab) ? urlTab : 'PENDING',
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
   // Cancellation Modal State
@@ -30,6 +36,13 @@ export const useManageBookings = () => {
   // Chat & Detail Modal States
   const [chatModalBooking, setChatModalBooking] = useState<BookingItem | null>(null);
   const [detailModalBooking, setDetailModalBooking] = useState<BookingItem | null>(null);
+
+  // Sync tab with URL parameter
+  useEffect(() => {
+    if (urlTab && ['PENDING', 'UPCOMING', 'HISTORY'].includes(urlTab)) {
+      setActiveTab(urlTab);
+    }
+  }, [urlTab]);
 
   // RTK Query API with Smart Targeted Polling (10s) & Window Focus Sync
   const {
@@ -77,6 +90,29 @@ export const useManageBookings = () => {
         b.status === BookingStatus.EXPIRED,
     );
   }, [allBookings]);
+
+  // Auto-focus booking from URL query param
+  useEffect(() => {
+    if (urlBookingId && allBookings.length > 0) {
+      const target = allBookings.find((b) => b.id === urlBookingId);
+      if (target) {
+        if (
+          target.status === BookingStatus.PENDING_MENTOR_APPROVAL ||
+          target.status === BookingStatus.PENDING_LEARNER_APPROVAL
+        ) {
+          setActiveTab('PENDING');
+        } else if (
+          target.status === BookingStatus.CONFIRMED ||
+          target.status === BookingStatus.STARTED
+        ) {
+          setActiveTab('UPCOMING');
+        } else {
+          setActiveTab('HISTORY');
+        }
+        setDetailModalBooking(target);
+      }
+    }
+  }, [urlBookingId, allBookings]);
 
   // Filter current tab items by search query
   const currentTabBookings = useMemo(() => {
@@ -188,6 +224,10 @@ export const useManageBookings = () => {
   const handleTabChange = (tab: BookingTabType) => {
     setActiveTab(tab);
     setPage(1);
+    setSearchParams((prev) => {
+      prev.set('tab', tab);
+      return prev;
+    });
   };
 
   const handleSearchChange = (query: string) => {

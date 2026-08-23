@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Clock, User, MessageSquare, RefreshCw } from 'lucide-react';
+import { Send, Clock, User, MessageSquare, RefreshCw, Lock } from 'lucide-react';
 import { Modal, Button } from '@/shared/components/ui';
 import {
   useGetBookingMessagesQuery,
   useSendBookingMessageMutation,
 } from '@/core/api/booking/bookingApi';
-import type { BookingItem } from '@/features/management/types';
+import { type BookingItem, BookingStatus } from '@/features/management/types';
 import LogoImage from '@/assets/images/Logo.png';
 import { toast } from '@/shared/utils';
 
@@ -25,6 +25,18 @@ export const BookingChatModal: React.FC<BookingChatModalProps> = ({
   const [inputText, setInputText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Active chatting is only allowed when CONFIRMED or STARTED
+  const isActiveChat =
+    booking?.status === BookingStatus.CONFIRMED || booking?.status === BookingStatus.STARTED;
+  const isReadOnly = Boolean(booking && !isActiveChat);
+
+  const isPending =
+    booking?.status === BookingStatus.PENDING_MENTOR_APPROVAL ||
+    booking?.status === BookingStatus.PENDING_LEARNER_APPROVAL;
+  const isCompleted = booking?.status === BookingStatus.COMPLETED;
+  const isCancelled = booking?.status === BookingStatus.CANCELLED;
+  const isRejected = booking?.status === BookingStatus.REJECTED;
+
   const {
     data: messagesData,
     isLoading,
@@ -32,7 +44,7 @@ export const BookingChatModal: React.FC<BookingChatModalProps> = ({
     isFetching,
   } = useGetBookingMessagesQuery(booking?.id || '', {
     skip: !booking?.id || !isOpen,
-    pollingInterval: isOpen ? 5000 : 0, // Auto poll every 5s while modal is open
+    pollingInterval: isOpen && !isReadOnly ? 5000 : 0, // Auto poll only if active and open
   });
 
   const messages = messagesData?.items || [];
@@ -192,31 +204,44 @@ export const BookingChatModal: React.FC<BookingChatModalProps> = ({
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Bar */}
-        <form
-          onSubmit={handleSend}
-          className="p-3 sm:p-4 bg-white border-t border-slate-200/80 flex items-center gap-2"
-        >
-          <input
-            type="text"
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Nhập tin nhắn trao đổi với đối tác..."
-            className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
-          />
-
-          <Button
-            type="submit"
-            variant="primary"
-            size="sm"
-            disabled={!inputText.trim() || isSending}
-            className="rounded-xl bg-primary-700 hover:bg-primary-800 text-white font-bold text-xs py-2.5 px-4 shadow-xs disabled:opacity-40 shrink-0 cursor-pointer"
+        {/* Footer Area: Input Bar or Read-only Notice */}
+        {isReadOnly ? (
+          <div className="p-3.5 sm:p-4 bg-slate-100/90 border-t border-slate-200 flex items-center justify-center gap-2 text-slate-500 text-xs font-medium text-center">
+            <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+            <span>
+              {isPending && 'Buổi học đang chờ duyệt. Tính năng nhắn tin sẽ mở sau khi được chấp nhận.'}
+              {isCompleted && 'Buổi học đã hoàn thành. Lịch sử trao đổi được lưu trữ ở chế độ chỉ đọc.'}
+              {isCancelled && 'Buổi học đã bị hủy. Đoạn chat đã đóng và chuyển sang chế độ chỉ đọc.'}
+              {isRejected && 'Yêu cầu đặt lịch đã bị từ chối. Đoạn chat đã đóng.'}
+            </span>
+          </div>
+        ) : (
+          <form
+            onSubmit={handleSend}
+            className="p-3 sm:p-4 bg-white border-t border-slate-200/80 flex items-center gap-2"
           >
-            <Send className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Gửi</span>
-          </Button>
-        </form>
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Nhập tin nhắn trao đổi với đối tác..."
+              className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all"
+            />
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={!inputText.trim() || isSending}
+              className="rounded-xl bg-primary-700 hover:bg-primary-800 text-white font-bold text-xs py-2.5 px-4 shadow-xs disabled:opacity-40 shrink-0 cursor-pointer"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Gửi</span>
+            </Button>
+          </form>
+        )}
       </div>
     </Modal>
   );
 };
+

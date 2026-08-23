@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, Clock, Gift, Bell } from 'lucide-react';
+import { Search, Clock, Gift } from 'lucide-react';
 import { NAV_LINKS } from '@/shared/config';
 import { UserRoleDropdown } from './UserRoleDropdown';
+import { NotificationDropdown } from '@/features/notification';
 import LogoImage from '@/assets/images/Logo.png';
 
 interface HeaderProps {
@@ -105,11 +106,8 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Notification Bell */}
-          <button className="relative p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors cursor-pointer shrink-0">
-            <Bell className="w-4.5 h-4.5" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
-          </button>
+          {/* Notification Bell with Live Dropdown */}
+          <NotificationDropdown />
 
           {/* Role Switcher & Profile Dropdown */}
           <UserRoleDropdown

@@ -4,6 +4,8 @@ import type {
   BookingMessage,
   GetBookingsParams,
   GetBookingsResponse,
+  SendBookingMessagePayload,
+  UploadChatAttachmentResponse,
 } from '@/features/management/types';
 
 
@@ -210,7 +212,7 @@ export const bookingApi = baseApi.injectEndpoints({
     // 11. Gửi tin nhắn trao đổi trong buổi học
     sendBookingMessage: builder.mutation<
       BookingMessage,
-      { bookingId: string; content: string; attachmentUrl?: string }
+      SendBookingMessagePayload
     >({
       query: ({ bookingId, ...body }) => ({
         url: `/bookings/${bookingId}/messages`,
@@ -222,7 +224,23 @@ export const bookingApi = baseApi.injectEndpoints({
       ],
     }),
 
-    // 12. Báo hiệu trạng thái đang soạn tin nhắn
+    // 12. Tải lên tệp đính kèm hoặc hình ảnh trong phòng chat
+    uploadChatAttachment: builder.mutation<
+      UploadChatAttachmentResponse,
+      { bookingId: string; file: File }
+    >({
+      query: ({ bookingId, file }) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return {
+          url: `/bookings/${bookingId}/attachments`,
+          method: 'POST',
+          body: formData,
+        };
+      },
+    }),
+
+    // 13. Báo hiệu trạng thái đang soạn tin nhắn
     setBookingTyping: builder.mutation<void, { bookingId: string; typing: boolean; clientId?: string }>({
       query: ({ bookingId, typing, clientId }) => ({
         url: `/bookings/${bookingId}/typing`,
@@ -246,6 +264,7 @@ export const {
   useMarkNoShowMutation,
   useGetBookingMessagesQuery,
   useSendBookingMessageMutation,
+  useUploadChatAttachmentMutation,
   useSetBookingTypingMutation,
 } = bookingApi;
 
