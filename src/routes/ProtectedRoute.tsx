@@ -7,15 +7,20 @@ import { ROUTES } from './paths';
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  fullScreen?: boolean;
 }
 
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+export const ProtectedRoute = ({ children, fullScreen = false }: ProtectedRouteProps) => {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const location = useLocation();
 
   if (!isAuthenticated) {
     // Điều hướng về trang đăng nhập nếu chưa authed, lưu lại location trước đó
     return <Navigate to={ROUTES.AUTH.LOGIN} state={{ from: location }} replace />;
+  }
+
+  if (fullScreen) {
+    return <>{children}</>;
   }
 
   return <MainLayout>{children}</MainLayout>;

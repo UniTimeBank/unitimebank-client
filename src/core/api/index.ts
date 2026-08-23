@@ -5,3 +5,4 @@ export * from './user';
 export * from './booking';
 export * from './wallet';
 export * from './notification/notificationApi';
+export * from './session';

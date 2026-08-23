@@ -16,9 +16,21 @@ export const WalletManagementPage: React.FC = () => {
       return [];
     }
 
-    return historyData.entries.map((entry: CreditLedgerEntry) => {
+    // Sort strictly newest first (descending by timestamp)
+    const sorted = [...historyData.entries].sort((a, b) => {
+      const timeA = new Date(a.createdAt).getTime();
+      const timeB = new Date(b.createdAt).getTime();
+      return timeB - timeA;
+    });
+
+    return sorted.map((entry: CreditLedgerEntry) => {
       const isCredit = entry.direction === 'CREDIT';
       const createdDate = new Date(entry.createdAt);
+
+      const timeStr = `${String(createdDate.getHours()).padStart(2, '0')}:${String(
+        createdDate.getMinutes(),
+      ).padStart(2, '0')}:${String(createdDate.getSeconds()).padStart(2, '0')}`;
+
       const dateStr = `${String(createdDate.getDate()).padStart(2, '0')}/${String(
         createdDate.getMonth() + 1,
       ).padStart(2, '0')}/${createdDate.getFullYear()}`;
@@ -44,7 +56,9 @@ export const WalletManagementPage: React.FC = () => {
         type: typeLabel,
         typeBg,
         status: 'Đã xử lý',
+        time: timeStr,
         date: dateStr,
+        rawTimestamp: createdDate.getTime(),
         amount: `${isCredit ? '+' : '-'}${entry.amount}m`,
         amountColor: isCredit ? 'text-primary-700 font-bold' : 'text-gray-700 font-bold',
       };

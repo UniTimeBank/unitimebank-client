@@ -23,5 +23,10 @@ export const ROUTES = {
     MESSAGES: '/manage/messages',
     DASHBOARD: '/manage/dashboard',
   },
+  ROOMS: {
+    ONE_ON_ONE: '/rooms/one-on-one/:bookingId',
+    GROUP: '/rooms/group/:roomId',
+    LOBBY: '/rooms/group',
+  },
   NOT_FOUND: '*',
 } as const;

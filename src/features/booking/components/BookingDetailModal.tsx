@@ -13,6 +13,7 @@ import {
 import { Modal, Button } from '@/shared/components/ui';
 import { BookingStatus, type BookingItem } from '@/features/management/types';
 import LogoImage from '@/assets/images/Logo.png';
+import { checkBookingSessionJoinable } from '@/features/session';
 
 export interface BookingDetailModalProps {
   booking: BookingItem | null;
@@ -86,7 +87,7 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
       case BookingStatus.STARTED:
         return (
           <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            Đã xác nhận (Ký quỹ thành công)
+            Đã xác nhận
           </span>
         );
       case BookingStatus.COMPLETED:
@@ -291,19 +292,31 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
                 Hủy buổi học
               </Button>
 
-              <Button
-                type="button"
-                variant="primary"
-                size="md"
-                onClick={() => {
-                  onClose();
-                  onJoinRoom?.(booking.id);
-                }}
-                className="rounded-xl bg-primary-700 hover:bg-primary-800 text-white font-bold text-xs px-5 shadow-xs"
-              >
-                <Video className="w-3.5 h-3.5" />
-                <span>Vào phòng học</span>
-              </Button>
+              {(() => {
+                const canJoin = checkBookingSessionJoinable(booking);
+                return (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="md"
+                    disabled={!canJoin}
+                    onClick={() => {
+                      if (canJoin) {
+                        onClose();
+                        onJoinRoom?.(booking.id);
+                      }
+                    }}
+                    className={`rounded-xl font-bold text-xs px-5 shadow-xs bg-primary-700 hover:bg-primary-800 text-white ${
+                      !canJoin
+                        ? 'opacity-40 cursor-not-allowed pointer-events-none'
+                        : 'cursor-pointer'
+                    }`}
+                  >
+                    <Video className="w-3.5 h-3.5" />
+                    <span>Vào phòng học</span>
+                  </Button>
+                );
+              })()}
             </>
           )}
         </div>

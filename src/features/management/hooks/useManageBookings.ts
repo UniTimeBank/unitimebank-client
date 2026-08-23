@@ -197,7 +197,7 @@ export const useManageBookings = () => {
   };
 
   const handleJoinRoom = (id: string) => {
-    toast.success('Đang kết nối phòng học 1-1...', `Mã buổi học: ${id}`);
+    navigate(`/rooms/one-on-one/${id}`);
   };
 
   const handleOpenChat = (itemOrId: BookingItem | string) => {

@@ -9,6 +9,7 @@ import {
 import { BookingStatus, type BookingItem } from '../types';
 import { Button } from '@/shared/components/ui';
 import LogoImage from '@/assets/images/Logo.png';
+import { checkBookingSessionJoinable } from '@/features/session';
 
 export interface BookingCardProps {
   booking: BookingItem;
@@ -303,40 +304,48 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             )}
 
             {/* Case 3: Confirmed / Upcoming */}
-            {isConfirmed && (
-              <>
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  onClick={() => onJoinRoom?.(booking.id)}
-                  className="rounded-lg bg-primary-700 hover:bg-primary-800 text-white font-medium text-xs py-1.5 px-3 flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Video className="w-3.5 h-3.5" />
-                  <span>Vào phòng học</span>
-                </Button>
+            {isConfirmed && (() => {
+              const canJoin = checkBookingSessionJoinable(booking);
+              return (
+                <>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    disabled={!canJoin}
+                    onClick={() => canJoin && onJoinRoom?.(booking.id)}
+                    className={`rounded-lg font-medium text-xs py-1.5 px-3 flex items-center gap-1.5 bg-primary-700 hover:bg-primary-800 text-white ${
+                      !canJoin
+                        ? 'opacity-40 cursor-not-allowed pointer-events-none'
+                        : 'cursor-pointer'
+                    }`}
+                  >
+                    <Video className="w-3.5 h-3.5" />
+                    <span>Vào phòng học</span>
+                  </Button>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onMessage?.(booking.id)}
-                  className="rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-medium text-xs py-1.5 px-2.5 flex items-center gap-1 cursor-pointer"
-                >
-                  <MessageSquare className="w-3.5 h-3.5 text-gray-500" />
-                  <span>Nhắn tin</span>
-                </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onMessage?.(booking.id)}
+                    className="rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-medium text-xs py-1.5 px-2.5 flex items-center gap-1 cursor-pointer"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-gray-500" />
+                    <span>Nhắn tin</span>
+                  </Button>
 
-                <button
-                  type="button"
-                  onClick={() => onCancel?.(booking.id)}
-                  disabled={isCancelling}
-                  className="text-xs text-gray-400 hover:text-red-600 font-medium px-1.5 py-1 transition-colors cursor-pointer"
-                >
-                  Hủy
-                </button>
-              </>
-            )}
+                  <button
+                    type="button"
+                    onClick={() => onCancel?.(booking.id)}
+                    disabled={isCancelling}
+                    className="text-xs text-gray-400 hover:text-red-600 font-medium px-1.5 py-1 transition-colors cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                </>
+              );
+            })()}
 
             {/* Case 4: Completed */}
             {isCompleted && (

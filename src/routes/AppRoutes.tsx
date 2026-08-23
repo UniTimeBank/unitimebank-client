@@ -20,6 +20,11 @@ import {
   WalletManagementPage,
   MessagesManagementPage,
 } from '@/features/management';
+import {
+  OneOnOneRoomPage,
+  GroupRoomPage,
+  GroupLobbyPage,
+} from '@/features/session';
 
 export const AppRoutes = () => {
   return (
@@ -126,6 +131,32 @@ export const AppRoutes = () => {
         <Route path="wallet" element={<WalletManagementPage />} />
         <Route path="messages" element={<MessagesManagementPage />} />
       </Route>
+
+      {/* Route bảo vệ - Phòng học trực tuyến & Thời gian thực (Full-screen) */}
+      <Route
+        path={ROUTES.ROOMS.ONE_ON_ONE}
+        element={
+          <ProtectedRoute fullScreen>
+            <OneOnOneRoomPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ROOMS.GROUP}
+        element={
+          <ProtectedRoute fullScreen>
+            <GroupRoomPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.ROOMS.LOBBY}
+        element={
+          <ProtectedRoute>
+            <GroupLobbyPage />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Wildcard 404 Route */}
       <Route path={ROUTES.NOT_FOUND} element={<Navigate to={ROUTES.EXPLORE} replace />} />

@@ -1,7 +1,7 @@
 import React from 'react';
 import { toast as hotToast } from 'react-hot-toast';
 import type { Toast } from 'react-hot-toast';
-import { CheckCircle2, XCircle, Info, Gift, Flame } from 'lucide-react';
+import { CheckCircle2, XCircle, Info, Gift, Flame, AlertTriangle } from 'lucide-react';
 
 // ─── Custom Toast Card Component ────────────────────────────────────────────
 
@@ -180,6 +180,22 @@ export const toast = {
         />
       ),
       { duration: 4000, id: `info-${Date.now()}` },
+    );
+  },
+
+  warning: (title: string, message?: string) => {
+    hotToast.custom(
+      (t) => (
+        <CustomToastCard
+          t={t}
+          icon={<AlertTriangle className="w-5 h-5 text-amber-400" />}
+          accentColor="linear-gradient(180deg, #F59E0B, #D97706)"
+          glowColor="#F59E0B"
+          title={title}
+          message={message}
+        />
+      ),
+      { duration: 5000, id: `warning-${Date.now()}` },
     );
   },
 

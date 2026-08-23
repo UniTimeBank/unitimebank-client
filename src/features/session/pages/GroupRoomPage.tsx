@@ -1,0 +1,335 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAppSelector } from '@/shared/hooks';
+import { selectCurrentUser } from '@/features/auth';
+import { useGetMeQuery } from '@/core/api/user';
+import {
+  useJoinGroupRoomMutation,
+  useLeaveGroupRoomMutation,
+  useGetRoomChatMessagesQuery,
+} from '@/core/api/session';
+import {
+  useLiveKitRoom,
+  useSessionSocket,
+  useInRoomChat,
+  useWhiteboard,
+  useCodeEditor,
+  useHeartbeat,
+} from '../hooks';
+import {
+  SessionHeader,
+  SessionControlsBar,
+  VideoGrid,
+  ScreenShareView,
+  InRoomChatPanel,
+  WhiteboardModal,
+  LiveCodeEditorModal,
+  DeviceSettingsModal,
+  SessionEndedModal,
+} from '../components';
+import { Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { toast } from '@/shared/utils';
+
+export const GroupRoomPage: React.FC = () => {
+  const { roomId } = useParams<{ roomId: string }>();
+  const navigate = useNavigate();
+  const authUser = useAppSelector(selectCurrentUser);
+  const { data: userProfile } = useGetMeQuery(undefined, { skip: !authUser });
+
+  const [joinGroup, { data: tokenData, isLoading: isJoining, error: joinError }] =
+    useJoinGroupRoomMutation();
+  const [leaveGroup] = useLeaveGroupRoomMutation();
+
+  const { data: initialMessages } = useGetRoomChatMessagesQuery(roomId || '', {
+    skip: !roomId,
+  });
+
+  // Modals & States
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isEndedModalOpen, setIsEndedModalOpen] = useState(false);
+
+  const displayName =
+    userProfile?.displayName ||
+    authUser?.email?.split('@')[0] ||
+    'Người học';
+  const avatarUrl = userProfile?.avatarUrl;
+
+  // 1. Initial Join Group Room
+  useEffect(() => {
+    if (roomId) {
+      joinGroup(roomId)
+        .unwrap()
+        .catch((err) => {
+          console.error('Failed to join group room:', err);
+        });
+    }
+  }, [roomId, joinGroup]);
+
+  // 2. WebRTC LiveKit
+  const {
+    localParticipant,
+    remoteParticipants,
+    activeSpeakers,
+    screenShareTrack,
+    isMicEnabled,
+    isCameraEnabled,
+    isScreenSharing,
+    toggleMicrophone,
+    toggleCamera,
+    toggleScreenShare,
+    disconnect,
+  } = useLiveKitRoom({
+    wsUrl: tokenData?.livekitWsUrl,
+    token: tokenData?.livekitToken,
+    autoConnect: !!tokenData?.livekitToken,
+    onDisconnected: () => {
+      setIsEndedModalOpen(true);
+    },
+  });
+
+  // 3. In-Room Chat
+  const {
+    messages,
+    unreadCount,
+    isChatOpen,
+    addMessage,
+    toggleChat,
+    closeChat,
+  } = useInRoomChat(initialMessages || []);
+
+  // 4. Whiteboard
+  const {
+    elements: whiteboardElements,
+    currentTool,
+    currentColor,
+    currentWidth,
+    isWhiteboardOpen,
+    setCurrentTool,
+    setCurrentColor,
+    setCurrentWidth,
+    setIsWhiteboardOpen,
+    addElement: addWhiteboardElement,
+    clearBoard: clearWhiteboard,
+    undo: undoWhiteboard,
+    handleRemoteUpdate: handleRemoteWhiteboardUpdate,
+  } = useWhiteboard((payload) => {
+    socketHelper.sendWhiteboardDraw(payload);
+  });
+
+  // 5. Code Editor
+  const {
+    code: editorCode,
+    language: editorLanguage,
+    isEditorOpen,
+    setIsEditorOpen,
+    updateCode: updateEditorCode,
+    updateLanguage: updateEditorLanguage,
+    handleRemoteUpdate: handleRemoteEditorUpdate,
+  } = useCodeEditor((payload) => {
+    socketHelper.sendCodeEditorChange(payload.code, payload.language);
+  });
+
+  // 6. Socket.IO Real-time Helper
+  const socketHelper = useSessionSocket({
+    roomId,
+    userId: authUser?.id,
+    role: tokenData?.role,
+    displayName,
+    onNewMessage: (msg) => {
+      addMessage(msg);
+    },
+    onWhiteboardUpdate: (data) => {
+      handleRemoteWhiteboardUpdate(data);
+    },
+    onCodeEditorUpdate: (data) => {
+      handleRemoteEditorUpdate(data);
+    },
+    onHeartbeatAck: (ack) => {
+      heartbeatHelper.handleHeartbeatAck(ack);
+    },
+    onParticipantMuted: (evt) => {
+      if (evt.userId === authUser?.id && evt.isMuted) {
+        toast.info('Host đã tắt microphone của bạn.');
+      }
+    },
+    onParticipantKicked: (evt) => {
+      if (evt.userId === authUser?.id) {
+        toast.error('Bạn đã bị mời ra khỏi phòng học nhóm.');
+        disconnect();
+        navigate('/rooms/group');
+      }
+    },
+  });
+
+  // 7. Heartbeat Hook (60s tick for group rooms)
+  const heartbeatHelper = useHeartbeat({
+    roomId,
+    isGroupRoom: true,
+    isLearner: tokenData?.role === 'LEARNER',
+    onHeartbeat: () => {
+      socketHelper.sendHeartbeat();
+    },
+    onInsufficientBalance: () => {
+      disconnect();
+      navigate('/manage/wallet');
+    },
+  });
+
+  // 8. Leave Group Call
+  const handleLeaveGroup = useCallback(async () => {
+    if (roomId) {
+      try {
+        await leaveGroup(roomId).unwrap();
+      } catch (err) {
+        console.error('Error leaving group room:', err);
+      }
+    }
+    disconnect();
+    navigate('/rooms/group');
+  }, [roomId, leaveGroup, disconnect, navigate]);
+
+  // Loading Screen
+  if (isJoining) {
+    return (
+      <div className="w-screen h-screen bg-slate-950 flex flex-col items-center justify-center text-center p-6 select-none">
+        <div className="w-16 h-16 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center mb-4 animate-pulse">
+          <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-100">Đang vào phòng học nhóm...</h2>
+        <p className="text-xs text-slate-400 mt-1 max-w-sm">
+          Đang kết nối luồng WebRTC và kiểm tra trạng thái số dư ví...
+        </p>
+      </div>
+    );
+  }
+
+  // Error Screen
+  if (joinError) {
+    const errorMessage =
+      (joinError as any)?.data?.message || 'Không thể tham gia phòng học nhóm này.';
+    return (
+      <div className="w-screen h-screen bg-slate-950 flex flex-col items-center justify-center text-center p-6 select-none">
+        <div className="w-16 h-16 rounded-full bg-rose-600/20 border border-rose-500/30 flex items-center justify-center mb-4 text-rose-400">
+          <AlertTriangle className="w-8 h-8" />
+        </div>
+        <h2 className="text-lg font-bold text-slate-100">Lỗi tham gia phòng nhóm</h2>
+        <p className="text-xs text-slate-400 mt-1 max-w-md">{errorMessage}</p>
+        <button
+          onClick={() => navigate('/rooms/group')}
+          className="mt-6 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> Quay lại danh sách phòng
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-screen h-screen bg-slate-950 flex flex-col overflow-hidden select-none">
+      {/* 1. Header */}
+      <SessionHeader
+        title="Phòng học nhóm trực tuyến"
+        roomType="GROUP"
+        participantCount={1 + remoteParticipants.length}
+        currentBalance={heartbeatHelper.currentBalance ?? tokenData?.availableBalance}
+        onLeave={handleLeaveGroup}
+      />
+
+      {/* 2. Main Content Area */}
+      <main className="flex-1 relative flex overflow-hidden">
+        <div className="flex-1 relative h-full flex flex-col items-center justify-center p-2 pb-24 md:pb-28">
+          {screenShareTrack ? (
+            /* Screen Share Spotlight */
+            <div className="w-full h-full max-w-7xl mx-auto">
+              <ScreenShareView
+                screenTrack={screenShareTrack.track}
+                participantIdentity={screenShareTrack.participantIdentity}
+              />
+            </div>
+          ) : (
+            /* Group Video Grid */
+            <VideoGrid
+              localParticipant={localParticipant}
+              remoteParticipants={remoteParticipants}
+              activeSpeakers={activeSpeakers}
+              mentorId={tokenData?.mentorId}
+              currentUserId={authUser?.id}
+              is1on1={false}
+              onMuteParticipant={(id) => socketHelper.muteParticipant(id, true)}
+              onKickParticipant={(id) => socketHelper.kickParticipant(id, 'Vi phạm quy định')}
+            />
+          )}
+        </div>
+
+        {/* Chat Sidebar */}
+        <InRoomChatPanel
+          isOpen={isChatOpen}
+          messages={messages}
+          currentUserId={authUser?.id}
+          onClose={closeChat}
+          onSendMessage={(content) => {
+            socketHelper.sendMessage(content, displayName, avatarUrl);
+          }}
+        />
+      </main>
+
+      {/* 3. Controls Bar */}
+      <SessionControlsBar
+        isMicEnabled={isMicEnabled}
+        isCameraEnabled={isCameraEnabled}
+        isScreenSharing={isScreenSharing}
+        isChatOpen={isChatOpen}
+        isWhiteboardOpen={isWhiteboardOpen}
+        isEditorOpen={isEditorOpen}
+        unreadCount={unreadCount}
+        onToggleMic={toggleMicrophone}
+        onToggleCamera={toggleCamera}
+        onToggleScreenShare={toggleScreenShare}
+        onToggleChat={toggleChat}
+        onToggleWhiteboard={() => setIsWhiteboardOpen((prev) => !prev)}
+        onToggleEditor={() => setIsEditorOpen((prev) => !prev)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onLeave={handleLeaveGroup}
+      />
+
+      {/* 4. Whiteboard Modal */}
+      <WhiteboardModal
+        isOpen={isWhiteboardOpen}
+        elements={whiteboardElements}
+        currentTool={currentTool}
+        currentColor={currentColor}
+        currentWidth={currentWidth}
+        onClose={() => setIsWhiteboardOpen(false)}
+        onToolChange={setCurrentTool}
+        onColorChange={setCurrentColor}
+        onWidthChange={setCurrentWidth}
+        onAddElement={addWhiteboardElement}
+        onClear={clearWhiteboard}
+        onUndo={undoWhiteboard}
+      />
+
+      {/* 5. Live Code Editor Modal */}
+      <LiveCodeEditorModal
+        isOpen={isEditorOpen}
+        code={editorCode}
+        language={editorLanguage}
+        onClose={() => setIsEditorOpen(false)}
+        onCodeChange={updateEditorCode}
+        onLanguageChange={updateEditorLanguage}
+      />
+
+      {/* 6. Settings Modal */}
+      <DeviceSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
+
+      {/* 7. Ended Modal */}
+      <SessionEndedModal
+        isOpen={isEndedModalOpen}
+        creditsTransferred={heartbeatHelper.totalCreditsCharged}
+        isHost={tokenData?.role === 'MENTOR'}
+      />
+    </div>
+  );
+};
