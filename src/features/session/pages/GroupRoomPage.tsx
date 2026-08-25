@@ -201,12 +201,12 @@ export const GroupRoomPage: React.FC = () => {
   // Loading Screen
   if (isJoining) {
     return (
-      <div className="w-screen h-screen bg-slate-950 flex flex-col items-center justify-center text-center p-6 select-none">
-        <div className="w-16 h-16 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center mb-4 animate-pulse">
-          <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+      <div className="w-screen h-screen bg-slate-50 flex flex-col items-center justify-center text-center p-6 select-none animate-in fade-in duration-200">
+        <div className="w-16 h-16 rounded-3xl bg-primary-50 border border-primary-200/80 flex items-center justify-center mb-4 shadow-sm">
+          <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
         </div>
-        <h2 className="text-lg font-bold text-slate-100">Đang vào phòng học nhóm...</h2>
-        <p className="text-xs text-slate-400 mt-1 max-w-sm">
+        <h2 className="text-base font-bold text-slate-800">Đang vào phòng học nhóm...</h2>
+        <p className="text-xs text-slate-500 mt-1 max-w-sm font-medium">
           Đang kết nối luồng WebRTC và kiểm tra trạng thái số dư ví...
         </p>
       </div>
@@ -218,24 +218,29 @@ export const GroupRoomPage: React.FC = () => {
     const errorMessage =
       (joinError as any)?.data?.message || 'Không thể tham gia phòng học nhóm này.';
     return (
-      <div className="w-screen h-screen bg-slate-950 flex flex-col items-center justify-center text-center p-6 select-none">
-        <div className="w-16 h-16 rounded-full bg-rose-600/20 border border-rose-500/30 flex items-center justify-center mb-4 text-rose-400">
-          <AlertTriangle className="w-8 h-8" />
+      <div className="w-screen h-screen bg-slate-50 flex flex-col items-center justify-center text-center p-6 select-none">
+        <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 space-y-4 shadow-xl">
+          <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-center justify-center mx-auto text-rose-500">
+            <AlertTriangle className="w-7 h-7" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-800">Lỗi tham gia phòng nhóm</h2>
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed font-medium">{errorMessage}</p>
+          </div>
+          <button
+            onClick={() => navigate('/manage/bookings')}
+            className="w-full py-2.5 px-4 bg-primary-700 hover:bg-primary-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Quay lại danh sách phòng</span>
+          </button>
         </div>
-        <h2 className="text-lg font-bold text-slate-100">Lỗi tham gia phòng nhóm</h2>
-        <p className="text-xs text-slate-400 mt-1 max-w-md">{errorMessage}</p>
-        <button
-          onClick={() => navigate('/rooms/group')}
-          className="mt-6 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Quay lại danh sách phòng
-        </button>
       </div>
     );
   }
 
   return (
-    <div className="w-screen h-screen bg-slate-950 flex flex-col overflow-hidden select-none">
+    <div className="w-screen h-screen bg-slate-100 flex flex-col overflow-hidden select-none">
       {/* 1. Header */}
       <SessionHeader
         title="Phòng học nhóm trực tuyến"

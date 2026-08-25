@@ -236,10 +236,12 @@ export const OneOnOneRoomPage: React.FC = () => {
   // ════════════════════════════════════════════════════════════
   if (isJoining || isBookingLoading) {
     return (
-      <div className="w-screen h-screen bg-slate-900 flex flex-col items-center justify-center text-white space-y-4">
-        <Loader2 className="w-10 h-10 text-primary-500 animate-spin" />
-        <h2 className="text-base font-bold tracking-wide">Đang kết nối vào phòng học trực tuyến...</h2>
-        <p className="text-xs text-slate-400">Vui lòng chờ trong giây lát</p>
+      <div className="w-screen h-screen bg-slate-50 flex flex-col items-center justify-center text-center p-6 select-none animate-in fade-in duration-200">
+        <div className="w-16 h-16 rounded-3xl bg-primary-50 border border-primary-200/80 flex items-center justify-center mb-4 shadow-sm">
+          <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+        </div>
+        <h2 className="text-base font-bold text-slate-800">Đang kết nối vào phòng học trực tuyến...</h2>
+        <p className="text-xs text-slate-500 mt-1 max-w-sm font-medium">Vui lòng chờ trong giây lát...</p>
       </div>
     );
   }
@@ -249,15 +251,19 @@ export const OneOnOneRoomPage: React.FC = () => {
       (joinError as any)?.data?.message ||
       'Không thể tham gia phòng học trực tuyến. Vui lòng thử lại sau.';
     return (
-      <div className="w-screen h-screen bg-slate-900 flex flex-col items-center justify-center p-6 text-white text-center">
-        <div className="max-w-md w-full bg-slate-800 border border-slate-700 rounded-3xl p-8 space-y-4 shadow-2xl">
-          <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
-          <h2 className="text-lg font-bold">Không thể vào phòng học</h2>
-          <p className="text-xs text-slate-300 leading-relaxed">{errorMsg}</p>
+      <div className="w-screen h-screen bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 space-y-4 shadow-xl">
+          <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-center justify-center mx-auto text-rose-500">
+            <AlertCircle className="w-7 h-7" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-800">Không thể vào phòng học</h2>
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed font-medium">{errorMsg}</p>
+          </div>
           <button
             type="button"
-            onClick={() => navigate('/management/classes')}
-            className="w-full py-2.5 px-4 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            onClick={() => navigate('/manage/bookings')}
+            className="w-full py-2.5 px-4 rounded-xl bg-primary-700 hover:bg-primary-800 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Quay lại trang quản lý</span>

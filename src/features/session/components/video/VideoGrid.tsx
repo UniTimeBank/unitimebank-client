@@ -61,14 +61,14 @@ export const VideoGrid: React.FC<VideoGridProps> = ({
             </div>
           ) : (
             /* Waiting placeholder when counterpart hasn't joined */
-            <div className="w-full h-full min-h-[220px] bg-slate-900/60 border-2 border-dashed border-slate-800 rounded-2xl flex flex-col items-center justify-center text-center p-6">
-              <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 mb-3 animate-pulse">
+            <div className="w-full h-full min-h-[220px] bg-white border border-dashed border-slate-300 rounded-3xl shadow-xs flex flex-col items-center justify-center text-center p-6">
+              <div className="w-16 h-16 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center mb-3 animate-pulse border border-primary-200/60">
                 <span className="text-2xl">⏳</span>
               </div>
-              <p className="text-slate-300 font-medium text-sm md:text-base">
+              <p className="text-slate-800 font-bold text-sm md:text-base">
                 Đang chờ người cùng học tham gia...
               </p>
-              <p className="text-xs text-slate-500 mt-1 max-w-xs">
+              <p className="text-xs text-slate-400 mt-1 max-w-xs font-medium">
                 Khi đối phương bấm vào phòng, hình ảnh và âm thanh sẽ xuất hiện tại đây.
               </p>
             </div>

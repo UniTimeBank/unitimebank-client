@@ -37,8 +37,8 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
 
         <div className="h-5 w-[1px] bg-slate-200 hidden md:block" />
 
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/70 text-xs font-semibold max-w-md truncate shadow-2xs">
-          <GraduationCap className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-50 text-primary-800 border border-primary-200/70 text-xs font-semibold max-w-md truncate shadow-2xs">
+          <GraduationCap className="w-3.5 h-3.5 text-primary-600 shrink-0" />
           <span className="truncate">{title}</span>
         </div>
       </div>
@@ -57,7 +57,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
               className="w-9 h-9 rounded-full object-cover border-2 border-slate-200 shadow-2xs"
             />
           ) : (
-            <div className="w-9 h-9 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center border-2 border-indigo-100 shadow-2xs">
+            <div className="w-9 h-9 rounded-full bg-primary-700 text-white font-bold text-xs flex items-center justify-center border-2 border-primary-100 shadow-2xs">
               {userName.charAt(0).toUpperCase()}
             </div>
           )}

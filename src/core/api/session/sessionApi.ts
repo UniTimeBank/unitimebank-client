@@ -78,7 +78,15 @@ export const sessionApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: 'Wallet', id: 'ME' }],
     }),
 
-    // 7. Lấy danh sách phòng nhóm đang mở
+    // 7. Mentor đóng phòng học nhóm
+    closeGroupRoom: builder.mutation<{ roomId: string; status: string; closedAt: string }, string>({
+      query: (roomId) => ({
+        url: `/rooms/group/${roomId}/close`,
+        method: 'POST',
+      }),
+    }),
+
+    // 8. Lấy danh sách phòng nhóm đang mở
     getActiveGroupRooms: builder.query<
       GetActiveGroupRoomsResponse,
       { category?: string; page?: number; limit?: number } | void
@@ -94,12 +102,26 @@ export const sessionApi = baseApi.injectEndpoints({
       },
     }),
 
-    // 8. Lấy lịch sử chat trong phòng
+    // 9. Lấy lịch sử các phòng nhóm đã kết thúc
+    getGroupRoomsHistory: builder.query<
+      { rooms: any[]; total: number; page: number; limit: number },
+      { page?: number; limit?: number } | void
+    >({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        if (params?.page) queryParams.append('page', String(params.page));
+        if (params?.limit) queryParams.append('limit', String(params.limit));
+        const queryString = queryParams.toString();
+        return `/rooms/group/history${queryString ? `?${queryString}` : ''}`;
+      },
+    }),
+
+    // 10. Lấy lịch sử chat trong phòng
     getRoomChatMessages: builder.query<InRoomChatMessage[], string>({
       query: (roomId) => `/rooms/${roomId}/chat`,
     }),
 
-    // 9. Gửi tin nhắn chat trong phòng qua HTTP REST (fallback)
+    // 11. Gửi tin nhắn chat trong phòng qua HTTP REST (fallback)
     sendRoomChatMessage: builder.mutation<InRoomChatMessage, { roomId: string; content: string }>({
       query: ({ roomId, content }) => ({
         url: `/rooms/${roomId}/chat`,
@@ -108,7 +130,7 @@ export const sessionApi = baseApi.injectEndpoints({
       }),
     }),
 
-    // 10. Mute thành viên (Host)
+    // 12. Mute thành viên (Host)
     muteParticipant: builder.mutation<
       { participantId: string; userId: string; isMuted: boolean },
       { roomId: string; participantId: string; isMuted?: boolean }
@@ -120,7 +142,7 @@ export const sessionApi = baseApi.injectEndpoints({
       }),
     }),
 
-    // 11. Kick thành viên (Host)
+    // 13. Kick thành viên (Host)
     kickParticipant: builder.mutation<
       { participantId: string; userId: string; isKicked: boolean },
       { roomId: string; participantId: string; reason?: string }
@@ -141,7 +163,9 @@ export const {
   useCreateGroupRoomMutation,
   useJoinGroupRoomMutation,
   useLeaveGroupRoomMutation,
+  useCloseGroupRoomMutation,
   useGetActiveGroupRoomsQuery,
+  useGetGroupRoomsHistoryQuery,
   useGetRoomChatMessagesQuery,
   useSendRoomChatMessageMutation,
   useMuteParticipantMutation,

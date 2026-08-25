@@ -19,6 +19,7 @@ import {
   RegisteredSkillsSection,
   LearnerSidebarCard,
 } from '../components';
+import { TrustScoreHistoryModal } from '@/features/moderation';
 import { useUserProfile, useUserSkills, useDailyCheckin } from '../hooks';
 import { useGetPublicProfileQuery } from '@/core/api/user/userApi';
 
@@ -54,6 +55,7 @@ export const UserProfilePage: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAddSkillModalOpen, setIsAddSkillModalOpen] = useState(false);
   const [isCreditTasksOpen, setIsCreditTasksOpen] = useState(false);
+  const [isTrustScoreModalOpen, setIsTrustScoreModalOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
 
   useEffect(() => {
@@ -107,9 +109,32 @@ export const UserProfilePage: React.FC = () => {
     : skills;
 
   const credits = 120;
-  const trustScoreMax100 = isOtherUser
-    ? targetPublicProfile?.trustScore || 100
-    : profile?.trustScore || 100;
+  const actualTrustScore = isOtherUser
+    ? targetPublicProfile?.trustScore ?? 100
+    : profile?.trustScore ?? 100;
+  const trustScoreMax100 = actualTrustScore;
+
+  const trustTier = isOtherUser
+    ? targetPublicProfile?.trustTier || 'GOOD'
+    : profile?.trustTier || 'GOOD';
+
+  const getTierInfo = (score: number, tier?: string) => {
+    if (score >= 120 || tier === 'EXCELLENT') {
+      return { label: 'Xuất sắc', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+    }
+    if (score >= 80 || tier === 'GOOD') {
+      return { label: 'Tốt', color: 'bg-blue-50 text-blue-700 border-blue-200' };
+    }
+    if (score >= 50 || tier === 'AVERAGE') {
+      return { label: 'Trung bình', color: 'bg-amber-50 text-amber-700 border-amber-200' };
+    }
+    if (score > 0 || tier === 'WARNING') {
+      return { label: 'Cảnh báo', color: 'bg-orange-50 text-orange-700 border-orange-200' };
+    }
+    return { label: 'Khóa', color: 'bg-rose-50 text-rose-700 border-rose-200' };
+  };
+
+  const tierInfo = getTierInfo(actualTrustScore, trustTier);
 
   const handleDeleteSkill = async (skillId: string) => {
     await deleteSkill(skillId);
@@ -388,54 +413,64 @@ export const UserProfilePage: React.FC = () => {
 
             {/* Card 2: Điểm Uy Tín 2 Chiều (Dual Trust Score) */}
             <div className="bg-white rounded-3xl p-6 sm:p-7 border border-primary-100/80 shadow-xs flex flex-col justify-between">
-              <div className="w-full flex items-center justify-between">
-                <span className="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-primary-600" />
+              {/* Header */}
+              <div className="w-full flex items-center justify-between pb-1">
+                <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   <span>Điểm Uy Tín 2 Chiều</span>
                 </span>
-                <span className="text-xs font-bold text-primary-700 bg-primary-50 px-2 py-0.5 rounded-full">
+                <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50/90 border border-emerald-200/60 px-2.5 py-0.5 rounded-full">
                   Chuẩn 360°
                 </span>
               </div>
 
-              {/* 2 Cột Điểm: Người Dạy & Người Học */}
-              <div className="grid grid-cols-2 gap-2 my-auto py-2 divide-x divide-slate-100">
+              {/* 2 Cột: Người Dạy & Người Học */}
+              <div className="grid grid-cols-2 gap-3 my-auto py-3">
                 {/* Cột 1: Người Dạy */}
-                <div className="text-center pr-2">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                    🧑‍🏫 Người Dạy
-                  </span>
-                  <div className="flex items-baseline justify-center gap-1">
+                <div className="bg-slate-50/70 hover:bg-slate-50 border border-slate-100/80 rounded-2xl p-3 text-center transition-colors">
+                  <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <GraduationCap className="w-3.5 h-3.5 text-primary-600" />
+                    <span>Người Dạy</span>
+                  </div>
+                  <div className="flex items-baseline justify-center gap-0.5">
                     <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                       {trustScoreMax100}
                     </span>
                     <span className="text-[11px] text-slate-400 font-bold">/100</span>
                   </div>
-                  <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded-md inline-block mt-1">
-                    Chất lượng dạy
-                  </span>
+                  <div className="mt-2">
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100/80 px-2 py-0.5 rounded-md inline-block">
+                      Chất lượng dạy
+                    </span>
+                  </div>
                 </div>
 
                 {/* Cột 2: Người Học */}
-                <div className="text-center pl-2">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                    🎓 Người Học
-                  </span>
-                  <div className="flex items-baseline justify-center gap-1">
+                <div className="bg-slate-50/70 hover:bg-slate-50 border border-slate-100/80 rounded-2xl p-3 text-center transition-colors">
+                  <div className="flex items-center justify-center gap-1 text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Người Học</span>
+                  </div>
+                  <div className="flex items-baseline justify-center gap-0.5">
                     <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                       100
                     </span>
                     <span className="text-[11px] text-slate-400 font-bold">/100</span>
                   </div>
-                  <span className="text-[10px] text-primary-700 font-bold bg-primary-50 px-1.5 py-0.5 rounded-md inline-block mt-1">
-                    Đúng giờ & Cam kết
-                  </span>
+                  <div className="mt-2">
+                    <span className="text-[10px] font-bold text-primary-700 bg-primary-50 border border-primary-100/80 px-2 py-0.5 rounded-md inline-block">
+                      Đúng giờ & Cam kết
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <p className="text-[11px] text-gray-500 font-medium text-center pt-2 border-t border-slate-100">
-                Đánh giá tách biệt giúp bạn giữ trọn uy tín ở cả 2 vai trò
-              </p>
+              {/* Footer */}
+              <div className="pt-2 border-t border-slate-100/80">
+                <p className="text-[11px] text-slate-400 font-medium text-center">
+                  Đánh giá tách biệt giúp bạn giữ trọn uy tín ở cả 2 vai trò
+                </p>
+              </div>
             </div>
 
             {/* Card 3: Nhiệm vụ Onboarding */}
@@ -618,6 +653,14 @@ export const UserProfilePage: React.FC = () => {
         isOpen={isCreditTasksOpen}
         onClose={() => setIsCreditTasksOpen(false)}
         onActionClick={handleProfileAction}
+      />
+
+      {/* Trust Score History Modal */}
+      <TrustScoreHistoryModal
+        isOpen={isTrustScoreModalOpen}
+        onClose={() => setIsTrustScoreModalOpen(false)}
+        userId={isOtherUser ? userId || '' : profile?.userId || profile?.id || ''}
+        userName={userName}
       />
     </div>
   );

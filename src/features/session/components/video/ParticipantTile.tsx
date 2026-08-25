@@ -48,8 +48,12 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
 
   return (
     <div
-      className={`relative w-full h-full bg-slate-900 rounded-2xl overflow-hidden shadow-lg border-2 transition-all duration-300 flex items-center justify-center ${
-        isSpeaking ? 'border-emerald-500 shadow-emerald-500/20 ring-4 ring-emerald-500/20' : 'border-slate-800'
+      className={`relative w-full h-full rounded-3xl overflow-hidden shadow-sm border-2 transition-all duration-300 flex items-center justify-center ${
+        isSpeaking
+          ? 'border-primary-500 shadow-primary-500/20 ring-4 ring-primary-500/20'
+          : isCameraEnabled
+          ? 'bg-slate-900 border-slate-800'
+          : 'bg-white border-slate-200/90'
       }`}
     >
       {/* Video Element */}
@@ -62,33 +66,46 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
           muted={isLocal}
         />
       ) : (
-        /* Avatar Placeholder when Camera is OFF */
+        /* Avatar Placeholder when Camera is OFF - Nền Trắng Sáng Sạch Sẽ */
         <div className="flex flex-col items-center justify-center p-6 text-center select-none">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-indigo-600 to-purple-600 text-white font-bold text-2xl md:text-3xl flex items-center justify-center shadow-xl border-4 border-slate-800">
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-primary-50 text-primary-700 font-extrabold text-2xl md:text-3xl flex items-center justify-center shadow-xs border-4 border-primary-100/90">
             {displayName.charAt(0).toUpperCase()}
           </div>
-          <p className="mt-3 text-slate-300 font-medium text-sm md:text-base flex items-center gap-1.5">
-            {displayName} {isLocal && <span className="text-xs text-indigo-400 font-normal">(Tôi)</span>}
+          <p className="mt-3.5 text-slate-800 font-bold text-sm md:text-base flex items-center gap-1.5">
+            <span>{displayName}</span>
+            {isLocal && (
+              <span className="text-[11px] text-primary-700 font-bold bg-primary-50 px-2 py-0.5 rounded-full border border-primary-200">
+                Tôi
+              </span>
+            )}
           </p>
-          <span className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+          <span className="text-xs text-slate-400 font-medium flex items-center gap-1 mt-1">
             <VideoOff className="w-3.5 h-3.5" /> Camera đang tắt
           </span>
         </div>
       )}
 
       {/* Participant Name Badge & Indicators (Bottom Left) */}
-      <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-slate-950/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700/50 shadow-md">
+      <div
+        className={`absolute bottom-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-xs backdrop-blur-md ${
+          isCameraEnabled
+            ? 'bg-slate-950/75 border-slate-700/60 text-slate-200'
+            : 'bg-white/95 border-slate-200 text-slate-800'
+        }`}
+      >
         {isHost && (
-          <span className="bg-amber-500/20 text-amber-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex items-center gap-1 border border-amber-500/30">
-            <Crown className="w-3 h-3 text-amber-400" /> Mentor
+          <span className="bg-primary-50 text-primary-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-primary-200">
+            <Crown className="w-3 h-3 text-primary-600" /> Mentor
           </span>
         )}
-        <span className="text-xs font-medium text-slate-200 truncate max-w-[120px] md:max-w-[160px]">
+        <span className="text-xs font-bold truncate max-w-[120px] md:max-w-[160px]">
           {displayName} {isLocal && '(Tôi)'}
         </span>
         <div
-          className={`p-1 rounded-full ${
-            isMicEnabled ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+          className={`p-1 rounded-full border ${
+            isMicEnabled
+              ? 'bg-primary-50 text-primary-700 border-primary-200'
+              : 'bg-rose-50 text-rose-600 border-rose-200'
           }`}
           title={isMicEnabled ? 'Micro đang bật' : 'Micro đang tắt'}
         >
@@ -98,11 +115,11 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
 
       {/* Host Moderation Quick Actions (Top Right) */}
       {canModerate && !isLocal && (
-        <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity bg-slate-950/80 backdrop-blur-md p-1.5 rounded-xl border border-slate-700/60 shadow-lg">
+        <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity bg-white/95 backdrop-blur-md p-1.5 rounded-xl border border-slate-200 shadow-md">
           {onMute && (
             <button
               onClick={onMute}
-              className="p-1.5 rounded-lg text-slate-300 hover:text-amber-400 hover:bg-slate-800 transition-colors text-xs flex items-center gap-1"
+              className="p-1.5 rounded-lg text-slate-600 hover:text-amber-600 hover:bg-amber-50 transition-colors text-xs flex items-center gap-1 cursor-pointer"
               title="Tắt mic người học"
             >
               <MicOff className="w-3.5 h-3.5" />
@@ -111,7 +128,7 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
           {onKick && (
             <button
               onClick={onKick}
-              className="p-1.5 rounded-lg text-slate-300 hover:text-rose-400 hover:bg-rose-950/50 transition-colors text-xs flex items-center gap-1"
+              className="p-1.5 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors text-xs flex items-center gap-1 cursor-pointer"
               title="Mời ra khỏi phòng"
             >
               Mời ra
