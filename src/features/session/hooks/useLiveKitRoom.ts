@@ -10,12 +10,14 @@ import {
   ConnectionState,
 } from 'livekit-client';
 import { toast } from '@/shared/utils';
+import type { InRoomChatMessage } from '../types';
 
 export interface UseLiveKitRoomProps {
   wsUrl?: string;
   token?: string;
   autoConnect?: boolean;
   onDisconnected?: () => void;
+  onDataReceived?: (msg: InRoomChatMessage) => void;
 }
 
 export const useLiveKitRoom = ({
@@ -23,6 +25,7 @@ export const useLiveKitRoom = ({
   token,
   autoConnect = true,
   onDisconnected,
+  onDataReceived,
 }: UseLiveKitRoomProps) => {
   const roomRef = useRef<Room | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
@@ -31,6 +34,11 @@ export const useLiveKitRoom = ({
   );
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+
+  const onDataReceivedRef = useRef(onDataReceived);
+  useEffect(() => {
+    onDataReceivedRef.current = onDataReceived;
+  }, [onDataReceived]);
 
   // Local Media States
   const [isMicEnabled, setIsMicEnabled] = useState(true);
@@ -156,6 +164,17 @@ export const useLiveKitRoom = ({
             prev?.participantIdentity === currentRoom.localParticipant.identity ? null : prev,
           );
         }
+      })
+      .on(RoomEvent.DataReceived, (payload: Uint8Array, participant?: RemoteParticipant) => {
+        try {
+          const text = new TextDecoder().decode(payload);
+          const parsed = JSON.parse(text);
+          if (parsed && parsed.type === 'CHAT_MESSAGE' && parsed.payload) {
+            onDataReceivedRef.current?.(parsed.payload);
+          }
+        } catch (err) {
+          console.warn('Error handling RoomEvent.DataReceived:', err);
+        }
       });
 
     // Connect
@@ -176,6 +195,22 @@ export const useLiveKitRoom = ({
       roomRef.current = null;
     };
   }, [wsUrl, token, autoConnect]);
+
+  // Publish in-room Chat Message via direct WebRTC reliable data channel
+  const publishChatMessage = useCallback(async (msg: InRoomChatMessage) => {
+    if (!roomRef.current || !roomRef.current.localParticipant) return;
+    try {
+      const data = new TextEncoder().encode(
+        JSON.stringify({
+          type: 'CHAT_MESSAGE',
+          payload: msg,
+        }),
+      );
+      await roomRef.current.localParticipant.publishData(data, { reliable: true });
+    } catch (err) {
+      console.warn('LiveKit publishData failed:', err);
+    }
+  }, []);
 
   // Toggle Microphone
   const toggleMicrophone = useCallback(async () => {
@@ -253,6 +288,7 @@ export const useLiveKitRoom = ({
     toggleMicrophone,
     toggleCamera,
     toggleScreenShare,
+    publishChatMessage,
     disconnect,
   };
 };

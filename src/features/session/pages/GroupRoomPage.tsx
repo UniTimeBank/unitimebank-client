@@ -16,6 +16,7 @@ import {
   useCodeEditor,
   useHeartbeat,
 } from '../hooks';
+import type { InRoomChatMessage } from '../types';
 import {
   SessionHeader,
   SessionControlsBar,
@@ -66,6 +67,23 @@ export const GroupRoomPage: React.FC = () => {
   }, [roomId, joinGroup]);
 
   // 2. WebRTC LiveKit
+  // 3. In-Room Chat
+  const {
+    messages,
+    unreadCount,
+    isChatOpen,
+    addMessage,
+    toggleChat,
+    closeChat,
+  } = useInRoomChat(initialMessages || []);
+
+  const handleNewChatMessage = useCallback(
+    (msg: InRoomChatMessage) => {
+      addMessage(msg);
+    },
+    [addMessage],
+  );
+
   const {
     localParticipant,
     remoteParticipants,
@@ -77,25 +95,17 @@ export const GroupRoomPage: React.FC = () => {
     toggleMicrophone,
     toggleCamera,
     toggleScreenShare,
+    publishChatMessage,
     disconnect,
   } = useLiveKitRoom({
     wsUrl: tokenData?.livekitWsUrl,
     token: tokenData?.livekitToken,
     autoConnect: !!tokenData?.livekitToken,
+    onDataReceived: handleNewChatMessage,
     onDisconnected: () => {
       setIsEndedModalOpen(true);
     },
   });
-
-  // 3. In-Room Chat
-  const {
-    messages,
-    unreadCount,
-    isChatOpen,
-    addMessage,
-    toggleChat,
-    closeChat,
-  } = useInRoomChat(initialMessages || []);
 
   // 4. Whiteboard
   const {
@@ -268,6 +278,17 @@ export const GroupRoomPage: React.FC = () => {
           currentUserId={authUser?.id}
           onClose={closeChat}
           onSendMessage={(content) => {
+            const newMsg: InRoomChatMessage = {
+              id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+              roomId: roomId || '',
+              senderId: authUser?.id || '',
+              senderName: displayName,
+              senderAvatar: avatarUrl,
+              content,
+              sentAt: new Date().toISOString(),
+            };
+            addMessage(newMsg);
+            publishChatMessage(newMsg);
             socketHelper.sendMessage(content, displayName, avatarUrl);
           }}
         />

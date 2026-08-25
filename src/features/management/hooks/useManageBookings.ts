@@ -8,12 +8,13 @@ import {
   BookingStatus,
   type BookingItem,
 } from '@/core/api/booking/bookingApi';
+import { useGetActiveGroupRoomsQuery } from '@/core/api/session';
 import { useUserProfile } from '@/features/user/hooks';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentUser } from '@/core/store';
 import { toast } from '@/shared/utils';
 
-export type BookingTabType = 'PENDING' | 'UPCOMING' | 'HISTORY';
+export type BookingTabType = 'PENDING' | 'UPCOMING' | 'GROUP' | 'HISTORY';
 
 export const useManageBookings = () => {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ export const useManageBookings = () => {
   const urlBookingId = searchParams.get('bookingId');
 
   const [activeTab, setActiveTab] = useState<BookingTabType>(
-    urlTab && ['PENDING', 'UPCOMING', 'HISTORY'].includes(urlTab) ? urlTab : 'PENDING',
+    urlTab && ['PENDING', 'UPCOMING', 'GROUP', 'HISTORY'].includes(urlTab) ? urlTab : 'PENDING',
   );
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -36,13 +37,27 @@ export const useManageBookings = () => {
   // Chat & Detail Modal States
   const [chatModalBooking, setChatModalBooking] = useState<BookingItem | null>(null);
   const [detailModalBooking, setDetailModalBooking] = useState<BookingItem | null>(null);
+  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
 
   // Sync tab with URL parameter
   useEffect(() => {
-    if (urlTab && ['PENDING', 'UPCOMING', 'HISTORY'].includes(urlTab)) {
+    if (urlTab && ['PENDING', 'UPCOMING', 'GROUP', 'HISTORY'].includes(urlTab)) {
       setActiveTab(urlTab);
     }
   }, [urlTab]);
+
+  // Group Rooms Query
+  const { data: groupRoomsData, isLoading: isGroupRoomsLoading } = useGetActiveGroupRoomsQuery(
+    undefined,
+    {
+      pollingInterval: 12000,
+      refetchOnFocus: true,
+    },
+  );
+
+  const groupRooms = useMemo(() => {
+    return groupRoomsData?.rooms || [];
+  }, [groupRoomsData]);
 
   // RTK Query API with Smart Targeted Polling (10s) & Window Focus Sync
   const {
@@ -235,6 +250,16 @@ export const useManageBookings = () => {
     setPage(1);
   };
 
+  const filteredGroupRooms = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return groupRooms;
+    return groupRooms.filter(
+      (r) =>
+        r.title?.toLowerCase().includes(q) ||
+        r.category?.toLowerCase().includes(q),
+    );
+  }, [searchQuery, groupRooms]);
+
   const totalPages = Math.ceil(currentTabBookings.length / pageSize);
 
   const paginatedBookings = useMemo(() => {
@@ -255,6 +280,11 @@ export const useManageBookings = () => {
     pendingBookings,
     upcomingBookings,
     historyBookings,
+    groupRooms,
+    filteredGroupRooms,
+    isGroupRoomsLoading,
+    isCreateGroupModalOpen,
+    setIsCreateGroupModalOpen,
     currentTabBookings,
     paginatedBookings,
     page,
@@ -262,7 +292,7 @@ export const useManageBookings = () => {
     pageSize,
     setPageSize,
     totalPages,
-    totalItems: currentTabBookings.length,
+    totalItems: activeTab === 'GROUP' ? filteredGroupRooms.length : currentTabBookings.length,
     isLoading,
     isAccepting,
     isRejecting,

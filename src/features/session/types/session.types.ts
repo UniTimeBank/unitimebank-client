@@ -63,4 +63,6 @@ export interface InRoomChatMessage {
   sentAt: string;
   senderName?: string;
   senderAvatar?: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
 }

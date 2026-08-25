@@ -14,6 +14,7 @@ import { Modal, Button } from '@/shared/components/ui';
 import { BookingStatus, type BookingItem } from '@/features/management/types';
 import LogoImage from '@/assets/images/Logo.png';
 import { checkBookingSessionJoinable } from '@/features/session';
+import { PostSessionRatingModal, ReportViolationModal } from '@/features/moderation';
 
 export interface BookingDetailModalProps {
   booking: BookingItem | null;
@@ -43,6 +44,9 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   isAccepting = false,
   isRejecting = false,
 }) => {
+  const [isRatingOpen, setIsRatingOpen] = React.useState(false);
+  const [isReportOpen, setIsReportOpen] = React.useState(false);
+
   if (!booking) return null;
 
   const isMentor = currentUserId ? booking.mentorId === currentUserId : false;
@@ -120,13 +124,14 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Chi tiết buổi học"
-      description="Thông tin lịch trình, đối tác và trạng thái ký quỹ Credit"
-      size="lg"
-    >
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Chi tiết buổi học"
+        description="Thông tin lịch trình, đối tác và trạng thái ký quỹ Credit"
+        size="lg"
+      >
       <div className="space-y-5 text-xs text-slate-700">
         {/* Header Capsule */}
         <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -244,6 +249,31 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
             Đóng
           </Button>
 
+          {booking.status === BookingStatus.COMPLETED && (
+            <>
+              {!isMentor && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  onClick={() => setIsRatingOpen(true)}
+                  className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-4 shadow-xs"
+                >
+                  ⭐ Đánh giá buổi học
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => setIsReportOpen(true)}
+                className="rounded-xl border-slate-200 text-slate-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 font-bold text-xs"
+              >
+                Báo cáo sự cố
+              </Button>
+            </>
+          )}
+
           {isPendingForMe && (
             <>
               <Button
@@ -276,51 +306,78 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
             </>
           )}
 
-          {isConfirmed && (
-            <>
-              <Button
-                type="button"
-                variant="outline"
-                size="md"
-                onClick={() => {
-                  onClose();
-                  onOpenCancel?.(booking.id);
-                }}
-
-                className="rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-xs"
-              >
-                Hủy buổi học
-              </Button>
-
-              {(() => {
-                const canJoin = checkBookingSessionJoinable(booking);
-                return (
+          {isConfirmed && (() => {
+            const canJoin = checkBookingSessionJoinable(booking);
+            const isStarted = booking.status === BookingStatus.STARTED;
+            return (
+              <>
+                {!canJoin && !isStarted && (
                   <Button
                     type="button"
-                    variant="primary"
+                    variant="outline"
                     size="md"
-                    disabled={!canJoin}
                     onClick={() => {
-                      if (canJoin) {
-                        onClose();
-                        onJoinRoom?.(booking.id);
-                      }
+                      onClose();
+                      onOpenCancel?.(booking.id);
                     }}
-                    className={`rounded-xl font-bold text-xs px-5 shadow-xs bg-primary-700 hover:bg-primary-800 text-white ${
-                      !canJoin
-                        ? 'opacity-40 cursor-not-allowed pointer-events-none'
-                        : 'cursor-pointer'
-                    }`}
+                    className="rounded-xl border-rose-200 text-rose-600 hover:bg-rose-50 font-bold text-xs"
                   >
-                    <Video className="w-3.5 h-3.5" />
-                    <span>Vào phòng học</span>
+                    Hủy buổi học
                   </Button>
-                );
-              })()}
-            </>
-          )}
+                )}
+
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  disabled={!canJoin}
+                  onClick={() => {
+                    if (canJoin) {
+                      onClose();
+                      onJoinRoom?.(booking.id);
+                    }
+                  }}
+                  className={`rounded-xl font-bold text-xs px-5 shadow-xs bg-primary-700 hover:bg-primary-800 text-white ${
+                    !canJoin
+                      ? 'opacity-40 cursor-not-allowed pointer-events-none'
+                      : 'cursor-pointer'
+                  }`}
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  <span>Vào phòng học</span>
+                </Button>
+              </>
+            );
+          })()}
         </div>
       </div>
     </Modal>
+
+    {/* Sub-modals */}
+    <PostSessionRatingModal
+      isOpen={isRatingOpen}
+      onClose={() => setIsRatingOpen(false)}
+      bookingId={booking.id}
+      mentorId={booking.mentorId}
+      mentorName={booking.mentorName}
+      mentorAvatar={booking.mentorAvatar}
+      onSuccess={() => {
+        setIsRatingOpen(false);
+      }}
+    />
+
+    <ReportViolationModal
+      isOpen={isReportOpen}
+      onClose={() => setIsReportOpen(false)}
+      targetUserId={isMentor ? booking.learnerId : booking.mentorId}
+      targetUserName={isMentor ? booking.learnerName : booking.mentorName}
+      targetType="BOOKING"
+      targetId={booking.id}
+      onSuccess={() => {
+        setIsReportOpen(false);
+      }}
+    />
+    </>
   );
 };
+

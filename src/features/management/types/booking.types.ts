@@ -54,6 +54,17 @@ export interface GetBookingsResponse {
   total: number;
 }
 
+export interface BusySlotItem {
+  id: string;
+  date: string; // 'YYYY-MM-DD'
+  startTime: string; // 'HH:mm'
+  endTime: string; // 'HH:mm'
+  scheduledStart: string;
+  scheduledEnd: string;
+  status: BookingStatus;
+  sourcePostId?: string;
+}
+
 export type MessageType = 'TEXT' | 'IMAGE' | 'FILE' | 'LINK' | 'SYSTEM';
 
 export interface BookingMessage {

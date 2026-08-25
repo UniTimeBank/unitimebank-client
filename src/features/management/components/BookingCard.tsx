@@ -5,6 +5,7 @@ import {
   Video,
   MessageSquare,
   Shield,
+  Star,
 } from 'lucide-react';
 import { BookingStatus, type BookingItem } from '../types';
 import { Button } from '@/shared/components/ui';
@@ -20,6 +21,7 @@ export interface BookingCardProps {
   onJoinRoom?: (id: string) => void;
   onMessage?: (id: string) => void;
   onOpenDetail?: (booking: BookingItem) => void;
+  onRate?: (booking: BookingItem) => void;
   isAccepting?: boolean;
   isRejecting?: boolean;
   isCancelling?: boolean;
@@ -34,6 +36,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   onJoinRoom,
   onMessage,
   onOpenDetail,
+  onRate,
   isAccepting = false,
   isRejecting = false,
   isCancelling = false,
@@ -335,14 +338,17 @@ export const BookingCard: React.FC<BookingCardProps> = ({
                     <span>Nhắn tin</span>
                   </Button>
 
-                  <button
-                    type="button"
-                    onClick={() => onCancel?.(booking.id)}
-                    disabled={isCancelling}
-                    className="text-xs text-gray-400 hover:text-red-600 font-medium px-1.5 py-1 transition-colors cursor-pointer"
-                  >
-                    Hủy
-                  </button>
+                  {/* Ẩn nút Hủy khi buổi học đã đến giờ hoặc đang diễn ra */}
+                  {!canJoin && booking.status !== BookingStatus.STARTED && (
+                    <button
+                      type="button"
+                      onClick={() => onCancel?.(booking.id)}
+                      disabled={isCancelling}
+                      className="text-xs text-gray-400 hover:text-red-600 font-medium px-1.5 py-1 transition-colors cursor-pointer"
+                    >
+                      Hủy
+                    </button>
+                  )}
                 </>
               );
             })()}
@@ -359,14 +365,18 @@ export const BookingCard: React.FC<BookingCardProps> = ({
                 >
                   Tin nhắn
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-medium text-xs py-1.5 px-3 cursor-pointer"
-                >
-                  Đánh giá
-                </Button>
+                {/* Chỉ Học viên mới được đánh giá Người dạy */}
+                {!isMentor && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onRate?.(booking)}
+                    className="rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-medium text-xs py-1.5 px-3 cursor-pointer"
+                  >
+                    Đánh giá
+                  </Button>
+                )}
               </>
             )}
           </div>

@@ -39,10 +39,14 @@ export const SidebarBookingCard: React.FC<SidebarBookingCardProps> = (props) => 
     setSelectedSlot,
     slotsForSelectedDate,
     blockedExceptionsOnDate,
+    busySlots,
+    busySlotsOnDate,
+    isAllSlotsBusyOnSelectedDate,
     isApiMode,
     isAvailabilityLoading,
     exceptions,
     recurringSchedules,
+    customSlots,
     activeDaysOfWeekSet,
     scheduleType,
     startDate,
@@ -87,6 +91,8 @@ export const SidebarBookingCard: React.FC<SidebarBookingCardProps> = (props) => 
           isAvailabilityLoading={isAvailabilityLoading}
           recurringSchedules={recurringSchedules}
           exceptions={exceptions}
+          busySlots={busySlots}
+          customSlots={customSlots}
           activeDaysOfWeekSet={activeDaysOfWeekSet}
           scheduleType={scheduleType}
           startDate={startDate}
@@ -102,6 +108,8 @@ export const SidebarBookingCard: React.FC<SidebarBookingCardProps> = (props) => 
           dayMonthLabel={dayMonthLabel}
           slotsForSelectedDate={slotsForSelectedDate}
           blockedExceptionsOnDate={blockedExceptionsOnDate}
+          busySlotsOnDate={busySlotsOnDate}
+          isAllSlotsBusy={isAllSlotsBusyOnSelectedDate}
           selectedSlot={selectedSlot}
           onSelectSlot={setSelectedSlot}
         />

@@ -6,6 +6,7 @@ import type {
   GetBookingsResponse,
   SendBookingMessagePayload,
   UploadChatAttachmentResponse,
+  BusySlotItem,
 } from '@/features/management/types';
 
 
@@ -249,6 +250,24 @@ export const bookingApi = baseApi.injectEndpoints({
       }),
     }),
 
+    // 14. Lấy danh sách khung giờ đã có lịch (CONFIRMED / STARTED) của Mentor
+    getMentorBusySlots: builder.query<
+      { data: BusySlotItem[] },
+      { mentorId: string; from?: string; to?: string }
+    >({
+      query: ({ mentorId, from, to }) => {
+        const params = new URLSearchParams();
+        if (from) params.append('from', from);
+        if (to) params.append('to', to);
+        const qs = params.toString();
+        return `/bookings/mentor/${mentorId}/busy-slots${qs ? `?${qs}` : ''}`;
+      },
+      providesTags: (_result, _error, { mentorId }) => [
+        { type: 'Booking', id: `BUSY_${mentorId}` },
+        { type: 'Booking', id: 'LIST' },
+      ],
+    }),
+
   }),
 });
 
@@ -266,6 +285,7 @@ export const {
   useSendBookingMessageMutation,
   useUploadChatAttachmentMutation,
   useSetBookingTypingMutation,
+  useGetMentorBusySlotsQuery,
 } = bookingApi;
 
 

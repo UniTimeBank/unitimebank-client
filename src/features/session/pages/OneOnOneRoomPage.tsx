@@ -62,29 +62,7 @@ export const OneOnOneRoomPage: React.FC = () => {
     }
   }, [bookingId, joinRoom]);
 
-  // 2. WebRTC LiveKit Hook
-  const {
-    localParticipant,
-    remoteParticipants,
-    screenShareTrack,
-    isMicEnabled,
-    isCameraEnabled,
-    isScreenSharing,
-    toggleMicrophone,
-    toggleCamera,
-    toggleScreenShare,
-    disconnect,
-  } = useLiveKitRoom({
-    wsUrl: tokenData?.livekitWsUrl,
-    token: tokenData?.livekitToken,
-    autoConnect: !!tokenData?.livekitToken,
-    onDisconnected: () => {
-      toast.info('Bạn đã rời khỏi phòng học.');
-      navigate('/management/classes');
-    },
-  });
-
-  // 3. In-Room Chat Data & Socket Integration
+  // 2. In-Room Chat Data & Socket Integration
   const { data: initialMessages = [] } = useGetRoomChatMessagesQuery(
     tokenData?.roomId || '',
     {
@@ -102,6 +80,30 @@ export const OneOnOneRoomPage: React.FC = () => {
     [addMessage],
   );
 
+  // 3. WebRTC LiveKit Hook (Video, Audio & Direct P2P Chat Sync)
+  const {
+    localParticipant,
+    remoteParticipants,
+    screenShareTrack,
+    isMicEnabled,
+    isCameraEnabled,
+    isScreenSharing,
+    toggleMicrophone,
+    toggleCamera,
+    toggleScreenShare,
+    publishChatMessage,
+    disconnect,
+  } = useLiveKitRoom({
+    wsUrl: tokenData?.livekitWsUrl,
+    token: tokenData?.livekitToken,
+    autoConnect: !!tokenData?.livekitToken,
+    onDataReceived: handleNewMessage,
+    onDisconnected: () => {
+      toast.info('Bạn đã rời khỏi phòng học.');
+      navigate('/management/classes');
+    },
+  });
+
   const { sendMessage } = useSessionSocket({
     roomId: tokenData?.roomId,
     userId: authUser?.id,
@@ -112,9 +114,37 @@ export const OneOnOneRoomPage: React.FC = () => {
 
   const handleSendMessage = useCallback(
     (content: string, attachmentUrl?: string, attachmentName?: string) => {
+      const newMsg: InRoomChatMessage = {
+        id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        roomId: tokenData?.roomId || bookingId || '',
+        senderId: authUser?.id || '',
+        senderName: displayName,
+        senderAvatar: avatarUrl,
+        content,
+        attachmentUrl,
+        attachmentName,
+        sentAt: new Date().toISOString(),
+      };
+
+      // 1. Hiển thị ngay trên UI người gửi
+      addMessage(newMsg);
+
+      // 2. Gửi trực tiếp qua LiveKit WebRTC Data Channel (đồng bộ tức thì tới đối tác)
+      publishChatMessage(newMsg);
+
+      // 3. Gửi lên Socket.IO / Backend để lưu trữ vào database
       sendMessage(content, displayName, avatarUrl, attachmentUrl, attachmentName);
     },
-    [sendMessage, displayName, avatarUrl],
+    [
+      tokenData,
+      bookingId,
+      authUser,
+      displayName,
+      avatarUrl,
+      addMessage,
+      publishChatMessage,
+      sendMessage,
+    ],
   );
 
   // 4. Partner Identification

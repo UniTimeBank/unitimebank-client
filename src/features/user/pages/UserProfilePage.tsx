@@ -528,7 +528,7 @@ export const UserProfilePage: React.FC = () => {
 
               {/* 3. Peer Reviews Section */}
               <PeerReviewsSection
-                reviews={reviews}
+                userId={userId || profile?.userId || profile?.id}
                 persona={guestPersona}
               />
             </div>

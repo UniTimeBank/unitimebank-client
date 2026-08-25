@@ -6,3 +6,4 @@ export * from './booking';
 export * from './wallet';
 export * from './notification/notificationApi';
 export * from './session';
+export * from './moderation';

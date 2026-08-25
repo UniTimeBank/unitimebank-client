@@ -4,8 +4,8 @@ import {
   JS_DAY_TO_SLOT_DAY,
   JS_DAY_TO_SHORT_DAY,
 } from '../../constants';
-import type { PostScheduleType } from '@/features/post/types';
-import type { RecurringSchedule, ScheduleException, CalendarDayItem } from '../../types';
+import type { PostScheduleType, TimeSlot } from '@/features/post/types';
+import type { RecurringSchedule, ScheduleException, CalendarDayItem, BusySlotItem } from '../../types';
 
 interface BookingCalendarGridProps {
   calendarGrid: (CalendarDayItem | null)[];
@@ -15,6 +15,8 @@ interface BookingCalendarGridProps {
   isAvailabilityLoading: boolean;
   recurringSchedules?: RecurringSchedule[];
   exceptions?: ScheduleException[];
+  busySlots?: BusySlotItem[];
+  customSlots?: TimeSlot[];
   activeDaysOfWeekSet: Set<string>;
   scheduleType?: PostScheduleType | string;
   startDate?: string;
@@ -28,8 +30,10 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
   todayStr,
   isApiMode,
   isAvailabilityLoading,
-  recurringSchedules,
-  exceptions,
+  recurringSchedules = [],
+  exceptions = [],
+  busySlots = [],
+  customSlots = [],
   activeDaysOfWeekSet,
   scheduleType,
   startDate,
@@ -64,42 +68,58 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
             const isToday = dateStr === todayStr;
             const isSelected = dateStr === selectedDate;
 
-            // Check if date has BLOCKED exception
-            const dayExceptions = (exceptions || []).filter(
-              (e) => e.exceptionDate === dateStr && e.type === 'BLOCKED',
-            );
-            const isBusy = !isPast && dayExceptions.length > 0;
+            const dateObj = new Date(dateStr + 'T00:00:00');
+            const jsDay = dateObj.getDay();
+            const dayKeyLong = JS_DAY_TO_SLOT_DAY[jsDay];
+            const dayKeyShort = JS_DAY_TO_SHORT_DAY[jsDay];
 
-            let isAvailable = false;
+            // 1. Lấy tất cả khung giờ mẫu cấu hình cho ngày này
+            const daySlots: { startTime: string; endTime: string }[] = [];
             if (isApiMode) {
-              const dateObj = new Date(dateStr + 'T00:00:00');
-              const jsDay = dateObj.getDay();
-              const dayKeyLong = JS_DAY_TO_SLOT_DAY[jsDay];
-              const dayKeyShort = JS_DAY_TO_SHORT_DAY[jsDay];
-
-              const hasRecurring = (recurringSchedules || []).some(
-                (r) =>
-                  (r.dayOfWeek === dayKeyShort || r.dayOfWeek === dayKeyLong) &&
-                  r.isActive !== false,
-              );
-              const hasExtra = (exceptions || []).some(
-                (e) => e.exceptionDate === dateStr && e.type === 'EXTRA',
-              );
-              isAvailable = !isPast && (hasRecurring || hasExtra);
+              (recurringSchedules || []).forEach((r) => {
+                if ((r.dayOfWeek === dayKeyShort || r.dayOfWeek === dayKeyLong) && r.isActive !== false) {
+                  daySlots.push({ startTime: r.startTime, endTime: r.endTime });
+                }
+              });
+              (exceptions || []).forEach((e) => {
+                if (e.exceptionDate === dateStr && e.type === 'EXTRA') {
+                  if (!daySlots.some((s) => s.startTime === e.startTime && s.endTime === e.endTime)) {
+                    daySlots.push({ startTime: e.startTime, endTime: e.endTime });
+                  }
+                }
+              });
             } else {
               let inRange = true;
               if (scheduleType === 'LIMITED_TIME' || (startDate && endDate)) {
                 if (startDate && dateStr < startDate) inRange = false;
                 if (endDate && dateStr > endDate) inRange = false;
               }
-
-              const dateObj = new Date(dateStr + 'T00:00:00');
-              const slotDayKey = JS_DAY_TO_SLOT_DAY[dateObj.getDay()];
-              isAvailable = inRange && activeDaysOfWeekSet.has(slotDayKey) && !isPast;
+              if (inRange) {
+                (customSlots || []).forEach((s) => {
+                  if (s.dayOfWeek.toUpperCase() === dayKeyLong || s.dayOfWeek.toUpperCase() === dayKeyShort) {
+                    daySlots.push({ startTime: s.startTime, endTime: s.endTime });
+                  }
+                });
+              }
             }
 
-            // 1. Ngày không rảnh và không có lịch bận -> disable
-            if (!isAvailable && !isBusy) {
+            // 2. Tính số lượng slot đã bận (bị chặn hoặc đã có người đặt)
+            const busyCount = daySlots.filter((slot) => {
+              const isBlocked = (exceptions || []).some(
+                (e) => e.exceptionDate === dateStr && e.type === 'BLOCKED' && slot.startTime < e.endTime && e.startTime < slot.endTime,
+              );
+              const isBooked = (busySlots || []).some(
+                (b) => b.date === dateStr && slot.startTime < b.endTime && b.startTime < slot.endTime,
+              );
+              return isBlocked || isBooked;
+            }).length;
+
+            const hasConfiguredSlots = daySlots.length > 0;
+            const isFullyBooked = !isPast && hasConfiguredSlots && busyCount >= daySlots.length;
+            const hasAvailableSlots = !isPast && hasConfiguredSlots && busyCount < daySlots.length;
+
+            // 1. Ngày quá khứ hoặc không có cấu hình lịch rảnh -> Disable
+            if (!hasConfiguredSlots || isPast) {
               return (
                 <div
                   key={dateStr}
@@ -113,19 +133,42 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
               );
             }
 
-            // 2. Ngày rảnh HOẶC Ngày có lịch bận -> Cho phép click chọn (ngày bận hiện chữ ĐỎ)
+            // 2. Ngày ĐÃ KÍN LỊCH -> Cho phép bấm chọn nhưng hiển thị tone MÀU XÁM
+            if (isFullyBooked) {
+              return (
+                <button
+                  key={dateStr}
+                  type="button"
+                  onClick={() => onSelectDate(dateStr)}
+                  title={`Ngày ${dayNum}: Đã kín lịch`}
+                  className={`relative h-8.5 rounded-xl text-xs transition-all flex items-center justify-center select-none cursor-pointer ${
+                    isSelected
+                      ? 'bg-gray-200 text-gray-700 font-bold shadow-xs'
+                      : 'text-gray-400 font-medium hover:bg-gray-100 hover:text-gray-600'
+                  }`}
+                >
+                  <span>{dayNum}</span>
+                  {isToday && (
+                    <span
+                      className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${
+                        isSelected ? 'bg-gray-600' : 'bg-primary-500'
+                      }`}
+                    />
+                  )}
+                </button>
+              );
+            }
+
+            // 3. Ngày CÒN KHUNG GIỜ TRỐNG -> Màu đen đậm, khi chọn nền xanh
             return (
               <button
                 key={dateStr}
                 type="button"
                 onClick={() => onSelectDate(dateStr)}
+                title={`Ngày ${dayNum}: Còn ${daySlots.length - busyCount} khung giờ trống`}
                 className={`relative h-8.5 rounded-xl text-xs transition-all flex items-center justify-center select-none cursor-pointer ${
                   isSelected
-                    ? isBusy
-                      ? 'bg-red-500 text-white font-bold shadow-xs'
-                      : 'bg-primary-700 text-white font-bold shadow-xs'
-                    : isBusy
-                    ? 'text-red-500 font-bold hover:bg-red-50'
+                    ? 'bg-primary-700 text-white font-bold shadow-xs'
                     : 'text-gray-900 font-bold hover:bg-primary-50/80 hover:text-primary-700'
                 }`}
               >
@@ -133,7 +176,7 @@ export const BookingCalendarGrid: React.FC<BookingCalendarGridProps> = ({
                 {isToday && (
                   <span
                     className={`absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${
-                      isSelected ? 'bg-white' : isBusy ? 'bg-red-500' : 'bg-primary-600'
+                      isSelected ? 'bg-white' : 'bg-primary-600'
                     }`}
                   />
                 )}

@@ -3,10 +3,11 @@ import type { TimeSlot } from '@/features/post/types';
 import { useMentorSchedule } from './useMentorSchedule';
 import { formatLocalDate } from '../utils';
 import { useGetMyWalletQuery } from '@/core/api';
+import { useGetMentorBusySlotsQuery } from '@/core/api/booking/bookingApi';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentUser } from '@/core/store';
 import { toast } from '@/shared/utils';
-import type { SidebarBookingCardProps, CalendarDayItem } from '../types';
+import type { SidebarBookingCardProps, CalendarDayItem, BusySlotItem } from '../types';
 import { JS_DAY_TO_SLOT_DAY, JS_DAY_TO_SHORT_DAY } from '../constants';
 
 export const useSidebarBooking = (props: SidebarBookingCardProps) => {
@@ -58,6 +59,18 @@ export const useSidebarBooking = (props: SidebarBookingCardProps) => {
     { from: fromMonthStr, to: toMonthStr },
   );
 
+  // Lấy các khung giờ đã có người đặt (CONFIRMED / STARTED) của Mentor
+  const { data: busySlotsData, isLoading: isBusySlotsLoading } = useGetMentorBusySlotsQuery(
+    {
+      mentorId: mentorId || '',
+      from: fromMonthStr,
+      to: toMonthStr,
+    },
+    { skip: !mentorId },
+  );
+
+  const busySlots = useMemo(() => busySlotsData?.data || [], [busySlotsData]);
+
   // Fallback slots if in custom slots mode and empty
   const customSlots: TimeSlot[] = useMemo(() => {
     if (slots && slots.length > 0) return slots;
@@ -99,16 +112,42 @@ export const useSidebarBooking = (props: SidebarBookingCardProps) => {
         }
 
         const slotDayKey = JS_DAY_TO_SLOT_DAY[d.getDay()];
-        if (inRange && activeDaysOfWeekSet.has(slotDayKey)) {
+        const matchingSlots = customSlots.filter((s) => s.dayOfWeek.toUpperCase() === slotDayKey);
+        const dayBusyCount = matchingSlots.filter((slot) => {
+          const isBlocked = (exceptions || []).some(
+            (e) => e.exceptionDate === dStr && e.type === 'BLOCKED' && slot.startTime < e.endTime && e.startTime < slot.endTime,
+          );
+          const isBooked = (busySlots || []).some(
+            (b) => b.date === dStr && slot.startTime < b.endTime && b.startTime < slot.endTime,
+          );
+          return isBlocked || isBooked;
+        }).length;
+
+        if (inRange && matchingSlots.length > 0 && dayBusyCount < matchingSlots.length) {
           return dStr;
         }
       }
     }
     return todayStr;
-  }, [todayStr, isApiMode, availability, activeDaysOfWeekSet, scheduleType, startDate, endDate]);
+  }, [
+    todayStr,
+    isApiMode,
+    availability,
+    customSlots,
+    exceptions,
+    busySlots,
+    scheduleType,
+    startDate,
+    endDate,
+  ]);
 
   const [selectedDate, setSelectedDate] = useState<string>(initialAvailableDate);
   const [selectedSlot, setSelectedSlot] = useState<{ startTime: string; endTime: string } | null>(null);
+
+  const busySlotsOnDate = useMemo(() => {
+    if (!selectedDate || !busySlots.length) return [];
+    return busySlots.filter((b) => b.date === selectedDate);
+  }, [selectedDate, busySlots]);
 
   // Month navigation handlers
   const handlePrevMonth = () => {
@@ -257,6 +296,20 @@ export const useSidebarBooking = (props: SidebarBookingCardProps) => {
     return exceptions.filter((e) => e.exceptionDate === selectedDate && e.type === 'BLOCKED');
   }, [exceptions, selectedDate]);
 
+  // Kiểm tra xem tất cả khung giờ của ngày được chọn có bị bận/đã đặt hết không
+  const isAllSlotsBusyOnSelectedDate = useMemo(() => {
+    if (!slotsForSelectedDate.length) return false;
+    return slotsForSelectedDate.every((slot) => {
+      const isBlocked = blockedExceptionsOnDate.some(
+        (b) => slot.startTime < b.endTime && b.startTime < slot.endTime,
+      );
+      const isBooked = busySlotsOnDate.some(
+        (b) => slot.startTime < b.endTime && b.startTime < slot.endTime,
+      );
+      return isBlocked || isBooked;
+    });
+  }, [slotsForSelectedDate, blockedExceptionsOnDate, busySlotsOnDate]);
+
   // Format labels
   const monthYearLabel = `Tháng ${currentMonth + 1}/${currentYear}`;
   const selectedDateObj = selectedDate ? new Date(selectedDate + 'T00:00:00') : today;
@@ -277,10 +330,20 @@ export const useSidebarBooking = (props: SidebarBookingCardProps) => {
   const requiredCredit = selectedSlotDuration; // 1 credit / phút
   const isInsufficientCredit = Boolean(selectedSlot && availableCredit < requiredCredit);
 
+  const computedPrimaryButtonText = useMemo(() => {
+    if (isAllSlotsBusyOnSelectedDate) return 'Ngày đã kín lịch';
+    return primaryButtonText;
+  }, [isAllSlotsBusyOnSelectedDate, primaryButtonText]);
+
   const isPrevMonthDisabled =
     currentYear === today.getFullYear() && currentMonth <= today.getMonth();
 
   const handleBooking = () => {
+    if (isAllSlotsBusyOnSelectedDate) {
+      toast.error('Ngày đã kín lịch', 'Tất cả khung giờ trong ngày này đã có người đặt hoặc gia sư báo bận.');
+      return;
+    }
+
     if (!selectedSlot) {
       toast.error('Chưa chọn khung giờ', 'Vui lòng chọn 1 khung giờ rảnh bên dưới');
       return;
@@ -335,10 +398,15 @@ export const useSidebarBooking = (props: SidebarBookingCardProps) => {
     setSelectedSlot,
     slotsForSelectedDate,
     blockedExceptionsOnDate,
+    busySlots,
+    busySlotsOnDate,
+    isBusySlotsLoading,
+    isAllSlotsBusyOnSelectedDate,
     isApiMode,
     isAvailabilityLoading,
     exceptions,
     recurringSchedules,
+    customSlots,
     activeDaysOfWeekSet,
     scheduleType,
     startDate,
@@ -346,7 +414,7 @@ export const useSidebarBooking = (props: SidebarBookingCardProps) => {
     availableCredit,
     requiredCredit,
     isInsufficientCredit,
-    primaryButtonText,
+    primaryButtonText: computedPrimaryButtonText,
     handleBooking,
   };
 };

@@ -79,6 +79,17 @@ export interface GetAvailabilityParams {
   to: string;
 }
 
+export interface BusySlotItem {
+  id: string;
+  date: string; // 'YYYY-MM-DD'
+  startTime: string; // 'HH:mm'
+  endTime: string; // 'HH:mm'
+  scheduledStart: string;
+  scheduledEnd: string;
+  status: string;
+  sourcePostId?: string;
+}
+
 export interface CalendarDayItem {
   dateStr: string;
   dayNum: number;

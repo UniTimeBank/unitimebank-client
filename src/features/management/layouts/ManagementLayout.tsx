@@ -5,6 +5,7 @@ import {
   Calendar,
   FileText,
   CalendarCheck,
+  Video,
   Wallet,
   MessageSquare,
 } from 'lucide-react';
@@ -17,6 +18,11 @@ export const ManagementLayout: React.FC = () => {
       icon: LayoutDashboard,
     },
     {
+      label: 'Quản lý Buổi học',
+      path: '/manage/bookings',
+      icon: CalendarCheck,
+    },
+    {
       label: 'Lịch trình & Lịch rảnh',
       path: '/manage/schedule',
       icon: Calendar,
@@ -25,11 +31,6 @@ export const ManagementLayout: React.FC = () => {
       label: 'Quản lý Bài đăng',
       path: '/manage/posts',
       icon: FileText,
-    },
-    {
-      label: 'Quản lý Booking',
-      path: '/manage/bookings',
-      icon: CalendarCheck,
     },
     {
       label: 'Ví Credit',

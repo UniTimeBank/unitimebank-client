@@ -91,6 +91,16 @@ export const useSessionSocket = ({
       });
     });
 
+    socket.on('reconnect', () => {
+      setIsConnected(true);
+      socket.emit('join-room', {
+        roomId,
+        userId,
+        role: role || 'LEARNER',
+        displayName,
+      });
+    });
+
     socket.on('disconnect', () => {
       setIsConnected(false);
     });
