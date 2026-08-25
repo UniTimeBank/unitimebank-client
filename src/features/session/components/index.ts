@@ -18,3 +18,4 @@ export * from './common/SessionEndedModal';
 
 export * from './lobby/GroupRoomCard';
 export * from './lobby/CreateGroupRoomModal';
+export * from './lobby/LiveGroupRoomsBanner';

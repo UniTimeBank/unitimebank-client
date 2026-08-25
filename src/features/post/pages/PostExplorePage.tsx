@@ -15,6 +15,7 @@ import { useMentorPosts, useLearnerRequests } from '../hooks';
 import { UnifiedPostCard } from '../components/cards';
 import { type ExploreCardItem } from '../types';
 import { SKILL_CATEGORY_LABELS } from '../constants';
+import { LiveGroupRoomsBanner } from '@/features/session/components';
 
 // Danh mục filter pills chuẩn theo UniTime Bank
 const FILTER_PILLS = [
@@ -234,8 +235,11 @@ export const PostExplorePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. Section: Danh Sách Bài Đăng (Header tích hợp 2 Tab Pill Clean & Tinh Tế) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+      {/* 2. Banner Live Sảnh Học Nhóm Trực Tuyến */}
+      <LiveGroupRoomsBanner />
+
+      {/* 3. Section: Danh Sách Bài Đăng (Header tích hợp 2 Tab Pill Clean & Tinh Tế) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-2">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 mb-6">
           {/* Bên Trái: Tiêu đề danh sách chuẩn */}
           <div>
