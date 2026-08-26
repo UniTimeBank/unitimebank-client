@@ -14,7 +14,8 @@ import {
   File,
 } from 'lucide-react';
 import type { InRoomChatMessage } from '../../types';
-import { useUploadChatAttachmentMutation } from '@/core/api/booking';
+import { useUploadFileDirectMutation } from '@/core/api/upload';
+import type { DirectUploadAsset } from '@/core/api/upload';
 import { toast } from '@/shared/utils';
 
 interface OneOnOneSessionSidebarProps {
@@ -25,7 +26,12 @@ interface OneOnOneSessionSidebarProps {
   bookingId?: string;
   currentUserId?: string;
   messages: InRoomChatMessage[];
-  onSendMessage: (content: string, attachmentUrl?: string, attachmentName?: string) => void;
+  onSendMessage: (
+    content: string,
+    attachmentUrl?: string,
+    attachmentName?: string,
+    attachmentAsset?: DirectUploadAsset,
+  ) => void;
 }
 
 export const OneOnOneSessionSidebar: React.FC<OneOnOneSessionSidebarProps> = ({
@@ -43,7 +49,7 @@ export const OneOnOneSessionSidebar: React.FC<OneOnOneSessionSidebarProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  const [uploadAttachment, { isLoading: isUploading }] = useUploadChatAttachmentMutation();
+  const [uploadFileDirect, { isLoading: isUploading }] = useUploadFileDirectMutation();
 
   const progressPercent = Math.min(
     100,
@@ -61,8 +67,8 @@ export const OneOnOneSessionSidebar: React.FC<OneOnOneSessionSidebarProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 25 * 1024 * 1024) {
-        toast.error('Kích thước tệp không được vượt quá 25MB');
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('Kích thước tệp không được vượt quá 10MB');
         return;
       }
       setSelectedFile(file);
@@ -82,15 +88,18 @@ export const OneOnOneSessionSidebar: React.FC<OneOnOneSessionSidebarProps> = ({
 
     let attachmentUrl: string | undefined;
     let attachmentName: string | undefined;
+    let attachmentAsset: DirectUploadAsset | undefined;
 
     if (selectedFile && bookingId) {
       try {
-        const uploadRes = await uploadAttachment({
+        const uploadRes = await uploadFileDirect({
           bookingId,
           file: selectedFile,
+          purpose: 'CHAT_ATTACHMENT',
         }).unwrap();
-        attachmentUrl = uploadRes.url;
-        attachmentName = uploadRes.name || selectedFile.name;
+        attachmentUrl = uploadRes.secureUrl;
+        attachmentName = uploadRes.originalFilename || selectedFile.name;
+        attachmentAsset = uploadRes;
       } catch (err) {
         console.error('Upload attachment failed:', err);
         toast.error('Không thể tải lên tệp đính kèm. Vui lòng thử lại.');
@@ -99,7 +108,7 @@ export const OneOnOneSessionSidebar: React.FC<OneOnOneSessionSidebarProps> = ({
     }
 
     const messageText = inputText.trim();
-    onSendMessage(messageText, attachmentUrl, attachmentName);
+    onSendMessage(messageText, attachmentUrl, attachmentName, attachmentAsset);
 
     setInputText('');
     setSelectedFile(null);

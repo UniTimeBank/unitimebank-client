@@ -13,6 +13,7 @@ import {
 } from '@/core/api/booking';
 import { useLiveKitRoom, useSessionSocket, useInRoomChat } from '../hooks';
 import type { InRoomChatMessage } from '../types';
+import type { DirectUploadAsset } from '@/core/api/upload';
 import {
   SessionHeader,
   OneOnOneSpotlightVideo,
@@ -91,7 +92,6 @@ export const OneOnOneRoomPage: React.FC = () => {
     toggleMicrophone,
     toggleCamera,
     toggleScreenShare,
-    publishChatMessage,
     disconnect,
   } = useLiveKitRoom({
     wsUrl: tokenData?.livekitWsUrl,
@@ -113,7 +113,12 @@ export const OneOnOneRoomPage: React.FC = () => {
   });
 
   const handleSendMessage = useCallback(
-    (content: string, attachmentUrl?: string, attachmentName?: string) => {
+    (
+      content: string,
+      attachmentUrl?: string,
+      attachmentName?: string,
+      attachmentAsset?: DirectUploadAsset,
+    ) => {
       const newMsg: InRoomChatMessage = {
         id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         roomId: tokenData?.roomId || bookingId || '',
@@ -129,11 +134,16 @@ export const OneOnOneRoomPage: React.FC = () => {
       // 1. Hiển thị ngay trên UI người gửi
       addMessage(newMsg);
 
-      // 2. Gửi trực tiếp qua LiveKit WebRTC Data Channel (đồng bộ tức thì tới đối tác)
-      publishChatMessage(newMsg);
-
-      // 3. Gửi lên Socket.IO / Backend để lưu trữ vào database
-      sendMessage(content, displayName, avatarUrl, attachmentUrl, attachmentName);
+      // 2. Socket.IO là kênh realtime duy nhất và backend lưu message vào database.
+      sendMessage(
+        content,
+        displayName,
+        avatarUrl,
+        attachmentUrl,
+        attachmentName,
+        attachmentAsset?.publicId,
+        attachmentAsset?.resourceType,
+      );
     },
     [
       tokenData,
@@ -142,7 +152,6 @@ export const OneOnOneRoomPage: React.FC = () => {
       displayName,
       avatarUrl,
       addMessage,
-      publishChatMessage,
       sendMessage,
     ],
   );

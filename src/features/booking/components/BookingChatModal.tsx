@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Clock, User, MessageSquare, RefreshCw, Lock } from 'lucide-react';
+import { Send, Clock, MessageSquare, RefreshCw, Lock } from 'lucide-react';
 import { Modal, Button } from '@/shared/components/ui';
 import {
   useGetBookingMessagesQuery,
@@ -44,7 +44,6 @@ export const BookingChatModal: React.FC<BookingChatModalProps> = ({
     isFetching,
   } = useGetBookingMessagesQuery(booking?.id || '', {
     skip: !booking?.id || !isOpen,
-    pollingInterval: isOpen && !isReadOnly ? 5000 : 0, // Auto poll only if active and open
   });
 
   const messages = messagesData?.items || [];

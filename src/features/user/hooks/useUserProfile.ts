@@ -1,10 +1,12 @@
 import { useGetMeQuery, useUpdateMeMutation, useUploadAvatarMutation } from '@/core/api/user';
+import { useUploadFileDirectMutation } from '@/core/api/upload';
 import type { UpdateProfileDto } from '../types';
 
 export const useUserProfile = () => {
   const { data: profile, isLoading, error, refetch } = useGetMeQuery();
   const [updateProfile, { isLoading: isUpdating }] = useUpdateMeMutation();
   const [uploadAvatar, { isLoading: isUploadingAvatar }] = useUploadAvatarMutation();
+  const [uploadFileDirect, { isLoading: isUploadingAvatarFile }] = useUploadFileDirectMutation();
 
   const handleUpdateProfile = async (dto: UpdateProfileDto) => {
     try {
@@ -17,9 +19,11 @@ export const useUserProfile = () => {
 
   const handleUploadAvatar = async (file: File) => {
     try {
-      const formData = new FormData();
-      formData.append('avatar', file);
-      const res = await uploadAvatar(formData).unwrap();
+      const asset = await uploadFileDirect({ file, purpose: 'AVATAR' }).unwrap();
+      const res = await uploadAvatar({
+        publicId: asset.publicId,
+        resourceType: 'image',
+      }).unwrap();
       return { success: true, data: res };
     } catch (err) {
       return { success: false, error: err };
@@ -34,6 +38,6 @@ export const useUserProfile = () => {
     updateProfile: handleUpdateProfile,
     isUpdating,
     uploadAvatar: handleUploadAvatar,
-    isUploadingAvatar,
+    isUploadingAvatar: isUploadingAvatar || isUploadingAvatarFile,
   };
 };

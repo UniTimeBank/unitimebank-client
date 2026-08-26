@@ -41,8 +41,8 @@ export const GroupRoomPage: React.FC = () => {
     useJoinGroupRoomMutation();
   const [leaveGroup] = useLeaveGroupRoomMutation();
 
-  const { data: initialMessages } = useGetRoomChatMessagesQuery(roomId || '', {
-    skip: !roomId,
+  const { data: initialMessages } = useGetRoomChatMessagesQuery(tokenData?.roomId || '', {
+    skip: !tokenData?.roomId,
   });
 
   // Modals & States
@@ -77,13 +77,6 @@ export const GroupRoomPage: React.FC = () => {
     closeChat,
   } = useInRoomChat(initialMessages || []);
 
-  const handleNewChatMessage = useCallback(
-    (msg: InRoomChatMessage) => {
-      addMessage(msg);
-    },
-    [addMessage],
-  );
-
   const {
     localParticipant,
     remoteParticipants,
@@ -95,13 +88,11 @@ export const GroupRoomPage: React.FC = () => {
     toggleMicrophone,
     toggleCamera,
     toggleScreenShare,
-    publishChatMessage,
     disconnect,
   } = useLiveKitRoom({
     wsUrl: tokenData?.livekitWsUrl,
     token: tokenData?.livekitToken,
     autoConnect: !!tokenData?.livekitToken,
-    onDataReceived: handleNewChatMessage,
     onDisconnected: () => {
       setIsEndedModalOpen(true);
     },
@@ -141,7 +132,7 @@ export const GroupRoomPage: React.FC = () => {
 
   // 6. Socket.IO Real-time Helper
   const socketHelper = useSessionSocket({
-    roomId,
+    roomId: tokenData?.roomId,
     userId: authUser?.id,
     role: tokenData?.role,
     displayName,
@@ -173,7 +164,7 @@ export const GroupRoomPage: React.FC = () => {
 
   // 7. Heartbeat Hook (60s tick for group rooms)
   const heartbeatHelper = useHeartbeat({
-    roomId,
+    roomId: tokenData?.roomId,
     isGroupRoom: true,
     isLearner: tokenData?.role === 'LEARNER',
     onHeartbeat: () => {
@@ -293,7 +284,6 @@ export const GroupRoomPage: React.FC = () => {
               sentAt: new Date().toISOString(),
             };
             addMessage(newMsg);
-            publishChatMessage(newMsg);
             socketHelper.sendMessage(content, displayName, avatarUrl);
           }}
         />

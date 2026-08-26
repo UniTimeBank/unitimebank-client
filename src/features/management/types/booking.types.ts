@@ -91,13 +91,7 @@ export interface SendBookingMessagePayload {
   attachmentName?: string;
   attachmentSize?: number;
   attachmentMime?: string;
-}
-
-export interface UploadChatAttachmentResponse {
-  url: string;
-  name: string;
-  size: number;
-  mime: string;
-  type: 'IMAGE' | 'FILE';
+  attachmentPublicId?: string;
+  attachmentResourceType?: 'image' | 'raw' | 'video';
 }
 

@@ -4,7 +4,6 @@ import {
   useGetMyBookingsQuery,
   useGetBookingMessagesQuery,
   useSendBookingMessageMutation,
-  useUploadChatAttachmentMutation,
   useSetBookingTypingMutation,
   useCancelBookingMutation,
   useAcceptBookingMutation,
@@ -12,6 +11,7 @@ import {
   type BookingItem,
   BookingStatus,
 } from '@/core/api/booking/bookingApi';
+import { useUploadFileDirectMutation } from '@/core/api/upload';
 import { useUserProfile } from '@/features/user/hooks';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentUser } from '@/core/store';
@@ -217,7 +217,7 @@ export const useMessagesManagement = () => {
     }
   }, [activeBooking]);
 
-  // 2. Fetch messages for selected booking (Redux RTK Query Cache & Auto-polling)
+  // 2. REST loads history once; RTK Query cache is updated by Booking Socket.IO.
   const {
     data: messagesData,
     isLoading: isMessagesLoading,
@@ -225,7 +225,6 @@ export const useMessagesManagement = () => {
     isFetching: isMessagesFetching,
   } = useGetBookingMessagesQuery(selectedBookingId || '', {
     skip: !selectedBookingId,
-    pollingInterval: !isReadOnly ? 2500 : 0, // Auto-poll only when active chat
     refetchOnFocus: true,
   });
 
@@ -233,7 +232,7 @@ export const useMessagesManagement = () => {
   const isPartnerTyping = Boolean(messagesData?.isPartnerTyping);
 
   const [sendMessage, { isLoading: isSending }] = useSendBookingMessageMutation();
-  const [uploadAttachment, { isLoading: isUploading }] = useUploadChatAttachmentMutation();
+  const [uploadFileDirect, { isLoading: isUploading }] = useUploadFileDirectMutation();
   const [setBookingTyping] = useSetBookingTypingMutation();
   const typingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -365,10 +364,11 @@ export const useMessagesManagement = () => {
 
     try {
       if (pendingAttachment) {
-        // 1. Upload attachment to Cloudinary
-        const uploadRes = await uploadAttachment({
+        // 1. Xin chữ ký rồi upload thẳng từ browser lên Cloudinary.
+        const uploadRes = await uploadFileDirect({
           bookingId: selectedBookingId,
           file: pendingAttachment.file,
+          purpose: 'CHAT_ATTACHMENT',
         }).unwrap();
 
         // 2. Send message with attachment metadata (prioritize pendingAttachment.name for UTF-8 integrity)
@@ -378,10 +378,12 @@ export const useMessagesManagement = () => {
             textContent ||
             (pendingAttachment.type === 'IMAGE' ? 'Hình ảnh đính kèm' : pendingAttachment.name),
           type: pendingAttachment.type,
-          attachmentUrl: uploadRes.url,
-          attachmentName: pendingAttachment.name || uploadRes.name,
-          attachmentSize: pendingAttachment.size || uploadRes.size,
-          attachmentMime: pendingAttachment.file.type || uploadRes.mime,
+          attachmentUrl: uploadRes.secureUrl,
+          attachmentName: pendingAttachment.name || uploadRes.originalFilename,
+          attachmentSize: uploadRes.bytes,
+          attachmentMime: pendingAttachment.file.type,
+          attachmentPublicId: uploadRes.publicId,
+          attachmentResourceType: uploadRes.resourceType,
         }).unwrap();
 
         handleRemoveAttachment();

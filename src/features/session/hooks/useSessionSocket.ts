@@ -73,7 +73,7 @@ export const useSessionSocket = ({
 
     const socket = io(`${origin}/sessions`, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'],
       reconnection: true,
       reconnectionDelay: 1000,
     });
@@ -165,6 +165,8 @@ export const useSessionSocket = ({
       senderAvatar?: string,
       attachmentUrl?: string,
       attachmentName?: string,
+      attachmentPublicId?: string,
+      attachmentResourceType?: 'image' | 'raw' | 'video',
     ) => {
       if (!socketRef.current || !roomId || (!content.trim() && !attachmentUrl)) return;
       socketRef.current.emit('send-room-message', {
@@ -175,6 +177,8 @@ export const useSessionSocket = ({
         senderAvatar,
         attachmentUrl,
         attachmentName,
+        attachmentPublicId,
+        attachmentResourceType,
       });
     },
     [roomId, userId],

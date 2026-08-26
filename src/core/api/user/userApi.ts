@@ -36,12 +36,15 @@ export const userApi = baseApi.injectEndpoints({
       invalidatesTags: ['User', 'Wallet'],
     }),
 
-    // 3. Upload ảnh đại diện
-    uploadAvatar: builder.mutation<{ avatarUrl: string }, FormData>({
-      query: (formData) => ({
+    // 3. Xác minh asset đã upload trực tiếp lên Cloudinary và cập nhật avatar
+    uploadAvatar: builder.mutation<
+      { avatarUrl: string },
+      { publicId: string; resourceType: 'image' }
+    >({
+      query: (body) => ({
         url: '/users/me/avatar',
         method: 'POST',
-        body: formData,
+        body,
       }),
       invalidatesTags: ['User', 'Wallet'],
     }),
