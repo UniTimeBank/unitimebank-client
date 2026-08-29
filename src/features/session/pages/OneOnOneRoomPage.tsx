@@ -286,7 +286,7 @@ export const OneOnOneRoomPage: React.FC = () => {
   // MAIN FULL-SCREEN UI
   // ════════════════════════════════════════════════════════════
   return (
-    <div className="w-screen h-screen bg-slate-100 flex flex-col overflow-hidden select-none">
+    <div className="fixed inset-0 w-full h-full bg-slate-100 flex flex-col overflow-hidden select-none z-40">
       {/* 1. Header Bar */}
       <SessionHeader
         title={bookingDetail?.title || 'Phòng học trực tuyến 1-1'}

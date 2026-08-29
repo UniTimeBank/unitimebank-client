@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCreateLearnerRequestMutation } from '@/core/api/post/postApi';
 import { useGetMyWalletQuery } from '@/core/api/wallet/walletApi';
 import { SessionType, SkillCategoryName, type TimeSlot } from '../types';
+import { CATEGORY_PRESET_IMAGES } from '../constants';
 import { toast } from '@/shared/utils';
 
 export interface LearnerRequestFormState {
@@ -30,8 +31,8 @@ export const useLearnerRequestForm = (
   const [subject, setSubject] = useState('');
   const [category, setCategory] = useState<SkillCategoryName>(SkillCategoryName.PROGRAMMING);
   const [sessionType, setSessionType] = useState<SessionType>(SessionType.ONE_ON_ONE);
-  const [coverImage, setCoverImage] = useState(
-    'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600',
+  const [coverImage, setCoverImage] = useState<string>(
+    CATEGORY_PRESET_IMAGES.PROGRAMMING?.[0] || '/images/categories/laptrinh/laptrinh1.webp',
   );
   const [shortDescription, setShortDescription] = useState('');
   const [goals, setGoals] = useState('');

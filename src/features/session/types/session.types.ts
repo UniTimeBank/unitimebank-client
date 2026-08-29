@@ -39,6 +39,10 @@ export interface ActiveGroupRoomItem {
   currentParticipants: number;
   openedAt: string;
   status: RoomStatus;
+  maxParticipants?: number;
+  coverImage?: string;
+  mentorName?: string;
+  participantUserIds?: string[];
 }
 
 export interface GetActiveGroupRoomsResponse {

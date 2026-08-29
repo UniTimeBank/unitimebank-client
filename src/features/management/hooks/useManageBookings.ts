@@ -13,6 +13,7 @@ import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentUser } from '@/core/store';
 import { toast } from '@/shared/utils';
 
+export type BookingRoleType = 'TEACHING' | 'LEARNING';
 export type BookingTabType = 'PENDING' | 'UPCOMING' | 'HISTORY';
 
 export const useManageBookings = () => {
@@ -22,8 +23,13 @@ export const useManageBookings = () => {
   const authUser = useAppSelector(selectCurrentUser);
   const currentUserId = profile?.userId || authUser?.id;
 
+  const urlRole = searchParams.get('role')?.toUpperCase() as BookingRoleType | undefined;
   const urlTab = searchParams.get('tab')?.toUpperCase() as BookingTabType | undefined;
   const urlBookingId = searchParams.get('bookingId');
+
+  const [roleTab, setRoleTab] = useState<BookingRoleType>(
+    urlRole && ['TEACHING', 'LEARNING'].includes(urlRole) ? urlRole : 'TEACHING',
+  );
 
   const [activeTab, setActiveTab] = useState<BookingTabType>(
     urlTab && ['PENDING', 'UPCOMING', 'HISTORY'].includes(urlTab) ? urlTab : 'PENDING',
@@ -44,9 +50,14 @@ export const useManageBookings = () => {
     }
   }, [urlTab]);
 
+  useEffect(() => {
+    if (urlRole && ['TEACHING', 'LEARNING'].includes(urlRole)) {
+      setRoleTab(urlRole);
+    }
+  }, [urlRole]);
+
   // RTK Query API with Smart Targeted Polling (10s) & Window Focus Sync
   const {
-
     data: apiResponse,
     isLoading,
     refetch,
@@ -65,23 +76,39 @@ export const useManageBookings = () => {
     return apiResponse?.items || [];
   }, [apiResponse]);
 
-  // Group bookings by Tab dynamically
+  // Phân chia danh sách theo Vai trò: Tôi dạy (Mentor) vs Tôi học (Learner)
+  const teachingBookings = useMemo(() => {
+    if (!currentUserId) return [];
+    return allBookings.filter((b) => String(b.mentorId) === String(currentUserId));
+  }, [allBookings, currentUserId]);
+
+  const learningBookings = useMemo(() => {
+    if (!currentUserId) return [];
+    return allBookings.filter((b) => String(b.learnerId) === String(currentUserId));
+  }, [allBookings, currentUserId]);
+
+  // Scoped list theo vai trò đang chọn
+  const scopedBookings = useMemo(() => {
+    return roleTab === 'TEACHING' ? teachingBookings : learningBookings;
+  }, [roleTab, teachingBookings, learningBookings]);
+
+  // Group bookings by Status Tab dynamically
   const pendingBookings = useMemo(() => {
-    return allBookings.filter(
+    return scopedBookings.filter(
       (b) =>
         b.status === BookingStatus.PENDING_MENTOR_APPROVAL ||
         b.status === BookingStatus.PENDING_LEARNER_APPROVAL,
     );
-  }, [allBookings]);
+  }, [scopedBookings]);
 
   const upcomingBookings = useMemo(() => {
-    return allBookings.filter(
+    return scopedBookings.filter(
       (b) => b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.STARTED,
     );
-  }, [allBookings]);
+  }, [scopedBookings]);
 
   const historyBookings = useMemo(() => {
-    return allBookings.filter(
+    return scopedBookings.filter(
       (b) =>
         b.status === BookingStatus.COMPLETED ||
         b.status === BookingStatus.CANCELLED ||
@@ -89,7 +116,7 @@ export const useManageBookings = () => {
         b.status === BookingStatus.NO_SHOW ||
         b.status === BookingStatus.EXPIRED,
     );
-  }, [allBookings]);
+  }, [scopedBookings]);
 
   // Auto-focus booking from URL query param
   useEffect(() => {
@@ -242,8 +269,21 @@ export const useManageBookings = () => {
     return currentTabBookings.slice(start, start + pageSize);
   }, [currentTabBookings, page, pageSize]);
 
+  const handleRoleChange = (role: BookingRoleType) => {
+    setRoleTab(role);
+    setPage(1);
+    setSearchParams((prev) => {
+      prev.set('role', role);
+      return prev;
+    });
+  };
+
   return {
     currentUserId,
+    roleTab,
+    setRoleTab: handleRoleChange,
+    teachingBookings,
+    learningBookings,
     activeTab,
     setActiveTab: handleTabChange,
     searchQuery,

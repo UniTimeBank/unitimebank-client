@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Calendar, ReceiptText, LogOut, CalendarCheck, LayoutDashboard, FileText } from 'lucide-react';
+import { User, Calendar, ReceiptText, LogOut, CalendarCheck, LayoutDashboard, FileText, Users } from 'lucide-react';
 import LogoImage from '@/assets/images/Logo.png';
 
 interface UserRoleDropdownProps {
@@ -24,8 +24,12 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const prevAvatarRef = useRef(avatarUrl);
   useEffect(() => {
-    setImageError(false);
+    if (prevAvatarRef.current !== avatarUrl) {
+      prevAvatarRef.current = avatarUrl;
+      setImageError(false);
+    }
   }, [avatarUrl]);
 
   const handleMouseEnter = () => {
@@ -154,7 +158,16 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
               className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
             >
               <CalendarCheck className="w-4 h-4 text-slate-400 stroke-[1.75]" />
-              <span>Quản lý Booking</span>
+              <span>Buổi học 1:1</span>
+            </Link>
+
+            <Link
+              to="/manage/group-sessions"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+            >
+              <Users className="w-4 h-4 text-slate-400 stroke-[1.75]" />
+              <span>Lớp học nhóm</span>
             </Link>
 
             <Link

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Upload, ImageIcon, AlertCircle, CheckCircle2, Circle, ArrowRight } from 'lucide-react';
 import { Button, Input, Select } from '@/shared/components/ui';
 import { SkillCategoryName } from '../../types';
-import { TIMELINE_OPTIONS, PRESET_COVER_IMAGES, POST_CATEGORIES } from '../../constants';
+import { TIMELINE_OPTIONS, CATEGORY_PRESET_IMAGES, FALLBACK_CATEGORY_IMAGES, POST_CATEGORIES } from '../../constants';
 import { RichTextEditor } from './RichTextEditor';
 import { DesiredSlotsSelector } from './DesiredSlotsSelector';
 import { useLearnerRequestForm, type LearnerRequestFormState } from '../../hooks';
@@ -58,6 +58,11 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
       setCoverImage(url);
     }
   };
+
+  const categoryPresets = React.useMemo(() => {
+    const rawCat = (category || SkillCategoryName.PROGRAMMING).toUpperCase();
+    return CATEGORY_PRESET_IMAGES[rawCat] || CATEGORY_PRESET_IMAGES.PROGRAMMING || [];
+  }, [category]);
 
   const timelineOptions = TIMELINE_OPTIONS.map((opt) => ({
     value: opt.label,
@@ -233,22 +238,31 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
       </div>
 
       {/* Skill Category */}
-      <div>
+      <div id="field-learner-category">
         <Select
           label="DANH MỤC KỸ NĂNG *"
           options={CATEGORY_OPTIONS}
           value={category}
-          onChange={(val) => setCategory(val as SkillCategoryName)}
+          onChange={(val) => {
+            const newCat = val as SkillCategoryName;
+            setCategory(newCat);
+            const newPresets =
+              CATEGORY_PRESET_IMAGES[newCat.toUpperCase()] || CATEGORY_PRESET_IMAGES.PROGRAMMING;
+            if (newPresets && newPresets.length > 0) {
+              setCoverImage(newPresets[0]);
+            }
+          }}
         />
       </div>
 
       {/* Cover Image Selector */}
-      <div>
+      <div id="field-learner-coverImage">
         <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-700 mb-1.5">
           ẢNH BÌA BÀI ĐĂNG
         </label>
         <div className="space-y-3">
-          <div className="relative h-40 rounded-2xl overflow-hidden bg-gray-50 border-2 border-dashed border-gray-200 hover:border-primary-400 transition-all flex flex-col items-center justify-center group cursor-pointer">
+          {/* Upload Box / Active Preview - Tỉ lệ 16:10 đồng bộ chuẩn card xem trước */}
+          <div className="relative aspect-[16/10] sm:h-48 w-full rounded-2xl overflow-hidden bg-gray-50 border-2 border-dashed border-gray-200 hover:border-primary-400 transition-all flex flex-col items-center justify-center group cursor-pointer shadow-2xs">
             {coverImage ? (
               <>
                 <img src={coverImage} alt="Cover Preview" className="w-full h-full object-cover" />
@@ -269,7 +283,7 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
               <label className="flex flex-col items-center gap-1.5 cursor-pointer p-4 text-center">
                 <ImageIcon className="w-8 h-8 text-gray-400 group-hover:text-primary-500 transition-colors" />
                 <span className="text-xs font-bold text-gray-700">Nhấp để tải ảnh từ máy tính</span>
-                <span className="text-[11px] text-gray-400">PNG, JPG tối đa 5MB</span>
+                <span className="text-[11px] text-gray-400">PNG, JPG, WEBP tối đa 5MB</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -280,20 +294,22 @@ export const LearnerRequestForm: React.FC<LearnerRequestFormProps> = ({ onPrevie
             )}
           </div>
 
+          {/* Preset Images Quick Selector Theo Danh Mục - Tỉ lệ 16:10 đồng bộ */}
           <div>
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
-              HOẶC CHỌN ẢNH MẪU CÓ SẴN:
+              HOẶC CHỌN ẢNH MẪU THEO DANH MỤC:
             </span>
-            <div className="grid grid-cols-4 gap-2">
-              {PRESET_COVER_IMAGES.map((imgUrl, idx) => (
+            <div className="grid grid-cols-4 gap-2.5">
+              {categoryPresets.map((imgUrl, idx) => (
                 <button
                   key={idx}
                   type="button"
                   onClick={() => setCoverImage(imgUrl)}
-                  className={`relative h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${coverImage === imgUrl
-                    ? 'border-primary-500 ring-2 ring-primary-200 scale-102'
-                    : 'border-transparent hover:opacity-80'
-                    }`}
+                  className={`relative aspect-[16/10] rounded-xl overflow-hidden border-2 transition-all cursor-pointer shadow-2xs ${
+                    coverImage === imgUrl
+                      ? 'border-primary-600 ring-2 ring-primary-200 scale-102'
+                      : 'border-transparent hover:opacity-80'
+                  }`}
                 >
                   <img src={imgUrl} alt={`Preset ${idx + 1}`} className="w-full h-full object-cover" />
                 </button>

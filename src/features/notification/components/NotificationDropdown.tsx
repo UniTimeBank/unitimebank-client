@@ -61,22 +61,20 @@ export const NotificationDropdown: React.FC = () => {
             <button
               type="button"
               onClick={() => setFilterUnreadOnly(false)}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                !filterUnreadOnly
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${!filterUnreadOnly
                   ? 'bg-slate-100 text-slate-900'
                   : 'text-slate-500 hover:text-slate-800'
-              }`}
+                }`}
             >
               Tất cả
             </button>
             <button
               type="button"
               onClick={() => setFilterUnreadOnly(true)}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                filterUnreadOnly
+              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${filterUnreadOnly
                   ? 'bg-slate-100 text-slate-900'
                   : 'text-slate-500 hover:text-slate-800'
-              }`}
+                }`}
             >
               <span>Chưa đọc</span>
               {unreadCount > 0 && (

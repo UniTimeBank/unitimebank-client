@@ -348,12 +348,15 @@ export const ScheduleExceptionsTab: React.FC<ScheduleExceptionsTabProps> = ({
                     </span>
                   </div>
 
-                  {/* Thẻ Card Ngoại Lệ với viền trái dày nổi bật */}
-                  <div
-                    className={`w-full bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs transition-all hover:shadow-sm ${
-                      isBlocked ? 'border-l-4 border-l-rose-500' : 'border-l-4 border-l-emerald-600'
-                    }`}
-                  >
+                  {/* Thẻ Card Ngoại Lệ với vạch màu sắc nét */}
+                  <div className="w-full bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 pl-5 sm:pl-6 shadow-xs transition-all hover:shadow-sm relative overflow-hidden">
+                    {/* Left Accent Stripe */}
+                    <div
+                      className={`absolute left-0 top-0 bottom-0 w-1.5 ${
+                        isBlocked ? 'bg-rose-500' : 'bg-emerald-600'
+                      }`}
+                    />
+
                     {/* Hàng Header Thẻ: Badge + Thời Gian + Nút Xóa */}
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">

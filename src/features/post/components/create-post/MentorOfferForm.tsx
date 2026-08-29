@@ -22,7 +22,7 @@ import { SessionType, PostScheduleType, SkillCategoryName } from '../../types';
 import { SkillMultiSelectCombobox } from './SkillMultiSelectCombobox';
 import { RichTextEditor } from './RichTextEditor';
 import type { SkillCategoryEnum } from '@/features/user/types';
-import { PRESET_COVER_IMAGES } from '../../constants';
+import { CATEGORY_PRESET_IMAGES, FALLBACK_CATEGORY_IMAGES } from '../../constants';
 
 const CATEGORY_OPTIONS = [
   { label: 'Lập trình', value: SkillCategoryName.PROGRAMMING },
@@ -91,12 +91,18 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
   // Internal Form State
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<SkillCategoryName>(SkillCategoryName.PROGRAMMING);
-  const [coverImage, setCoverImage] = useState(
-    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600'
+  const [coverImage, setCoverImage] = useState<string>(
+    CATEGORY_PRESET_IMAGES.PROGRAMMING?.[0] || '/images/categories/laptrinh/laptrinh1.webp'
   );
   const [skillsText, setSkillsText] = useState('');
   const [shortDescription, setShortDescription] = useState('');
   const [description, setDescription] = useState('');
+
+  // 4 ảnh mẫu theo danh mục đã chọn
+  const categoryPresets = useMemo(() => {
+    const rawCat = (category || SkillCategoryName.PROGRAMMING).toUpperCase();
+    return CATEGORY_PRESET_IMAGES[rawCat] || CATEGORY_PRESET_IMAGES.PROGRAMMING || [];
+  }, [category]);
   const [scheduleType, setScheduleType] = useState<'ALWAYS_OPEN' | 'LIMITED_TIME'>('ALWAYS_OPEN');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -579,14 +585,50 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
           />
         </div>
 
+        {/* Category Selector */}
+        <div id="field-mentor-category">
+          <Select
+            label="DANH MỤC LĨNH VỰC *"
+            options={CATEGORY_OPTIONS}
+            value={category}
+            onChange={(val) => {
+              const newCat = val as SkillCategoryName;
+              if (newCat !== category) {
+                setCategory(newCat);
+                setSkillsText(''); // Tự động reset kỹ năng khi đổi danh mục
+                setErrors((prev) => ({ ...prev, skills: '' }));
+                const newPresets =
+                  CATEGORY_PRESET_IMAGES[newCat.toUpperCase()] || CATEGORY_PRESET_IMAGES.PROGRAMMING;
+                if (newPresets && newPresets.length > 0) {
+                  setCoverImage(newPresets[0]);
+                }
+              }
+            }}
+          />
+        </div>
+
+        {/* Skills Selector */}
+        <div id="field-mentor-skills">
+          <SkillMultiSelectCombobox
+            category={category}
+            label="KỸ NĂNG BÀI DẠY *"
+            selectedSkills={selectedSkills}
+            availableSkills={profileSkills}
+            onToggleSkill={handleToggleSkill}
+            onRemoveSkill={handleRemoveSkill}
+            onAddNewSkillToProfile={handleAddNewSkillToProfile}
+            error={errors.skills}
+          />
+        </div>
+
         {/* Cover Image Selector */}
-        <div>
+        <div id="field-mentor-coverImage">
           <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-700 mb-1.5">
             ẢNH BÌA BÀI ĐĂNG
           </label>
           <div className="space-y-3">
-            {/* Upload Box / Active Preview */}
-            <div className="relative h-40 rounded-2xl overflow-hidden bg-gray-50 border-2 border-dashed border-gray-200 hover:border-primary-400 transition-all flex flex-col items-center justify-center group cursor-pointer">
+            {/* Upload Box / Active Preview - Tỉ lệ 16:10 đồng bộ chuẩn card xem trước */}
+            <div className="relative aspect-[16/10] sm:h-48 w-full rounded-2xl overflow-hidden bg-gray-50 border-2 border-dashed border-gray-200 hover:border-primary-400 transition-all flex flex-col items-center justify-center group cursor-pointer shadow-2xs">
               {coverImage ? (
                 <>
                   <img src={coverImage} alt="Cover Preview" className="w-full h-full object-cover" />
@@ -607,7 +649,7 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
                 <label className="flex flex-col items-center gap-1.5 cursor-pointer p-4 text-center">
                   <ImageIcon className="w-8 h-8 text-gray-400 group-hover:text-primary-500 transition-colors" />
                   <span className="text-xs font-bold text-gray-700">Nhấp để tải ảnh từ máy tính</span>
-                  <span className="text-[11px] text-gray-400">PNG, JPG tối đa 5MB</span>
+                  <span className="text-[11px] text-gray-400">PNG, JPG, WEBP tối đa 5MB</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -618,21 +660,22 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
               )}
             </div>
 
-            {/* Preset Images Quick Selector */}
+            {/* Preset Images Quick Selector Theo Danh Mục - Tỉ lệ 16:10 đồng bộ */}
             <div>
               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
-                HOẶC CHỌN ẢNH MẪU CÓ SẴN:
+                HOẶC CHỌN ẢNH MẪU THEO DANH MỤC:
               </span>
-              <div className="grid grid-cols-4 gap-2">
-                {PRESET_COVER_IMAGES.map((imgUrl, idx) => (
+              <div className="grid grid-cols-4 gap-2.5">
+                {categoryPresets.map((imgUrl, idx) => (
                   <button
                     key={idx}
                     type="button"
                     onClick={() => setCoverImage(imgUrl)}
-                    className={`relative h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${coverImage === imgUrl
-                      ? 'border-primary-600 ring-2 ring-primary-200 scale-102'
-                      : 'border-transparent hover:opacity-80'
-                      }`}
+                    className={`relative aspect-[16/10] rounded-xl overflow-hidden border-2 transition-all cursor-pointer shadow-2xs ${
+                      coverImage === imgUrl
+                        ? 'border-primary-600 ring-2 ring-primary-200 scale-102'
+                        : 'border-transparent hover:opacity-80'
+                    }`}
                   >
                     <img src={imgUrl} alt={`Preset ${idx + 1}`} className="w-full h-full object-cover" />
                   </button>
@@ -640,36 +683,6 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Category Selector */}
-        <div id="field-mentor-category">
-          <Select
-            label="DANH MỤC LĨNH VỰC *"
-            options={CATEGORY_OPTIONS}
-            value={category}
-            onChange={(val) => {
-              const newCat = val as SkillCategoryName;
-              if (newCat !== category) {
-                setCategory(newCat);
-                setSkillsText(''); // Tự động reset kỹ năng khi đổi danh mục
-                setErrors((prev) => ({ ...prev, skills: '' }));
-              }
-            }}
-          />
-        </div>
-
-        <div id="field-mentor-skills">
-          <SkillMultiSelectCombobox
-            category={category}
-            label="KỸ NĂNG BÀI DẠY *"
-            selectedSkills={selectedSkills}
-            availableSkills={profileSkills}
-            onToggleSkill={handleToggleSkill}
-            onRemoveSkill={handleRemoveSkill}
-            onAddNewSkillToProfile={handleAddNewSkillToProfile}
-            error={errors.skills}
-          />
         </div>
 
         {/* Short Summary Description for Card Feed */}

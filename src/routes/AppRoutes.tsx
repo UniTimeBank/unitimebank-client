@@ -14,6 +14,7 @@ import {
 import {
   ManagementLayout,
   BookingManagementPage,
+  GroupSessionsManagementPage,
   ScheduleManagementPage,
   DashboardManagementPage,
   PostsManagementPage,
@@ -125,6 +126,7 @@ export const AppRoutes = () => {
       >
         <Route index element={<Navigate to={ROUTES.MANAGE.BOOKINGS} replace />} />
         <Route path="bookings" element={<BookingManagementPage />} />
+        <Route path="group-sessions" element={<GroupSessionsManagementPage />} />
         <Route path="schedule" element={<ScheduleManagementPage />} />
         <Route path="dashboard" element={<DashboardManagementPage />} />
         <Route path="posts" element={<PostsManagementPage />} />

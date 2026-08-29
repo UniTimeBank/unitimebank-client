@@ -17,5 +17,7 @@ export * from './common/AutoJoinNotification';
 export * from './common/SessionEndedModal';
 
 export * from './lobby/GroupRoomCard';
+export * from './lobby/FeaturedGroupRoomCard';
+export * from './lobby/MiniGroupRoomCard';
 export * from './lobby/CreateGroupRoomModal';
 export * from './lobby/LiveGroupRoomsBanner';

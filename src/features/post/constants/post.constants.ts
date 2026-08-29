@@ -28,43 +28,86 @@ export const SKILL_CATEGORY_LABELS: Record<string, string> = {
   ECONOMICS: 'Kinh doanh',
 };
 
-export const DEFAULT_POST_COVER =
-  'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600';
+export const DEFAULT_POST_COVER = '/images/categories/laptrinh/laptrinh1.webp';
 
 export const FALLBACK_CATEGORY_IMAGES: Record<string, string> = {
-  PROGRAMMING:
-    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600',
-  STEM:
-    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600',
-  LANGUAGE:
-    'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600',
-  HUMANITIES:
-    'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600',
-  DESIGN:
-    'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&q=80&w=600',
-  ARTS:
-    'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&q=80&w=600',
-  ACADEMIC:
-    'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=600',
-  BUSINESS:
-    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=600',
-  ECONOMICS:
-    'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=600',
-  SOFT_SKILLS:
-    'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=600',
-  MUSIC:
-    'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&q=80&w=600',
-  SPORTS:
-    'https://images.unsplash.com/photo-1517649763962-0c623266ddc0?auto=format&fit=crop&q=80&w=600',
-  OTHER:
-    'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&q=80&w=600',
+  PROGRAMMING: '/images/categories/laptrinh/laptrinh1.webp',
+  STEM: '/images/categories/laptrinh/laptrinh1.webp',
+  LANGUAGE: '/images/categories/ngoaingu/ngoaingu1.webp',
+  HUMANITIES: '/images/categories/ngoaingu/ngoaingu1.webp',
+  DESIGN: '/images/categories/thietke/thietke1.webp',
+  ARTS: '/images/categories/thietke/thietke1.webp',
+  ACADEMIC: '/images/categories/hocthuat/hocthuat1.webp',
+  BUSINESS: '/images/categories/kinhdoanh/kinhdoanh1.webp',
+  ECONOMICS: '/images/categories/kinhdoanh/kinhdoanh1.webp',
+  SOFT_SKILLS: '/images/categories/kynangmem/kynangmem1.webp',
+  MUSIC: '/images/categories/amnhac/amnhac1.webp',
+  SPORTS: '/images/categories/thethao/thethao1.webp',
+  OTHER: '/images/categories/khac/khac1.webp',
+};
+
+export const CATEGORY_PRESET_IMAGES: Record<string, string[]> = {
+  PROGRAMMING: [
+    '/images/categories/laptrinh/laptrinh1.webp',
+    '/images/categories/laptrinh/laptrinh2.webp',
+    '/images/categories/laptrinh/laptrinh3.webp',
+    '/images/categories/laptrinh/laptrinh4.webp',
+  ],
+  LANGUAGE: [
+    '/images/categories/ngoaingu/ngoaingu1.webp',
+    '/images/categories/ngoaingu/ngoaingu2.webp',
+    '/images/categories/ngoaingu/ngoaingu3.webp',
+    '/images/categories/ngoaingu/ngoaingu4.webp',
+  ],
+  DESIGN: [
+    '/images/categories/thietke/thietke1.webp',
+    '/images/categories/thietke/thietke2.webp',
+    '/images/categories/thietke/thietke3.webp',
+    '/images/categories/thietke/thietke4.webp',
+  ],
+  ACADEMIC: [
+    '/images/categories/hocthuat/hocthuat1.webp',
+    '/images/categories/hocthuat/hocthuat2.webp',
+    '/images/categories/hocthuat/hocthuat3.webp',
+    '/images/categories/hocthuat/hocthuat4.webp',
+  ],
+  BUSINESS: [
+    '/images/categories/kinhdoanh/kinhdoanh1.webp',
+    '/images/categories/kinhdoanh/kinhdoanh2.webp',
+    '/images/categories/kinhdoanh/kinhdoanh3.webp',
+    '/images/categories/kinhdoanh/kinhdoanh4.webp',
+  ],
+  SOFT_SKILLS: [
+    '/images/categories/kynangmem/kynangmem1.webp',
+    '/images/categories/kynangmem/kynangmem2.webp',
+    '/images/categories/kynangmem/kynangmem3.webp',
+    '/images/categories/kynangmem/kynangmem4.webp',
+  ],
+  MUSIC: [
+    '/images/categories/amnhac/amnhac1.webp',
+    '/images/categories/amnhac/amnhac2.webp',
+    '/images/categories/amnhac/amnhac3.webp',
+    '/images/categories/amnhac/amnhac4.webp',
+  ],
+  SPORTS: [
+    '/images/categories/thethao/thethao1.webp',
+    '/images/categories/thethao/thethao2.webp',
+    '/images/categories/thethao/thethao3.webp',
+    '/images/categories/thethao/thethao4.webp',
+  ],
+  OTHER: [
+    '/images/categories/khac/khac1.webp',
+    '/images/categories/khac/khac2.webp',
+    '/images/categories/khac/khac3.webp',
+    '/images/categories/khac/khac4.webp',
+  ],
 };
 
 export const PRESET_COVER_IMAGES = [
-  'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=600',
+  '/images/categories/laptrinh/laptrinh1.webp',
+  '/images/categories/ngoaingu/ngoaingu1.webp',
+  '/images/categories/thietke/thietke1.webp',
+  '/images/categories/kinhdoanh/kinhdoanh1.webp',
 ];
 
 export const POST_SORT_OPTIONS = [

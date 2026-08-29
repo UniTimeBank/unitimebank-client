@@ -241,7 +241,7 @@ export const MyScheduleAgendaTab: React.FC = () => {
       ) : viewMode === 'WEEK' ? (
         /* WEEK GRID VIEW (With horizontal scroll support to avoid squeezing) */
         <div className="overflow-x-auto pb-3 -mx-2 px-2">
-          <div className="grid grid-cols-7 gap-3 min-w-[840px]">
+          <div className="grid grid-cols-7 gap-3 min-w-[960px]">
             {weekDays.map((day) => {
               const shortLabel = DAYS_OF_WEEK.find((d) => d.key === day.dayOfWeek)?.short || '';
 
@@ -307,31 +307,41 @@ export const MyScheduleAgendaTab: React.FC = () => {
                         return (
                           <div
                             key={b.id}
-                            className={`p-2.5 rounded-xl border text-left flex flex-col justify-between gap-2 transition-all shadow-2xs ${
+                            className={`relative overflow-hidden p-3 pl-3.5 rounded-xl border text-left flex flex-col justify-between gap-2.5 transition-all shadow-2xs ${
                               isMentorRole
-                                ? 'bg-blue-50/40 border-blue-200/80 border-l-4 border-l-blue-600'
-                                : 'bg-emerald-50/40 border-emerald-200/80 border-l-4 border-l-emerald-600'
+                                ? 'bg-blue-50/40 border-blue-200/80'
+                                : 'bg-emerald-50/40 border-emerald-200/80'
                             }`}
                           >
+                            {/* Left Accent Stripe */}
+                            <div
+                              className={`absolute left-0 top-0 bottom-0 w-1 ${
+                                isMentorRole ? 'bg-blue-600' : 'bg-emerald-600'
+                              }`}
+                            />
+
                             <div>
-                              {/* 1. Header: Time & Role Pill */}
-                              <div className="flex items-center justify-between gap-1 mb-1.5">
-                                <span className="text-[11px] font-semibold text-slate-700 tracking-tight whitespace-nowrap">
-                                  {startTime} - {endTime}
-                                </span>
+                              {/* 1. Header: Role Badge */}
+                              <div className="flex items-center justify-between gap-1 mb-1">
                                 <span
-                                  className={`px-1.5 py-0.2 rounded text-[9px] font-semibold uppercase shrink-0 ${
+                                  className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider ${
                                     isMentorRole
-                                      ? 'bg-blue-600 text-white'
-                                      : 'bg-emerald-600 text-white'
+                                      ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                                      : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
                                   }`}
                                 >
-                                  {isMentorRole ? 'Dạy' : 'Học'}
+                                  {isMentorRole ? 'Lớp dạy' : 'Lớp học'}
                                 </span>
                               </div>
 
-                              {/* 2. Session Title */}
-                              <h4 className="text-xs font-medium text-slate-800 line-clamp-2 leading-snug mb-1.5">
+                              {/* 2. Time Range */}
+                              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-700 mb-1.5 whitespace-nowrap">
+                                <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                                <span>{startTime} – {endTime}</span>
+                              </div>
+
+                              {/* 3. Session Title */}
+                              <h4 className="text-xs font-bold text-slate-900 line-clamp-2 leading-snug mb-1.5">
                                 {b.title}
                               </h4>
 
@@ -348,7 +358,7 @@ export const MyScheduleAgendaTab: React.FC = () => {
                                     {partnerName?.charAt(0) || 'U'}
                                   </div>
                                 )}
-                                <span className="text-[11px] text-slate-500 truncate font-normal">
+                                <span className="text-[11px] text-slate-600 truncate font-medium">
                                   {partnerName}
                                 </span>
                               </div>
@@ -362,7 +372,7 @@ export const MyScheduleAgendaTab: React.FC = () => {
                                   type="button"
                                   disabled={!canJoin}
                                   onClick={() => canJoin && handleJoinClass(b.id)}
-                                  className={`w-full mt-1 flex items-center justify-center gap-1.5 rounded-xl text-[11px] font-semibold py-1.5 transition-all duration-200 shadow-2xs ${
+                                  className={`w-full mt-1 flex items-center justify-center gap-1.5 rounded-xl text-xs font-bold py-1.5 transition-all duration-200 shadow-2xs ${
                                     isMentorRole
                                       ? 'bg-blue-600 hover:bg-blue-700 text-white'
                                       : 'bg-emerald-600 hover:bg-emerald-700 text-white'

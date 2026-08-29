@@ -15,7 +15,7 @@ interface AddSkillModalProps {
 }
 
 // Preset gợi ý kỹ năng theo từng danh mục
-export const PRESET_SKILLS_BY_CATEGORY: Record<SkillCategoryEnum, string[]> = {
+const PRESET_SKILLS_BY_CATEGORY: Record<SkillCategoryEnum, string[]> = {
   PROGRAMMING: [
     'Java',
     'Python',
@@ -126,6 +126,10 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
       setCategory(defaultCategory);
       setSkillName('');
       setIsDropdownOpen(false);
+      const timer = setTimeout(() => {
+        inputRef.current?.focus({ preventScroll: true });
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [isOpen, defaultCategory]);
 
@@ -206,7 +210,7 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="md" zIndex={60}>
       <div className="space-y-4" onKeyDown={handleKeyDown}>
         {/* 1. Skill Category Selector (Ẩn đi khi đã có danh mục cố định từ Form Đăng bài) */}
         {!hideCategorySelect && (
@@ -252,7 +256,6 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
               }}
               placeholder="VD: Python, Figma, Giải tích 1, Tiếng Nhật..."
               className="w-full text-sm text-gray-900 placeholder:text-gray-400 placeholder:font-normal font-normal bg-transparent focus:outline-hidden pr-2"
-              autoFocus
             />
 
             {/* Clear Button or Toggle Dropdown Arrow */}
@@ -330,17 +333,23 @@ export const AddSkillModal: React.FC<AddSkillModalProps> = ({
         </div>
 
         {/* Actions Footer */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
-          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-gray-100">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            className="rounded-xl border-gray-200 text-gray-700 hover:bg-gray-50 text-xs font-semibold px-4.5 py-2 cursor-pointer"
+          >
             Hủy
           </Button>
           <Button
             type="button"
-            variant="primary"
             size="sm"
             isLoading={isSubmitting}
             onClick={() => handleSave()}
             disabled={!skillName.trim() || isSubmitting}
+            className="rounded-xl bg-primary-700 hover:bg-primary-800 active:bg-primary-900 text-white text-xs font-bold px-5 py-2 shadow-xs transition-all cursor-pointer"
           >
             Thêm kỹ năng
           </Button>

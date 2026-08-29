@@ -164,7 +164,7 @@ export const PostExplorePage: React.FC = () => {
     <div className="min-h-screen bg-[#F8FAFC] pb-16">
       {/* 1. Hero Section (Thanh tìm kiếm & Danh mục tập trung) */}
       <section className="pt-12 sm:pt-16 pb-8 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto text-center">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight leading-[1.18]">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.18]">
           Khám phá Không gian<br />
           Tri thức Học thuật
         </h1>
@@ -243,7 +243,7 @@ export const PostExplorePage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 mb-6">
           {/* Bên Trái: Tiêu đề danh sách chuẩn */}
           <div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
               {exploreTab === 'LEARNER_REQUESTS'
                 ? 'Yêu Cầu Học Tập Từ Sinh Viên'
                 : 'Lớp Học Dạy Kèm Đề Xuất'}
@@ -255,46 +255,32 @@ export const PostExplorePage: React.FC = () => {
             </p>
           </div>
 
-          {/* Bên Phải: Clean Text Tabs (Không icon, không gạch chân, không khung viền) + Xem Tất Cả */}
+          {/* Bên Phải: Clean Text Tabs (Không icon, không badge số lượng) + Xem Tất Cả */}
           <div className="flex items-center gap-4 shrink-0 flex-wrap">
             {/* Tab 1: Người Dạy */}
             <button
               type="button"
               onClick={() => setExploreTab('MENTOR_POSTS')}
-              className={`inline-flex items-center gap-1.5 text-xs transition-colors cursor-pointer ${
+              className={`text-xs transition-colors cursor-pointer py-1 ${
                 exploreTab === 'MENTOR_POSTS'
                   ? 'text-primary-700 font-bold'
                   : 'text-slate-500 hover:text-slate-800 font-medium'
               }`}
             >
               <span>Người Dạy</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                exploreTab === 'MENTOR_POSTS'
-                  ? 'bg-primary-50 text-primary-700'
-                  : 'bg-slate-100 text-slate-500'
-              }`}>
-                {mentorPosts.length}
-              </span>
             </button>
 
             {/* Tab 2: Người Học */}
             <button
               type="button"
               onClick={() => setExploreTab('LEARNER_REQUESTS')}
-              className={`inline-flex items-center gap-1.5 text-xs transition-colors cursor-pointer ${
+              className={`text-xs transition-colors cursor-pointer py-1 ${
                 exploreTab === 'LEARNER_REQUESTS'
                   ? 'text-primary-700 font-bold'
                   : 'text-slate-500 hover:text-slate-800 font-medium'
               }`}
             >
               <span>Người Học</span>
-              <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                exploreTab === 'LEARNER_REQUESTS'
-                  ? 'bg-primary-50 text-primary-700'
-                  : 'bg-slate-100 text-slate-500'
-              }`}>
-                {learnerRequests.length}
-              </span>
             </button>
 
             {/* Vách ngăn dọc mỏng */}
@@ -302,8 +288,8 @@ export const PostExplorePage: React.FC = () => {
 
             {/* Xem Tất Cả */}
             <Link
-              to="/requests"
-              className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-primary-700 transition-colors group cursor-pointer"
+              to={exploreTab === 'LEARNER_REQUESTS' ? '/requests' : '/explore'}
+              className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-primary-700 transition-colors cursor-pointer py-1 group shrink-0"
             >
               <span>Xem tất cả</span>
               <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-primary-700 group-hover:translate-x-0.5 transition-all" />

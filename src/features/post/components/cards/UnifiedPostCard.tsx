@@ -74,7 +74,7 @@ export const UnifiedPostCard: React.FC<{
 
   const topBadgeRight =
     type === 'MENTOR'
-      ? sessionTypeText || 'Lớp 1:1'
+      ? undefined
       : timelineText || 'Trong 3 ngày';
 
   const isLimited = scheduleType === 'LIMITED_TIME';
@@ -98,7 +98,7 @@ export const UnifiedPostCard: React.FC<{
           (t) =>
             Boolean(t) &&
             t.toLowerCase() !== topBadge.toLowerCase() &&
-            t.toLowerCase() !== (topBadgeRight || '').toLowerCase()
+            (!topBadgeRight || t.toLowerCase() !== topBadgeRight.toLowerCase())
         )
     )
   );
@@ -108,7 +108,7 @@ export const UnifiedPostCard: React.FC<{
 
   return (
     <div
-      className={`bg-white rounded-3xl p-3.5 border border-slate-200/90 hover:border-primary-400 shadow-2xs hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between group relative overflow-hidden ${className}`}
+      className={`bg-white rounded-3xl p-3.5 border border-slate-200/90 hover:border-primary-400 shadow-2xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between group relative overflow-hidden ${className}`}
     >
       <div>
         {/* 1. Header Media Thumbnail */}
@@ -126,12 +126,14 @@ export const UnifiedPostCard: React.FC<{
           </span>
 
           {/* Top Right: Session Type or Timeline Badge */}
-          <span className="absolute top-3 right-3 px-3 py-1 rounded-xl bg-black/40 backdrop-blur-md text-white font-medium text-[11px] shadow-xs">
-            {topBadgeRight}
-          </span>
+          {topBadgeRight && (
+            <span className="absolute top-3 right-3 px-3 py-1 rounded-xl bg-black/40 backdrop-blur-md text-white font-medium text-[11px] shadow-xs">
+              {topBadgeRight}
+            </span>
+          )}
 
-          {/* Bottom Left: Timing / Schedule Badge for Mentor, Credit Badge for Learner */}
-          <div className="absolute bottom-3 left-3 px-3 py-1 rounded-xl bg-slate-950/85 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm">
+          {/* Bottom Right: Timing / Schedule Badge for Mentor, Credit Badge for Learner (So le với Danh mục Top-Left) */}
+          <div className="absolute bottom-3 right-3 px-3 py-1 rounded-xl bg-slate-950/85 backdrop-blur-md text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm">
             {type === 'MENTOR' ? (
               isLimited ? (
                 <Calendar className="w-3.5 h-3.5 text-amber-400 shrink-0" />
@@ -188,9 +190,9 @@ export const UnifiedPostCard: React.FC<{
             </div>
           </div>
 
-          {/* Title */}
+          {/* Title (không đổi màu chữ khi hover) */}
           {detailUrl && !isPreview ? (
-            <Link to={detailUrl} className="block group-hover:text-primary-700 transition-colors">
+            <Link to={detailUrl} className="block">
               <h3 className="text-base font-bold text-slate-900 line-clamp-1 leading-snug tracking-tight">
                 {validTitle}
               </h3>

@@ -59,11 +59,10 @@ export const Header: React.FC<HeaderProps> = ({
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`transition-colors py-1 border-b-2 whitespace-nowrap ${
-                    isActive
+                  className={`transition-colors py-1 border-b-2 whitespace-nowrap ${isActive
                       ? 'text-primary-600 border-primary-500 font-extrabold'
                       : 'text-gray-600 border-transparent hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   {link.label}
                 </Link>

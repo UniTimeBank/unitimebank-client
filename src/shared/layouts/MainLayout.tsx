@@ -21,14 +21,8 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
 
   const authUser = useAppSelector(selectCurrentUser);
   const { data: userProfile } = useGetMeQuery(undefined, { skip: !authUser });
-  const { data: walletData } = useGetMyWalletQuery(undefined, {
-    skip: !authUser,
-    refetchOnFocus: true,
-  });
-  const { data: onboardingData } = useGetOnboardingTasksQuery(undefined, {
-    skip: !authUser,
-    refetchOnFocus: true,
-  });
+  const { data: walletData } = useGetMyWalletQuery(undefined, { skip: !authUser });
+  const { data: onboardingData } = useGetOnboardingTasksQuery(undefined, { skip: !authUser });
   useOnboardingTaskToastNotifier(onboardingData);
 
   const [isSetPasswordOpen, setIsSetPasswordOpen] = useState(() => {

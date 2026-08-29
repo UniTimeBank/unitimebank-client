@@ -65,7 +65,6 @@ export const MentorPostPreview: React.FC<MentorPostPreviewProps> = ({
             authorSubtitle: 'Mentor UniTime',
             trustScore: profile?.trustScore || 100,
             creditText: scheduleLabel,
-            sessionTypeText: 'Lớp 1:1',
             scheduleType: scheduleType,
             timeAgoText: 'Vừa xong',
             isPreview: true,

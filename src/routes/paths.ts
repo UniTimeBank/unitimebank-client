@@ -17,6 +17,7 @@ export const ROUTES = {
   MANAGE: {
     ROOT: '/manage',
     BOOKINGS: '/manage/bookings',
+    GROUP_SESSIONS: '/manage/group-sessions',
     SCHEDULE: '/manage/schedule',
     POSTS: '/manage/posts',
     WALLET: '/manage/wallet',

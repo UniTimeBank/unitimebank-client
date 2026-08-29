@@ -92,17 +92,24 @@ export const useLiveKitRoom = ({
         setLocalParticipant(currentRoom.localParticipant);
         updateParticipants();
 
-        // Enable default Mic and Camera
+        // Enable default Camera & Microphone independently so one failure does not block the other
         try {
-          await currentRoom.localParticipant.enableCameraAndMicrophone();
+          await currentRoom.localParticipant.setCameraEnabled(true);
           setIsCameraEnabled(true);
+        } catch (err: any) {
+          console.warn('Could not enable default camera:', err);
+          setIsCameraEnabled(false);
+        }
+
+        try {
+          await currentRoom.localParticipant.setMicrophoneEnabled(true);
           setIsMicEnabled(true);
         } catch (err: any) {
-          console.warn('Could not enable default cam/mic:', err);
-          toast.warning('Không thể truy cập Microphone hoặc Camera.', 'Vui lòng kiểm tra quyền trình duyệt');
-          setIsCameraEnabled(false);
+          console.warn('Could not enable default microphone:', err);
           setIsMicEnabled(false);
         }
+
+        updateParticipants();
       })
       .on(RoomEvent.Disconnected, () => {
         if (!isMounted) return;
@@ -117,6 +124,14 @@ export const useLiveKitRoom = ({
       })
       .on(RoomEvent.ParticipantDisconnected, (participant) => {
         toast.info(`${participant.name || 'Người tham gia'} đã rời phòng.`);
+        updateParticipants();
+      })
+      .on(RoomEvent.TrackMuted, () => {
+        if (!isMounted) return;
+        updateParticipants();
+      })
+      .on(RoomEvent.TrackUnmuted, () => {
+        if (!isMounted) return;
         updateParticipants();
       })
       .on(
@@ -148,6 +163,13 @@ export const useLiveKitRoom = ({
       })
       .on(RoomEvent.LocalTrackPublished, (pub) => {
         if (!isMounted) return;
+        updateParticipants();
+        if (pub.source === Track.Source.Camera) {
+          setIsCameraEnabled(true);
+        }
+        if (pub.source === Track.Source.Microphone) {
+          setIsMicEnabled(true);
+        }
         if (pub.source === Track.Source.ScreenShare && pub.track) {
           setIsScreenSharing(true);
           setScreenShareTrack({
@@ -158,6 +180,13 @@ export const useLiveKitRoom = ({
       })
       .on(RoomEvent.LocalTrackUnpublished, (pub) => {
         if (!isMounted) return;
+        updateParticipants();
+        if (pub.source === Track.Source.Camera) {
+          setIsCameraEnabled(false);
+        }
+        if (pub.source === Track.Source.Microphone) {
+          setIsMicEnabled(false);
+        }
         if (pub.source === Track.Source.ScreenShare) {
           setIsScreenSharing(false);
           setScreenShareTrack((prev) =>

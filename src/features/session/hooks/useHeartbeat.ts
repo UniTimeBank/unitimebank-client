@@ -20,6 +20,7 @@ export const useHeartbeat = ({
   const [currentBalance, setCurrentBalance] = useState<number | null>(null);
   const [totalCreditsCharged, setTotalCreditsCharged] = useState(0);
   const [freeSecondsRemaining, setFreeSecondsRemaining] = useState(5 * 60);
+  const [paidSeconds, setPaidSeconds] = useState(0);
   const warnedLowBalanceRef = useRef(false);
   const onHeartbeatRef = useRef(onHeartbeat);
   const onInsufficientBalanceRef = useRef(onInsufficientBalance);
@@ -35,12 +36,26 @@ export const useHeartbeat = ({
     // Send initial heartbeat
     onHeartbeatRef.current?.();
 
-    // 60-second cycle
-    const interval = setInterval(() => {
+    // 60-second cycle for backend metering sync
+    const heartbeatInterval = setInterval(() => {
       onHeartbeatRef.current?.();
     }, 60000);
 
-    return () => clearInterval(interval);
+    // 1-second local interval for smooth real-time countdown timer & paid duration
+    const countdownInterval = setInterval(() => {
+      setFreeSecondsRemaining((prev) => {
+        if (prev <= 0) {
+          setPaidSeconds((ps) => ps + 1);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      clearInterval(heartbeatInterval);
+      clearInterval(countdownInterval);
+    };
   }, [roomId, isGroupRoom, isLearner]);
 
   const handleHeartbeatAck = (ack: HeartbeatAckEvent) => {
@@ -75,6 +90,7 @@ export const useHeartbeat = ({
     currentBalance,
     totalCreditsCharged,
     freeSecondsRemaining,
+    paidSeconds,
     handleHeartbeatAck,
   };
 };

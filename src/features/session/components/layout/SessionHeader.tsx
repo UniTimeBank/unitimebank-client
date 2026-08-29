@@ -12,6 +12,8 @@ interface SessionHeaderProps {
   participantCount?: number;
   currentBalance?: number;
   freeSecondsRemaining?: number;
+  paidSeconds?: number;
+  totalCreditsCharged?: number;
   onLeave?: () => void;
 }
 
@@ -23,6 +25,8 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
   participantCount,
   currentBalance,
   freeSecondsRemaining,
+  paidSeconds = 0,
+  totalCreditsCharged = 0,
 }) => {
   return (
     <header className="h-16 px-6 bg-white border-b border-slate-200/90 flex items-center justify-between shrink-0 select-none z-20">
@@ -45,11 +49,23 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
 
       {/* Right: Notification Bell Dropdown + Profile Avatar */}
       <div className="flex items-center gap-3 shrink-0">
-        {roomType === 'GROUP' && freeSecondsRemaining !== undefined && freeSecondsRemaining > 0 && (
-          <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-            <Clock3 className="h-3.5 w-3.5" />
-            Miễn phí {Math.ceil(freeSecondsRemaining / 60)} phút
-          </div>
+        {roomType === 'GROUP' && freeSecondsRemaining !== undefined && (
+          freeSecondsRemaining > 0 ? (
+            <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 shadow-2xs">
+              <Clock3 className="h-3.5 w-3.5 text-emerald-600 shrink-0 animate-pulse" />
+              <span>
+                Miễn phí: {Math.floor(freeSecondsRemaining / 60).toString().padStart(2, '0')}:{(freeSecondsRemaining % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
+          ) : (
+            <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 shadow-2xs">
+              <Clock3 className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+              <span>
+                Trả phí: {Math.floor(paidSeconds / 60).toString().padStart(2, '0')}:{(paidSeconds % 60).toString().padStart(2, '0')}
+                {totalCreditsCharged > 0 ? ` • -${totalCreditsCharged} Credit` : ' (1 Credit/phút)'}
+              </span>
+            </div>
+          )
         )}
 
         {roomType === 'GROUP' && currentBalance !== undefined && (

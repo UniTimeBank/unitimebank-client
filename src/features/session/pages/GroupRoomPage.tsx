@@ -192,7 +192,7 @@ export const GroupRoomPage: React.FC = () => {
   // Loading Screen
   if (isJoining) {
     return (
-      <div className="w-screen h-screen bg-slate-50 flex flex-col items-center justify-center text-center p-6 select-none animate-in fade-in duration-200">
+      <div className="fixed inset-0 w-full h-full bg-slate-50 flex flex-col items-center justify-center text-center p-6 select-none animate-in fade-in duration-200 z-50">
         <div className="w-16 h-16 rounded-3xl bg-primary-50 border border-primary-200/80 flex items-center justify-center mb-4 shadow-sm">
           <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
         </div>
@@ -209,7 +209,7 @@ export const GroupRoomPage: React.FC = () => {
     const errorMessage =
       (joinError as any)?.data?.message || 'Không thể tham gia phòng học nhóm này.';
     return (
-      <div className="w-screen h-screen bg-slate-50 flex flex-col items-center justify-center text-center p-6 select-none">
+      <div className="fixed inset-0 w-full h-full bg-slate-50 flex flex-col items-center justify-center text-center p-6 select-none z-50">
         <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 space-y-4 shadow-xl">
           <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-center justify-center mx-auto text-rose-500">
             <AlertTriangle className="w-7 h-7" />
@@ -231,7 +231,7 @@ export const GroupRoomPage: React.FC = () => {
   }
 
   return (
-    <div className="w-screen h-screen bg-slate-100 flex flex-col overflow-hidden select-none">
+    <div className="fixed inset-0 w-full h-full bg-slate-100 flex flex-col overflow-hidden select-none z-40">
       {/* 1. Header */}
       <SessionHeader
         title="Phòng học nhóm trực tuyến"
@@ -245,6 +245,16 @@ export const GroupRoomPage: React.FC = () => {
         freeSecondsRemaining={
           tokenData?.role === 'LEARNER'
             ? heartbeatHelper.freeSecondsRemaining
+            : undefined
+        }
+        paidSeconds={
+          tokenData?.role === 'LEARNER'
+            ? heartbeatHelper.paidSeconds
+            : undefined
+        }
+        totalCreditsCharged={
+          tokenData?.role === 'LEARNER'
+            ? heartbeatHelper.totalCreditsCharged
             : undefined
         }
         onLeave={handleLeaveGroup}
