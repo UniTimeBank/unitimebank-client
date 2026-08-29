@@ -237,7 +237,16 @@ export const GroupRoomPage: React.FC = () => {
         title="Phòng học nhóm trực tuyến"
         roomType="GROUP"
         participantCount={1 + remoteParticipants.length}
-        currentBalance={heartbeatHelper.currentBalance ?? tokenData?.availableBalance}
+        currentBalance={
+          tokenData?.role === 'LEARNER'
+            ? (heartbeatHelper.currentBalance ?? tokenData.availableBalance)
+            : undefined
+        }
+        freeSecondsRemaining={
+          tokenData?.role === 'LEARNER'
+            ? heartbeatHelper.freeSecondsRemaining
+            : undefined
+        }
         onLeave={handleLeaveGroup}
       />
 

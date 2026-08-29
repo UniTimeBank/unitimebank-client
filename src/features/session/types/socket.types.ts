@@ -56,6 +56,9 @@ export interface HeartbeatAckEvent {
   tickId?: string;
   creditDeducted: number;
   newBalance?: number;
+  insufficientBalance?: boolean;
+  freeSecondsRemaining?: number;
+  totalCreditsCharged?: number;
   success?: boolean;
   error?: string;
 }

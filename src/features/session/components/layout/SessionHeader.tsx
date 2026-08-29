@@ -1,5 +1,5 @@
 import React from 'react';
-import { GraduationCap } from 'lucide-react';
+import { Clock3, Coins, GraduationCap } from 'lucide-react';
 import LogoImage from '@/assets/images/Logo.png';
 import { NotificationDropdown } from '@/features/notification';
 
@@ -11,18 +11,18 @@ interface SessionHeaderProps {
   userName?: string;
   participantCount?: number;
   currentBalance?: number;
+  freeSecondsRemaining?: number;
   onLeave?: () => void;
 }
 
 export const SessionHeader: React.FC<SessionHeaderProps> = ({
   title = 'Phòng học trực tuyến 1-1',
   roomType = 'ONE_ON_ONE',
-  isRecording = true,
   userAvatar,
   userName = 'Thành viên',
   participantCount,
   currentBalance,
-  onLeave,
+  freeSecondsRemaining,
 }) => {
   return (
     <header className="h-16 px-6 bg-white border-b border-slate-200/90 flex items-center justify-between shrink-0 select-none z-20">
@@ -45,6 +45,26 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
 
       {/* Right: Notification Bell Dropdown + Profile Avatar */}
       <div className="flex items-center gap-3 shrink-0">
+        {roomType === 'GROUP' && freeSecondsRemaining !== undefined && freeSecondsRemaining > 0 && (
+          <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+            <Clock3 className="h-3.5 w-3.5" />
+            Miễn phí {Math.ceil(freeSecondsRemaining / 60)} phút
+          </div>
+        )}
+
+        {roomType === 'GROUP' && currentBalance !== undefined && (
+          <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+            <Coins className="h-3.5 w-3.5" />
+            {currentBalance} Credit
+          </div>
+        )}
+
+        {roomType === 'GROUP' && participantCount !== undefined && (
+          <span className="hidden lg:inline text-xs font-medium text-slate-500">
+            {participantCount} người
+          </span>
+        )}
+
         {/* Real-time Notification Dropdown */}
         <NotificationDropdown />
 
