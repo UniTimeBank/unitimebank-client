@@ -40,7 +40,26 @@ export const formatLocalDate = (d: Date): string => {
  */
 export const formatDateVN = (dateInput?: string | Date): string => {
   if (!dateInput) return '';
-  const date = new Date(dateInput);
+  const date = parseUtcDate(dateInput);
   if (isNaN(date.getTime())) return '';
   return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
 };
+
+/**
+ * Chuyển đổi timestamp / ISO string / Date thành Date chính xác theo múi giờ địa phương
+ * Tự động gắn thêm Z nếu chuỗi từ backend (PostgreSQL) thiếu múi giờ UTC
+ */
+export const parseUtcDate = (dateInput?: string | Date | number): Date => {
+  if (!dateInput) return new Date();
+  if (dateInput instanceof Date) return dateInput;
+  if (typeof dateInput === 'number') return new Date(dateInput);
+  let str = String(dateInput).trim();
+  str = str.replace(' ', 'T');
+  // Nếu chuỗi ISO chưa có định danh múi giờ (+HH:MM, -HH:MM hoặc Z), gắn Z để parse chuẩn UTC
+  if (!str.endsWith('Z') && !/[+-]\d{2}(:\d{2})?$/.test(str)) {
+    str += 'Z';
+  }
+  const parsed = new Date(str);
+  return isNaN(parsed.getTime()) ? new Date(dateInput) : parsed;
+};
+

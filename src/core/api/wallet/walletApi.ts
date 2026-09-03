@@ -62,7 +62,7 @@ export const walletApi = baseApi.injectEndpoints({
     // 1. Lấy thông tin ví của user đang đăng nhập
     getMyWallet: builder.query<Wallet, void>({
       query: () => '/wallets/me',
-      providesTags: ['Wallet', 'User'],
+      providesTags: ['Wallet'],
     }),
 
     // 2. Lấy lịch sử giao dịch sổ cái
@@ -71,19 +71,19 @@ export const walletApi = baseApi.injectEndpoints({
         url: '/wallets/history',
         params: params || {},
       }),
-      providesTags: ['User'],
+      providesTags: ['Wallet'],
     }),
 
     // 3. Kiểm tra số dư vào phòng học
     checkBalance: builder.query<CheckBalanceResponse, void>({
       query: () => '/wallets/balance/check',
-      providesTags: ['User'],
+      providesTags: ['Wallet'],
     }),
 
     // 4. Lấy thông tin ví theo userId
     getWalletByUserId: builder.query<Wallet, string>({
       query: (userId) => `/wallets/${userId}`,
-      providesTags: ['User'],
+      providesTags: ['Wallet'],
     }),
   }),
 });

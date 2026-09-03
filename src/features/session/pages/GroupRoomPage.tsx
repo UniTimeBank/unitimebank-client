@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentUser } from '@/features/auth';
@@ -7,6 +7,7 @@ import {
   useJoinGroupRoomMutation,
   useLeaveGroupRoomMutation,
   useGetRoomChatMessagesQuery,
+  useGetGroupRoomStatsQuery,
 } from '@/core/api/session';
 import {
   useLiveKitRoom,
@@ -27,6 +28,7 @@ import {
   LiveCodeEditorModal,
   DeviceSettingsModal,
   SessionEndedModal,
+  GroupEscrowModal,
 } from '../components';
 import { Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { toast } from '@/shared/utils';
@@ -41,6 +43,17 @@ export const GroupRoomPage: React.FC = () => {
     useJoinGroupRoomMutation();
   const [leaveGroup] = useLeaveGroupRoomMutation();
 
+  const isHost = tokenData?.role === 'MENTOR';
+
+  // Thống kê quỹ tạm giữ dành cho Host (Cập nhật theo dữ liệu thực tế)
+  const {
+    data: roomStats,
+    isLoading: isLoadingStats,
+    refetch: refetchStats,
+  } = useGetGroupRoomStatsQuery(tokenData?.roomId || '', {
+    skip: !tokenData?.roomId || !isHost,
+  });
+
   const { data: initialMessages } = useGetRoomChatMessagesQuery(tokenData?.roomId || '', {
     skip: !tokenData?.roomId,
   });
@@ -48,12 +61,47 @@ export const GroupRoomPage: React.FC = () => {
   // Modals & States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEndedModalOpen, setIsEndedModalOpen] = useState(false);
+  const [isEscrowModalOpen, setIsEscrowModalOpen] = useState(false);
+
+  // Theo dõi số Credit đóng góp thời gian thực từ các học viên đang có mặt trong phòng
+  const [liveLearnerEscrows, setLiveLearnerEscrows] = useState<
+    Record<string, { activeSeconds: number; paidSeconds: number; credits: number }>
+  >({});
 
   const displayName =
     userProfile?.displayName ||
     authUser?.email?.split('@')[0] ||
     'Người học';
   const avatarUrl = userProfile?.avatarUrl;
+
+  const hostAccumulatedCredits = useMemo(() => {
+    if (!isHost) return 0;
+    const serverTotal = roomStats?.accumulatedCredits ?? 0;
+    const liveTotal = Object.values(liveLearnerEscrows).reduce((sum, item) => sum + item.credits, 0);
+    return Math.max(serverTotal, liveTotal);
+  }, [isHost, roomStats?.accumulatedCredits, liveLearnerEscrows]);
+
+  const mergedStats = useMemo(() => {
+    if (!roomStats) return null;
+    const learners = roomStats.learners.map((l) => {
+      const live = liveLearnerEscrows[l.userId];
+      if (live) {
+        return {
+          ...l,
+          activeSeconds: Math.max(l.activeSeconds, live.activeSeconds),
+          paidMinutes: Math.max(l.paidMinutes, Math.floor(live.paidSeconds / 60)),
+          creditsContributed: Math.max(l.creditsContributed, live.credits),
+        };
+      }
+      return l;
+    });
+
+    return {
+      ...roomStats,
+      accumulatedCredits: hostAccumulatedCredits,
+      learners,
+    };
+  }, [roomStats, liveLearnerEscrows, hostAccumulatedCredits]);
 
   // 1. Initial Join Group Room
   useEffect(() => {
@@ -145,8 +193,13 @@ export const GroupRoomPage: React.FC = () => {
     onCodeEditorUpdate: (data) => {
       handleRemoteEditorUpdate(data);
     },
-    onHeartbeatAck: (ack) => {
-      heartbeatHelper.handleHeartbeatAck(ack);
+    onEscrowMeteringUpdate: (data) => {
+      if (isHost) {
+        setLiveLearnerEscrows((prev) => ({
+          ...prev,
+          [data.userId]: data,
+        }));
+      }
     },
     onParticipantMuted: (evt) => {
       if (evt.userId === authUser?.id && evt.isMuted) {
@@ -162,13 +215,19 @@ export const GroupRoomPage: React.FC = () => {
     },
   });
 
-  // 7. Heartbeat Hook (60s tick for group rooms)
+  // 7. Session Billing Timer Hook (Optimistic Metering)
   const heartbeatHelper = useHeartbeat({
     roomId: tokenData?.roomId,
     isGroupRoom: true,
     isLearner: tokenData?.role === 'LEARNER',
-    onHeartbeat: () => {
-      socketHelper.sendHeartbeat();
+    initialBalance:
+      tokenData?.availableBalance ??
+      (authUser as any)?.wallet?.availableBalance ??
+      0,
+    initialActiveSeconds: tokenData?.activeSeconds ?? 0,
+    initialCreditsCharged: tokenData?.creditsCharged ?? 0,
+    onTick: (data) => {
+      socketHelper.sendMeteringTick(data.activeSeconds, data.paidSeconds, data.credits);
     },
     onInsufficientBalance: () => {
       disconnect();
@@ -237,6 +296,12 @@ export const GroupRoomPage: React.FC = () => {
         title="Phòng học nhóm trực tuyến"
         roomType="GROUP"
         participantCount={1 + remoteParticipants.length}
+        isHost={isHost}
+        hostAccumulatedCredits={hostAccumulatedCredits}
+        onOpenEscrowModal={() => {
+          refetchStats();
+          setIsEscrowModalOpen(true);
+        }}
         currentBalance={
           tokenData?.role === 'LEARNER'
             ? (heartbeatHelper.currentBalance ?? tokenData.availableBalance)
@@ -364,6 +429,15 @@ export const GroupRoomPage: React.FC = () => {
         isOpen={isEndedModalOpen}
         creditsTransferred={heartbeatHelper.totalCreditsCharged}
         isHost={tokenData?.role === 'MENTOR'}
+      />
+
+      {/* 8. Group Escrow & Participant Breakdown Modal (Host) */}
+      <GroupEscrowModal
+        isOpen={isEscrowModalOpen}
+        onClose={() => setIsEscrowModalOpen(false)}
+        stats={mergedStats}
+        isLoading={isLoadingStats}
+        onRefresh={refetchStats}
       />
     </div>
   );

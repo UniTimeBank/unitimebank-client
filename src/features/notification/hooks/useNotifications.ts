@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAppDispatch } from '@/shared/hooks';
+import { baseApi } from '@/core/api/baseApi';
 import {
   useGetMyNotificationsQuery,
   useGetUnreadCountQuery,
@@ -12,6 +14,7 @@ import { ROUTES } from '@/routes/paths';
 
 export const useNotifications = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [isOpen, setIsOpen] = useState(false);
   const [filterUnreadOnly, setFilterUnreadOnly] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -48,6 +51,7 @@ export const useNotifications = () => {
     const handleRealtimeNotification = () => {
       refetchUnread();
       refetchNotifs();
+      dispatch(baseApi.util.invalidateTags(['Wallet', 'User', 'Booking']));
     };
 
     socket.on('notification:new', handleRealtimeNotification);
@@ -57,7 +61,7 @@ export const useNotifications = () => {
       socket.off('notification:new', handleRealtimeNotification);
       socket.off('notification:update', handleRealtimeNotification);
     };
-  }, [refetchUnread, refetchNotifs]);
+  }, [refetchUnread, refetchNotifs, dispatch]);
 
   // Close dropdown on outside click
   useEffect(() => {

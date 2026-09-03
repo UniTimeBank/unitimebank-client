@@ -29,6 +29,10 @@ export interface LiveKitTokenResponse {
   escrowedCredit?: number;
   availableBalance?: number;
   canJoin: boolean;
+  freeSecondsRemaining?: number;
+  activeSeconds?: number;
+  paidSeconds?: number;
+  creditsCharged?: number;
 }
 
 export interface ActiveGroupRoomItem {
@@ -69,4 +73,29 @@ export interface InRoomChatMessage {
   senderAvatar?: string;
   attachmentUrl?: string;
   attachmentName?: string;
+}
+
+export interface GroupLearnerStat {
+  id: string;
+  userId: string;
+  role: ParticipantRole;
+  connectionStatus: ConnectionStatus;
+  joinedAt: string;
+  leftAt?: string | null;
+  activeSeconds: number;
+  freeSecondsRemaining: number;
+  paidMinutes: number;
+  creditsContributed: number;
+}
+
+export interface GroupRoomStatsResponse {
+  roomId: string;
+  title: string;
+  mentorId: string;
+  status: RoomStatus;
+  openedAt: string;
+  accumulatedCredits: number;
+  totalLearnersCount: number;
+  activeLearnersCount: number;
+  learners: GroupLearnerStat[];
 }

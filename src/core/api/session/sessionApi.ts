@@ -4,6 +4,7 @@ import type {
   CreateGroupRoomPayload,
   GetActiveGroupRoomsResponse,
   InRoomChatMessage,
+  GroupRoomStatsResponse,
 } from '@/features/session/types';
 
 export const sessionApi = baseApi.injectEndpoints({
@@ -34,28 +35,32 @@ export const sessionApi = baseApi.injectEndpoints({
 
     // 3. Đóng phòng học 1:1
     closeOneOnOneRoom: builder.mutation<
-      { roomId: string; status: string; closedAt: string; creditsTransferred: number },
+      { bookingId: string; status: string; completedAt: string },
       { bookingId: string; closeReason?: string }
     >({
       query: ({ bookingId, closeReason }) => ({
         url: `/rooms/one-on-one/${bookingId}/close`,
         method: 'POST',
-        body: { bookingId, closeReason },
+        body: { closeReason },
       }),
       invalidatesTags: (_result, _error, { bookingId }) => [
         { type: 'Booking', id: bookingId },
         { type: 'Booking', id: 'LIST' },
-        { type: 'Wallet', id: 'ME' },
+        'Wallet',
       ],
     }),
 
-    // 4. Tạo phòng học nhóm
-    createGroupRoom: builder.mutation<LiveKitTokenResponse, CreateGroupRoomPayload>({
-      query: (body) => ({
+    // 4. Tạo phòng học nhóm mới
+    createGroupRoom: builder.mutation<
+      { roomId: string; livekitRoomName: string; title: string },
+      CreateGroupRoomPayload
+    >({
+      query: (payload) => ({
         url: '/rooms/group',
         method: 'POST',
-        body,
+        body: payload,
       }),
+      invalidatesTags: ['Session'],
     }),
 
     // 5. Tham gia phòng học nhóm
@@ -64,18 +69,24 @@ export const sessionApi = baseApi.injectEndpoints({
         url: `/rooms/group/${roomId}/join`,
         method: 'POST',
       }),
+      invalidatesTags: ['Session'],
     }),
 
-    // 6. Rời phòng học nhóm
+    // 6. Học viên rời phòng học nhóm
     leaveGroupRoom: builder.mutation<
-      { roomId: string; leftAt: string; minutesParticipated: number; creditsCharged: number },
+      {
+        roomId: string;
+        leftAt: string;
+        minutesParticipated: number;
+        creditsCharged: number;
+      },
       string
     >({
       query: (roomId) => ({
         url: `/rooms/group/${roomId}/leave`,
         method: 'POST',
       }),
-      invalidatesTags: [{ type: 'Wallet', id: 'ME' }],
+      invalidatesTags: ['Session', 'Wallet'],
     }),
 
     // 7. Mentor đóng phòng học nhóm
@@ -84,6 +95,7 @@ export const sessionApi = baseApi.injectEndpoints({
         url: `/rooms/group/${roomId}/close`,
         method: 'POST',
       }),
+      invalidatesTags: ['Session', 'Wallet'],
     }),
 
     // 8. Lấy danh sách phòng nhóm đang mở
@@ -100,6 +112,7 @@ export const sessionApi = baseApi.injectEndpoints({
         const queryString = queryParams.toString();
         return `/rooms/group/active${queryString ? `?${queryString}` : ''}`;
       },
+      providesTags: ['Session'],
     }),
 
     // 9. Lấy lịch sử các phòng nhóm đã kết thúc
@@ -116,12 +129,18 @@ export const sessionApi = baseApi.injectEndpoints({
       },
     }),
 
-    // 10. Lấy lịch sử chat trong phòng
+    // 10. Lấy thống kê quỹ tạm giữ và chi tiết học viên (Dành cho Host)
+    getGroupRoomStats: builder.query<GroupRoomStatsResponse, string>({
+      query: (roomId) => `/rooms/group/${roomId}/stats`,
+      providesTags: ['Session'],
+    }),
+
+    // 11. Lấy lịch sử chat trong phòng
     getRoomChatMessages: builder.query<InRoomChatMessage[], string>({
       query: (roomId) => `/rooms/${roomId}/chat`,
     }),
 
-    // 11. Gửi tin nhắn chat trong phòng qua HTTP REST (fallback)
+    // 12. Gửi tin nhắn chat trong phòng qua HTTP REST (fallback)
     sendRoomChatMessage: builder.mutation<InRoomChatMessage, { roomId: string; content: string }>({
       query: ({ roomId, content }) => ({
         url: `/rooms/${roomId}/chat`,
@@ -130,7 +149,7 @@ export const sessionApi = baseApi.injectEndpoints({
       }),
     }),
 
-    // 12. Mute thành viên (Host)
+    // 13. Mute thành viên (Host)
     muteParticipant: builder.mutation<
       { participantId: string; userId: string; isMuted: boolean },
       { roomId: string; participantId: string; isMuted?: boolean }
@@ -142,7 +161,7 @@ export const sessionApi = baseApi.injectEndpoints({
       }),
     }),
 
-    // 13. Kick thành viên (Host)
+    // 14. Kick thành viên (Host)
     kickParticipant: builder.mutation<
       { participantId: string; userId: string; isKicked: boolean },
       { roomId: string; participantId: string; reason?: string }
@@ -166,6 +185,7 @@ export const {
   useCloseGroupRoomMutation,
   useGetActiveGroupRoomsQuery,
   useGetGroupRoomsHistoryQuery,
+  useGetGroupRoomStatsQuery,
   useGetRoomChatMessagesQuery,
   useSendRoomChatMessageMutation,
   useMuteParticipantMutation,

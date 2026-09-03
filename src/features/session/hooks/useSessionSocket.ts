@@ -21,6 +21,12 @@ export interface UseSessionSocketProps {
   onParticipantMuted?: (evt: ParticipantMutedEvent) => void;
   onParticipantKicked?: (evt: ParticipantKickedEvent) => void;
   onHeartbeatAck?: (ack: HeartbeatAckEvent) => void;
+  onEscrowMeteringUpdate?: (data: {
+    userId: string;
+    activeSeconds: number;
+    paidSeconds: number;
+    credits: number;
+  }) => void;
 }
 
 export const useSessionSocket = ({
@@ -35,6 +41,7 @@ export const useSessionSocket = ({
   onParticipantMuted,
   onParticipantKicked,
   onHeartbeatAck,
+  onEscrowMeteringUpdate,
 }: UseSessionSocketProps) => {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -48,6 +55,7 @@ export const useSessionSocket = ({
     onParticipantMuted,
     onParticipantKicked,
     onHeartbeatAck,
+    onEscrowMeteringUpdate,
   });
 
   useEffect(() => {
@@ -59,6 +67,7 @@ export const useSessionSocket = ({
       onParticipantMuted,
       onParticipantKicked,
       onHeartbeatAck,
+      onEscrowMeteringUpdate,
     };
   });
 
@@ -134,6 +143,19 @@ export const useSessionSocket = ({
       callbacksRef.current.onParticipantKicked?.(evt);
     });
 
+    // Escrow Metering Sync
+    socket.on(
+      'escrow-metering-update',
+      (data: {
+        userId: string;
+        activeSeconds: number;
+        paidSeconds: number;
+        credits: number;
+      }) => {
+        callbacksRef.current.onEscrowMeteringUpdate?.(data);
+      },
+    );
+
     // Heartbeat ack
     socket.on('heartbeat-ack', (ack: HeartbeatAckEvent) => {
       callbacksRef.current.onHeartbeatAck?.(ack);
@@ -155,6 +177,21 @@ export const useSessionSocket = ({
       socketRef.current.emit('note-update', { roomId, content });
     },
     [roomId],
+  );
+
+  // Send metering tick to sync escrow in real-time
+  const sendMeteringTick = useCallback(
+    (activeSeconds: number, paidSeconds: number, credits: number) => {
+      if (!socketRef.current || !roomId) return;
+      socketRef.current.emit('metering-tick', {
+        roomId,
+        userId,
+        activeSeconds,
+        paidSeconds,
+        credits,
+      });
+    },
+    [roomId, userId],
   );
 
   // Send message
@@ -246,6 +283,7 @@ export const useSessionSocket = ({
     sendWhiteboardDraw,
     sendCodeEditorChange,
     sendHeartbeat,
+    sendMeteringTick,
     muteParticipant,
     kickParticipant,
   };

@@ -14,6 +14,9 @@ interface SessionHeaderProps {
   freeSecondsRemaining?: number;
   paidSeconds?: number;
   totalCreditsCharged?: number;
+  isHost?: boolean;
+  hostAccumulatedCredits?: number;
+  onOpenEscrowModal?: () => void;
   onLeave?: () => void;
 }
 
@@ -27,6 +30,9 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
   freeSecondsRemaining,
   paidSeconds = 0,
   totalCreditsCharged = 0,
+  isHost = false,
+  hostAccumulatedCredits = 0,
+  onOpenEscrowModal,
 }) => {
   return (
     <header className="h-16 px-6 bg-white border-b border-slate-200/90 flex items-center justify-between shrink-0 select-none z-20">
@@ -49,7 +55,22 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
 
       {/* Right: Notification Bell Dropdown + Profile Avatar */}
       <div className="flex items-center gap-3 shrink-0">
-        {roomType === 'GROUP' && freeSecondsRemaining !== undefined && (
+        {/* Host Escrow Earnings Badge */}
+        {roomType === 'GROUP' && isHost && (
+          <button
+            onClick={onOpenEscrowModal}
+            className="flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100/80 transition-colors cursor-pointer"
+            title="Nhấn để xem chi tiết danh sách học viên đóng góp"
+          >
+            <Coins className="h-3.5 w-3.5 text-amber-600" />
+            <span>
+              Tạm giữ: <strong className="font-bold text-amber-900">+{hostAccumulatedCredits} Credit</strong>
+            </span>
+          </button>
+        )}
+
+        {/* Learner Free / Paid Metering Badges */}
+        {roomType === 'GROUP' && !isHost && freeSecondsRemaining !== undefined && (
           freeSecondsRemaining > 0 ? (
             <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 shadow-2xs">
               <Clock3 className="h-3.5 w-3.5 text-emerald-600 shrink-0 animate-pulse" />
@@ -68,7 +89,8 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
           )
         )}
 
-        {roomType === 'GROUP' && currentBalance !== undefined && (
+        {/* Learner Available Balance Badge */}
+        {roomType === 'GROUP' && !isHost && currentBalance !== undefined && (
           <div className="hidden sm:flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
             <Coins className="h-3.5 w-3.5" />
             {currentBalance} Credit
