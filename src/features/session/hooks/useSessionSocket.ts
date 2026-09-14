@@ -21,6 +21,17 @@ export interface UseSessionSocketProps {
   onParticipantMuted?: (evt: ParticipantMutedEvent) => void;
   onParticipantKicked?: (evt: ParticipantKickedEvent) => void;
   onHeartbeatAck?: (ack: HeartbeatAckEvent) => void;
+  onHostPresenceChanged?: (data: {
+    isHostPresent: boolean;
+    roomId?: string;
+    absentSince?: string;
+    killCountdownSeconds?: number;
+  }) => void;
+  onRoomClosed?: (data: {
+    roomId?: string;
+    reason?: string;
+    message?: string;
+  }) => void;
   onEscrowMeteringUpdate?: (data: {
     userId: string;
     activeSeconds: number;
@@ -41,6 +52,8 @@ export const useSessionSocket = ({
   onParticipantMuted,
   onParticipantKicked,
   onHeartbeatAck,
+  onHostPresenceChanged,
+  onRoomClosed,
   onEscrowMeteringUpdate,
 }: UseSessionSocketProps) => {
   const socketRef = useRef<Socket | null>(null);
@@ -55,6 +68,8 @@ export const useSessionSocket = ({
     onParticipantMuted,
     onParticipantKicked,
     onHeartbeatAck,
+    onHostPresenceChanged,
+    onRoomClosed,
     onEscrowMeteringUpdate,
   });
 
@@ -67,6 +82,8 @@ export const useSessionSocket = ({
       onParticipantMuted,
       onParticipantKicked,
       onHeartbeatAck,
+      onHostPresenceChanged,
+      onRoomClosed,
       onEscrowMeteringUpdate,
     };
   });
@@ -161,7 +178,39 @@ export const useSessionSocket = ({
       callbacksRef.current.onHeartbeatAck?.(ack);
     });
 
+    // Host presence changed (freeze or unfreeze group room)
+    socket.on('host-presence-changed', (data: {
+      isHostPresent: boolean;
+      roomId?: string;
+      absentSince?: string;
+      killCountdownSeconds?: number;
+    }) => {
+      callbacksRef.current.onHostPresenceChanged?.(data);
+    });
+
+    // Room closed / killed by system (e.g. host absent timeout)
+    socket.on('room-closed', (data: {
+      roomId?: string;
+      reason?: string;
+      message?: string;
+    }) => {
+      callbacksRef.current.onRoomClosed?.(data);
+    });
+
+    // Nếu người tham gia là Mentor (Host), định kỳ gửi heartbeat mỗi 25 giây để duy trì trạng thái ONLINE trên Backend
+    let mentorHeartbeatInterval: any = null;
+    if (role === 'MENTOR') {
+      mentorHeartbeatInterval = setInterval(() => {
+        if (socket.connected) {
+          socket.emit('heartbeat', { roomId, userId });
+        }
+      }, 25000);
+    }
+
     return () => {
+      if (mentorHeartbeatInterval) {
+        clearInterval(mentorHeartbeatInterval);
+      }
       if (socket.connected) {
         socket.emit('leave-room', { roomId, userId });
       }

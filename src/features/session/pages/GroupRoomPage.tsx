@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentUser } from '@/features/auth';
@@ -14,7 +14,6 @@ import {
   useSessionSocket,
   useInRoomChat,
   useWhiteboard,
-  useCodeEditor,
   useHeartbeat,
 } from '../hooks';
 import type { InRoomChatMessage } from '../types';
@@ -25,12 +24,11 @@ import {
   ScreenShareView,
   InRoomChatPanel,
   WhiteboardModal,
-  LiveCodeEditorModal,
   DeviceSettingsModal,
   SessionEndedModal,
   GroupEscrowModal,
 } from '../components';
-import { Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Loader2, AlertTriangle, ArrowLeft, PauseCircle, Clock } from 'lucide-react';
 import { toast } from '@/shared/utils';
 
 export const GroupRoomPage: React.FC = () => {
@@ -62,6 +60,12 @@ export const GroupRoomPage: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEndedModalOpen, setIsEndedModalOpen] = useState(false);
   const [isEscrowModalOpen, setIsEscrowModalOpen] = useState(false);
+
+  // Trạng thái hiện diện của Chủ phòng (Host) & Đóng băng phòng
+  const [socketHostPresent, setSocketHostPresent] = useState<boolean | null>(null);
+  const [hostAbsentSecondsRemaining, setHostAbsentSecondsRemaining] = useState<number>(300);
+  const [roomEndReason, setRoomEndReason] = useState<{ title?: string; description?: string } | null>(null);
+  const hostDisconnectedAtRef = useRef<number | null>(null);
 
   // Theo dõi số Credit đóng góp thời gian thực từ các học viên đang có mặt trong phòng
   const [liveLearnerEscrows, setLiveLearnerEscrows] = useState<
@@ -114,6 +118,23 @@ export const GroupRoomPage: React.FC = () => {
     }
   }, [roomId, joinGroup]);
 
+  // Đồng bộ trạng thái hiện diện và đồng hồ đếm ngược phòng từ backend khi load xong tokenData
+  useEffect(() => {
+    if (tokenData && !isHost) {
+      if (tokenData.isHostPresent !== undefined) {
+        setSocketHostPresent(tokenData.isHostPresent);
+      }
+      if (tokenData.hostDisconnectedAt) {
+        const absentMs = new Date(tokenData.hostDisconnectedAt).getTime();
+        hostDisconnectedAtRef.current = absentMs;
+        const elapsed = Math.floor((Date.now() - absentMs) / 1000);
+        setHostAbsentSecondsRemaining(Math.max(0, 300 - elapsed));
+      } else if (tokenData.hostAbsentSecondsRemaining !== undefined) {
+        setHostAbsentSecondsRemaining(tokenData.hostAbsentSecondsRemaining);
+      }
+    }
+  }, [tokenData, isHost]);
+
   // 2. WebRTC LiveKit
   // 3. In-Room Chat
   const {
@@ -165,20 +186,7 @@ export const GroupRoomPage: React.FC = () => {
     socketHelper.sendWhiteboardDraw(payload);
   });
 
-  // 5. Code Editor
-  const {
-    code: editorCode,
-    language: editorLanguage,
-    isEditorOpen,
-    setIsEditorOpen,
-    updateCode: updateEditorCode,
-    updateLanguage: updateEditorLanguage,
-    handleRemoteUpdate: handleRemoteEditorUpdate,
-  } = useCodeEditor((payload) => {
-    socketHelper.sendCodeEditorChange(payload.code, payload.language);
-  });
-
-  // 6. Socket.IO Real-time Helper
+  // 5. Socket.IO Real-time Helper
   const socketHelper = useSessionSocket({
     roomId: tokenData?.roomId,
     userId: authUser?.id,
@@ -189,9 +197,6 @@ export const GroupRoomPage: React.FC = () => {
     },
     onWhiteboardUpdate: (data) => {
       handleRemoteWhiteboardUpdate(data);
-    },
-    onCodeEditorUpdate: (data) => {
-      handleRemoteEditorUpdate(data);
     },
     onEscrowMeteringUpdate: (data) => {
       if (isHost) {
@@ -213,13 +218,97 @@ export const GroupRoomPage: React.FC = () => {
         navigate('/rooms/group');
       }
     },
+    onHostPresenceChanged: (evt) => {
+      setSocketHostPresent(evt.isHostPresent);
+      if (evt.isHostPresent) {
+        toast.success('Chủ phòng đã trở lại! Buổi học tiếp tục.');
+        hostDisconnectedAtRef.current = null;
+        setHostAbsentSecondsRemaining(300);
+      } else {
+        toast.warning(
+          'Chủ phòng tạm vắng mặt',
+          'Thời gian tính phí đã tạm dừng. Phòng sẽ tự đóng sau 5 phút nếu chủ phòng không quay lại.',
+        );
+        if (evt.absentSince) {
+          const absentMs = new Date(evt.absentSince).getTime();
+          hostDisconnectedAtRef.current = absentMs;
+          const elapsed = Math.floor((Date.now() - absentMs) / 1000);
+          setHostAbsentSecondsRemaining(Math.max(0, 300 - elapsed));
+        } else if (evt.killCountdownSeconds) {
+          hostDisconnectedAtRef.current = Date.now() - (300 - evt.killCountdownSeconds) * 1000;
+          setHostAbsentSecondsRemaining(evt.killCountdownSeconds);
+        } else {
+          hostDisconnectedAtRef.current = Date.now();
+          setHostAbsentSecondsRemaining(300);
+        }
+      }
+    },
+    onRoomClosed: (evt) => {
+      setRoomEndReason({
+        title: 'Phòng học đã kết thúc',
+        description: evt.message || 'Phòng học nhóm đã tự động đóng do chủ phòng vắng mặt quá 5 phút.',
+      });
+      disconnect();
+      setIsEndedModalOpen(true);
+    },
   });
 
+  // Kiểm tra sự hiện diện của Chủ phòng (Mentor)
+  const isHostPresent = useMemo(() => {
+    if (isHost) return true;
+    if (!tokenData) return true;
+
+    // 1. Socket presence là nguồn sự kiện cập nhật thời gian thực
+    if (socketHostPresent !== null) {
+      return socketHostPresent;
+    }
+
+    // 2. Dữ liệu từ session API khi vừa join phòng
+    if (tokenData.isHostPresent !== undefined) {
+      return tokenData.isHostPresent;
+    }
+
+    // 3. Mặc định là true khi đang kết nối, không tự ý hiện banner vắng mặt
+    return true;
+  }, [isHost, tokenData, socketHostPresent]);
+
+  // Bộ đếm ngược 5 phút (300 giây) tự động giải tán phòng khi Host vắng mặt
+  useEffect(() => {
+    if (isHost || isHostPresent) return;
+
+    const timer = setInterval(() => {
+      setHostAbsentSecondsRemaining((prev) => {
+        let remaining = prev - 1;
+        if (hostDisconnectedAtRef.current) {
+          const elapsed = Math.floor((Date.now() - hostDisconnectedAtRef.current) / 1000);
+          remaining = Math.max(0, 300 - elapsed);
+        }
+
+        if (remaining <= 0) {
+          clearInterval(timer);
+          setRoomEndReason({
+            title: 'Phòng học nhóm đã kết thúc',
+            description:
+              'Chủ phòng (Mentor) đã vắng mặt quá 5 phút. Buổi học đã tự động đóng để đảm bảo quyền lợi và không trừ credit của bạn.',
+          });
+          disconnect();
+          setIsEndedModalOpen(true);
+          return 0;
+        }
+        return remaining;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isHost, isHostPresent, disconnect]);
+
   // 7. Session Billing Timer Hook (Optimistic Metering)
+  // Khi isHostPresent = false, đồng hồ ĐÓNG BĂNG, không tăng giây và không trừ credit
   const heartbeatHelper = useHeartbeat({
     roomId: tokenData?.roomId,
     isGroupRoom: true,
     isLearner: tokenData?.role === 'LEARNER',
+    isFrozen: !isHostPresent,
     initialBalance:
       tokenData?.availableBalance ??
       (authUser as any)?.wallet?.availableBalance ??
@@ -325,6 +414,51 @@ export const GroupRoomPage: React.FC = () => {
         onLeave={handleLeaveGroup}
       />
 
+      {/* Banner Đóng băng thời gian khi Chủ phòng vắng mặt */}
+      {!isHost && !isHostPresent && (
+        <div className="w-full bg-amber-50/90 border-b border-amber-200/90 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs shrink-0 select-none z-20 transition-all">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-700 shrink-0">
+              <PauseCircle className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-800 text-xs sm:text-sm">Thời gian đang tạm dừng</span>
+                <span className="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 text-[11px] font-semibold text-amber-800">
+                  Tạm dừng tính phí
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-600 mt-0.5">
+                Chủ phòng (Mentor) đang tạm vắng mặt. Hệ thống không trừ credit của bạn trong thời gian này.
+              </p>
+            </div>
+          </div>
+
+          <div
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border shadow-2xs transition-colors shrink-0 ${
+              hostAbsentSecondsRemaining <= 60
+                ? 'bg-rose-50 border-rose-200 text-rose-700'
+                : 'bg-white border-amber-200 text-slate-700'
+            }`}
+          >
+            <Clock
+              className={`w-3.5 h-3.5 shrink-0 ${
+                hostAbsentSecondsRemaining <= 60 ? 'text-rose-600 animate-pulse' : 'text-amber-600'
+              }`}
+            />
+            <span className="text-xs font-medium">Tự động hủy phòng sau:</span>
+            <span
+              className={`font-mono text-xs font-bold tracking-wide ${
+                hostAbsentSecondsRemaining <= 60 ? 'text-rose-700' : 'text-amber-800'
+              }`}
+            >
+              {String(Math.floor(hostAbsentSecondsRemaining / 60)).padStart(2, '0')}:
+              {String(hostAbsentSecondsRemaining % 60).padStart(2, '0')}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* 2. Main Content Area */}
       <main className="flex-1 relative flex overflow-hidden">
         <div className="flex-1 relative h-full flex flex-col items-center justify-center p-2 pb-24 md:pb-28">
@@ -380,14 +514,12 @@ export const GroupRoomPage: React.FC = () => {
         isScreenSharing={isScreenSharing}
         isChatOpen={isChatOpen}
         isWhiteboardOpen={isWhiteboardOpen}
-        isEditorOpen={isEditorOpen}
         unreadCount={unreadCount}
         onToggleMic={toggleMicrophone}
         onToggleCamera={toggleCamera}
         onToggleScreenShare={toggleScreenShare}
         onToggleChat={toggleChat}
         onToggleWhiteboard={() => setIsWhiteboardOpen((prev) => !prev)}
-        onToggleEditor={() => setIsEditorOpen((prev) => !prev)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onLeave={handleLeaveGroup}
       />
@@ -408,17 +540,7 @@ export const GroupRoomPage: React.FC = () => {
         onUndo={undoWhiteboard}
       />
 
-      {/* 5. Live Code Editor Modal */}
-      <LiveCodeEditorModal
-        isOpen={isEditorOpen}
-        code={editorCode}
-        language={editorLanguage}
-        onClose={() => setIsEditorOpen(false)}
-        onCodeChange={updateEditorCode}
-        onLanguageChange={updateEditorLanguage}
-      />
-
-      {/* 6. Settings Modal */}
+      {/* 5. Settings Modal */}
       <DeviceSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -429,6 +551,8 @@ export const GroupRoomPage: React.FC = () => {
         isOpen={isEndedModalOpen}
         creditsTransferred={heartbeatHelper.totalCreditsCharged}
         isHost={tokenData?.role === 'MENTOR'}
+        title={roomEndReason?.title}
+        description={roomEndReason?.description}
       />
 
       {/* 8. Group Escrow & Participant Breakdown Modal (Host) */}

@@ -6,7 +6,6 @@ import {
   VideoOff,
   Monitor,
   PenTool,
-  Code,
   MessageSquare,
   Settings,
   PhoneOff,
@@ -18,14 +17,14 @@ interface SessionControlsBarProps {
   isScreenSharing: boolean;
   isChatOpen: boolean;
   isWhiteboardOpen: boolean;
-  isEditorOpen: boolean;
+  isEditorOpen?: boolean;
   unreadCount?: number;
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleScreenShare: () => void;
   onToggleChat: () => void;
   onToggleWhiteboard: () => void;
-  onToggleEditor: () => void;
+  onToggleEditor?: () => void;
   onOpenSettings?: () => void;
   onLeave: () => void;
 }
@@ -101,19 +100,6 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
         title="Bảng vẽ trực tuyến (Whiteboard)"
       >
         <PenTool className="w-5 h-5" />
-      </button>
-
-      {/* Code Editor */}
-      <button
-        onClick={onToggleEditor}
-        className={`p-3 rounded-xl transition-all shadow-xs flex items-center justify-center cursor-pointer ${
-          isEditorOpen
-            ? 'bg-primary-700 text-white shadow-primary-700/20'
-            : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60'
-        }`}
-        title="Trình soạn code trực tiếp (Code Editor)"
-      >
-        <Code className="w-5 h-5" />
       </button>
 
       {/* Chat Toggle with Unread Badge */}

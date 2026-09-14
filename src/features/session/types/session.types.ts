@@ -33,6 +33,9 @@ export interface LiveKitTokenResponse {
   activeSeconds?: number;
   paidSeconds?: number;
   creditsCharged?: number;
+  isHostPresent?: boolean;
+  hostDisconnectedAt?: string | null;
+  hostAbsentSecondsRemaining?: number;
 }
 
 export interface ActiveGroupRoomItem {

@@ -12,6 +12,8 @@ interface SessionEndedModalProps {
   mentorId?: string;
   mentorName?: string;
   mentorAvatar?: string;
+  title?: string;
+  description?: string;
 }
 
 export const SessionEndedModal: React.FC<SessionEndedModalProps> = ({
@@ -23,6 +25,8 @@ export const SessionEndedModal: React.FC<SessionEndedModalProps> = ({
   mentorId,
   mentorName,
   mentorAvatar,
+  title,
+  description,
 }) => {
   const navigate = useNavigate();
   const [isRatingOpen, setIsRatingOpen] = useState(false);
@@ -37,9 +41,9 @@ export const SessionEndedModal: React.FC<SessionEndedModalProps> = ({
             <CheckCircle2 className="w-8 h-8" />
           </div>
 
-          <h3 className="text-xl font-bold text-slate-100">Buổi học đã kết thúc!</h3>
+          <h3 className="text-xl font-bold text-slate-100">{title || 'Buổi học đã kết thúc!'}</h3>
           <p className="text-sm text-slate-400 mt-2">
-            Cảm ơn bạn đã tham gia buổi học và chia sẻ tri thức cùng cộng đồng UniTimeBank.
+            {description || 'Cảm ơn bạn đã tham gia buổi học và chia sẻ tri thức cùng cộng đồng UniTimeBank.'}
           </p>
 
           {/* Stats */}

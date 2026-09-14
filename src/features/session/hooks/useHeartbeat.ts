@@ -8,6 +8,7 @@ export interface UseHeartbeatProps {
   initialBalance?: number;
   initialActiveSeconds?: number;
   initialCreditsCharged?: number;
+  isFrozen?: boolean;
   onInsufficientBalance?: () => void;
   onTick?: (data: { activeSeconds: number; paidSeconds: number; credits: number }) => void;
 }
@@ -19,6 +20,7 @@ export const useHeartbeat = ({
   initialBalance,
   initialActiveSeconds = 0,
   initialCreditsCharged = 0,
+  isFrozen = false,
   onInsufficientBalance,
   onTick,
 }: UseHeartbeatProps) => {
@@ -43,6 +45,16 @@ export const useHeartbeat = ({
     initialBalance !== undefined ? initialBalance : null,
   );
 
+  const isFrozenRef = useRef(isFrozen);
+  useEffect(() => {
+    isFrozenRef.current = isFrozen;
+  }, [isFrozen]);
+
+  const activeSecondsRef = useRef(initialActiveSeconds);
+  useEffect(() => {
+    activeSecondsRef.current = initialActiveSeconds;
+  }, [initialActiveSeconds]);
+
   useEffect(() => {
     onInsufficientBalanceRef.current = onInsufficientBalance;
     onTickRef.current = onTick;
@@ -58,15 +70,17 @@ export const useHeartbeat = ({
   useEffect(() => {
     if (!roomId || !isGroupRoom || !isLearner) return;
 
-    const startTimestamp = Date.now();
-    const baseActiveSeconds = initialActiveSeconds;
     const baseCreditsCharged = initialCreditsCharged;
 
-    // Chu kỳ 1 giây đo lường thời gian thực dựa trên Date.now() và kế thừa baseActiveSeconds từ Backend
-    // Hoàn toàn chạy mượt mà tại Frontend, không spam Socket request mỗi phút
+    // Chu kỳ 1 giây đo lường thời gian thực
+    // Khi isFrozen=true (Chủ phòng vắng mặt), thời gian dừng lại, KHÔNG cộng dồn giây và KHÔNG trừ credit
     const countdownInterval = setInterval(() => {
-      const elapsedInSession = Math.floor((Date.now() - startTimestamp) / 1000);
-      const totalActiveSeconds = baseActiveSeconds + elapsedInSession;
+      if (isFrozenRef.current) {
+        return;
+      }
+
+      activeSecondsRef.current += 1;
+      const totalActiveSeconds = activeSecondsRef.current;
 
       const freeRemaining = Math.max(0, FREE_LIMIT - totalActiveSeconds);
       const paid = Math.max(0, totalActiveSeconds - FREE_LIMIT);
@@ -107,12 +121,13 @@ export const useHeartbeat = ({
     return () => {
       clearInterval(countdownInterval);
     };
-  }, [roomId, isGroupRoom, isLearner, initialActiveSeconds, initialCreditsCharged]);
+  }, [roomId, isGroupRoom, isLearner, initialCreditsCharged]);
 
   return {
     currentBalance,
     totalCreditsCharged,
     freeSecondsRemaining,
     paidSeconds,
+    isFrozen,
   };
 };
