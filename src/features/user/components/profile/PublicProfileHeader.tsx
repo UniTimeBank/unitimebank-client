@@ -23,17 +23,25 @@ export const PublicProfileHeader: React.FC<PublicProfileHeaderProps> = ({
   onToggleLike,
   persona = 'MENTOR',
 }) => {
+  const [avatarError, setAvatarError] = React.useState(false);
   const isMentor = persona === 'MENTOR';
   return (
     <div className="bg-white rounded-3xl p-6 sm:p-7 border border-primary-100/80 shadow-xs relative space-y-6">
       <div className="flex flex-col md:flex-row items-start gap-6">
         {/* Avatar Standalone */}
         <div className="relative flex-shrink-0">
-          <img
-            src={avatarUrl}
-            alt={userName}
-            className="w-22 h-22 sm:w-24 sm:h-24 rounded-3xl object-cover ring-4 ring-primary-50 shadow-xs"
-          />
+          {avatarUrl && !avatarError ? (
+            <img
+              src={avatarUrl}
+              alt={userName}
+              onError={() => setAvatarError(true)}
+              className="w-22 h-22 sm:w-24 sm:h-24 rounded-3xl object-cover ring-4 ring-primary-50 shadow-xs"
+            />
+          ) : (
+            <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-br from-primary-600 to-primary-800 text-white font-black text-3xl flex items-center justify-center ring-4 ring-primary-50 shadow-xs select-none">
+              {(userName || 'U').charAt(0).toUpperCase()}
+            </div>
+          )}
         </div>
 
         <div className="flex-1 min-w-0">

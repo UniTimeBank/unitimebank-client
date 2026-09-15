@@ -15,7 +15,14 @@ export interface UserProfile {
   avatarUrl?: string;
   bio?: string;
   trustScore: number;
+  mentorTrustScore?: number;
+  learnerTrustScore?: number;
   trustTier?: 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'WARNING' | 'LOCKED';
+  mentorTier?: 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'WARNING' | 'LOCKED';
+  learnerTier?: 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'WARNING' | 'LOCKED';
+  totalTeachingMinutes?: number;
+  totalLearningMinutes?: number;
+  totalSessionsCompleted?: number;
   onboardingCompleted?: boolean;
   skills?: UserSkill[];
   stats?: UserStats;

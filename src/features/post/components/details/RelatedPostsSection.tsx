@@ -62,7 +62,7 @@ export const RelatedPostsSection: React.FC<RelatedPostsSectionProps> = ({
       <div className="flex items-center justify-between">
         <h3 className="text-sm sm:text-base font-bold text-gray-900">{title}</h3>
         <Link
-          to="/explore"
+          to="/posts/all"
           className="inline-flex items-center gap-1 text-xs font-bold text-primary-600 hover:text-primary-700 transition-colors"
         >
           <span>Xem tất cả</span>

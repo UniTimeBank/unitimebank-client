@@ -139,6 +139,8 @@ export const CreateGroupRoomModal: React.FC<CreateGroupRoomModalProps> = ({
       const res = await createRoom({
         title: title.trim(),
         category: selectedCategory,
+        skills: selectedSkill ? [selectedSkill] : [],
+        coverImage: selectedCoverImage || undefined,
         maxParticipants: isUnlimited ? 100 : maxParticipants,
       }).unwrap();
 

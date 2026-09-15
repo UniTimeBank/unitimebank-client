@@ -27,6 +27,47 @@ const BG_COLORS = [
   'bg-purple-100 text-purple-800',
 ];
 
+interface ReviewAvatarProps {
+  src?: string;
+  name: string;
+  bgClass: string;
+}
+
+const ReviewAvatar: React.FC<ReviewAvatarProps> = ({ src, name, bgClass }) => {
+  const [hasError, setHasError] = React.useState(false);
+
+  React.useEffect(() => {
+    setHasError(false);
+  }, [src]);
+
+  const initials = React.useMemo(() => {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.trim().slice(0, 2).toUpperCase() || 'U';
+  }, [name]);
+
+  if (src && src.trim() !== '' && !hasError) {
+    return (
+      <img
+        src={src}
+        alt={name}
+        onError={() => setHasError(true)}
+        className="w-7 h-7 rounded-full object-cover border border-gray-200 shrink-0"
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-[10px] ${bgClass} shrink-0 border border-black/5 select-none shadow-2xs`}
+    >
+      {initials}
+    </div>
+  );
+};
+
 export const PeerReviewsSection: React.FC<PeerReviewsSectionProps> = ({
   userId,
   reviews: externalReviews,
@@ -101,17 +142,11 @@ export const PeerReviewsSection: React.FC<PeerReviewsSectionProps> = ({
             <div key={rev.id} className="border-b border-gray-50 last:border-0 pb-4 last:pb-0">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2.5">
-                  {rev.avatarUrl ? (
-                    <img
-                      src={rev.avatarUrl}
-                      alt={rev.author}
-                      className="w-7 h-7 rounded-full object-cover border border-gray-200 shrink-0"
-                    />
-                  ) : (
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${rev.avatarBg} shrink-0`}>
-                      {rev.initials}
-                    </div>
-                  )}
+                  <ReviewAvatar
+                    src={rev.avatarUrl}
+                    name={rev.author}
+                    bgClass={rev.avatarBg}
+                  />
                   <div>
                     <span className="text-xs font-bold text-gray-900 block">{rev.author}</span>
                     {rev.stars && (

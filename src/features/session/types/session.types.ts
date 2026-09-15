@@ -43,12 +43,16 @@ export interface ActiveGroupRoomItem {
   mentorId: string;
   title: string;
   category?: string;
+  skills?: string[];
   currentParticipants: number;
   openedAt: string;
   status: RoomStatus;
   maxParticipants?: number;
   coverImage?: string;
   mentorName?: string;
+  mentorAvatar?: string;
+  mentorTitle?: string;
+  mentorTrustScore?: number;
   participantUserIds?: string[];
 }
 
@@ -62,6 +66,8 @@ export interface GetActiveGroupRoomsResponse {
 export interface CreateGroupRoomPayload {
   title: string;
   category?: string;
+  skills?: string[];
+  coverImage?: string;
   maxParticipants?: number;
   postId?: string;
 }

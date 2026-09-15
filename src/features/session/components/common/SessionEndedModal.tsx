@@ -59,9 +59,11 @@ export const SessionEndedModal: React.FC<SessionEndedModalProps> = ({
             <div className="bg-slate-950/70 border border-slate-800/80 p-3.5 rounded-2xl">
               <div className="flex items-center justify-center gap-1.5 text-slate-400 text-xs mb-1">
                 <Coins className="w-3.5 h-3.5 text-amber-400" />
-                <span>{isHost ? 'Credits nhận được' : 'Credits giải ngân'}</span>
+                <span>{isHost ? 'Credits nhận được' : 'Credits đã sử dụng'}</span>
               </div>
-              <p className="text-base font-bold text-emerald-400">+{creditsTransferred} Credits</p>
+              <p className={`text-base font-bold ${isHost ? 'text-emerald-400' : creditsTransferred > 0 ? 'text-rose-400' : 'text-slate-200'}`}>
+                {isHost ? `+${creditsTransferred}` : creditsTransferred > 0 ? `-${creditsTransferred}` : '0'} Credits
+              </p>
             </div>
           </div>
 

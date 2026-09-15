@@ -57,6 +57,7 @@ export const UserProfilePage: React.FC = () => {
   const [isCreditTasksOpen, setIsCreditTasksOpen] = useState(false);
   const [isTrustScoreModalOpen, setIsTrustScoreModalOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     if (isOtherUser) {
@@ -112,7 +113,13 @@ export const UserProfilePage: React.FC = () => {
   const actualTrustScore = isOtherUser
     ? targetPublicProfile?.trustScore ?? 100
     : profile?.trustScore ?? 100;
-  const trustScoreMax100 = actualTrustScore;
+  const mentorTrustScore = isOtherUser
+    ? targetPublicProfile?.mentorTrustScore ?? targetPublicProfile?.trustScore ?? 100
+    : profile?.mentorTrustScore ?? profile?.trustScore ?? 100;
+  const learnerTrustScore = isOtherUser
+    ? targetPublicProfile?.learnerTrustScore ?? 100
+    : profile?.learnerTrustScore ?? 100;
+  const trustScoreMax100 = mentorTrustScore;
 
   const trustTier = isOtherUser
     ? targetPublicProfile?.trustTier || 'GOOD'
@@ -297,11 +304,18 @@ export const UserProfilePage: React.FC = () => {
                   className="relative shrink-0 group cursor-pointer"
                   onClick={() => setIsEditModalOpen(true)}
                 >
-                  <img
-                    src={avatarUrl}
-                    alt={userName}
-                    className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover ring-4 ring-primary-50 shadow-sm transition-transform duration-200 group-hover:scale-105"
-                  />
+                  {avatarUrl && !avatarError ? (
+                    <img
+                      src={avatarUrl}
+                      alt={userName}
+                      onError={() => setAvatarError(true)}
+                      className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl object-cover ring-4 ring-primary-50 shadow-sm transition-transform duration-200 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-800 text-white font-black text-2xl flex items-center justify-center ring-4 ring-primary-50 shadow-sm transition-transform duration-200 group-hover:scale-105">
+                      {userName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Pencil className="w-4 h-4 text-white" />
                   </div>
@@ -434,7 +448,7 @@ export const UserProfilePage: React.FC = () => {
                   </div>
                   <div className="flex items-baseline justify-center gap-0.5">
                     <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                      {trustScoreMax100}
+                      {mentorTrustScore}
                     </span>
                     <span className="text-[11px] text-slate-400 font-bold">/100</span>
                   </div>
@@ -453,7 +467,7 @@ export const UserProfilePage: React.FC = () => {
                   </div>
                   <div className="flex items-baseline justify-center gap-0.5">
                     <span className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                      100
+                      {learnerTrustScore}
                     </span>
                     <span className="text-[11px] text-slate-400 font-bold">/100</span>
                   </div>

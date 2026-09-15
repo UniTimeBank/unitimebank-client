@@ -8,6 +8,7 @@ export const NAV_LINKS: NavLinkItem[] = [
   { label: 'Đăng bài', path: '/requests' },
   { label: 'Quản lý', path: '/manage/bookings' },
   { label: 'Cộng đồng', path: '/community' },
+  { label: 'Xếp hạng', path: '/leaderboard' },
 ];
 
 

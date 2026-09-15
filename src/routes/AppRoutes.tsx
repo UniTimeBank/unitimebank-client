@@ -6,6 +6,7 @@ import { ROUTES } from './paths';
 import { UserProfilePage } from '@/features/user';
 import {
   PostExplorePage,
+  AllPostsPage,
   OpenRequestsPage,
   CommunityPage,
   MentorPostDetailPage,
@@ -26,6 +27,7 @@ import {
   GroupRoomPage,
   GroupLobbyPage,
 } from '@/features/session';
+import { LeaderboardPage } from '@/features/leaderboard';
 
 export const AppRoutes = () => {
   return (
@@ -53,7 +55,7 @@ export const AppRoutes = () => {
       <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.EXPLORE} replace />} />
       <Route path={ROUTES.DASHBOARD} element={<Navigate to={ROUTES.EXPLORE} replace />} />
 
-      {/* Route bảo vệ - Explore & Requests & Community */}
+      {/* Route bảo vệ - Explore & All Posts & Requests & Community */}
       <Route
         path={ROUTES.EXPLORE}
         element={
@@ -62,6 +64,15 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path={ROUTES.POSTS_ALL}
+        element={
+          <ProtectedRoute>
+            <AllPostsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/posts" element={<Navigate to={ROUTES.POSTS_ALL} replace />} />
       <Route
         path={ROUTES.COMMUNITY}
         element={
@@ -75,6 +86,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <OpenRequestsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.LEADERBOARD}
+        element={
+          <ProtectedRoute>
+            <LeaderboardPage />
           </ProtectedRoute>
         }
       />

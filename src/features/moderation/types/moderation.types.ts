@@ -45,7 +45,11 @@ export interface TrustScore {
   id: string;
   userId: string;
   score: number;
+  mentorScore: number;
+  learnerScore: number;
   tier: 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'WARNING' | 'LOCKED';
+  mentorTier?: 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'WARNING' | 'LOCKED';
+  learnerTier?: 'EXCELLENT' | 'GOOD' | 'AVERAGE' | 'WARNING' | 'LOCKED';
   lastUpdatedAt: string;
 }
 
@@ -54,6 +58,7 @@ export interface TrustScoreChange {
   userId: string;
   delta: number;
   reason: string;
+  roleType?: 'MENTOR' | 'LEARNER';
   scoreBefore: number;
   scoreAfter: number;
   sourceEventId?: string;
@@ -65,6 +70,50 @@ export interface TrustScoreHistoryResponse {
   trustScore: TrustScore;
   history: TrustScoreChange[];
 }
+
+export interface MentorLeaderboardItem {
+  rank: number;
+  userId: string;
+  name: string;
+  displayName?: string;
+  avatar?: string;
+  avatarUrl?: string;
+  headline?: string;
+  major?: string;
+  mentorTrustScore: number;
+  averageRating: number;
+  totalReviews: number;
+  totalTeachingMinutes: number;
+  totalStudentsTaught: number;
+  fiveStarReviewsCount: number;
+  rankScore: number;
+  badgeTitle?: string;
+}
+
+export interface LearnerLeaderboardItem {
+  rank: number;
+  userId: string;
+  name: string;
+  displayName?: string;
+  avatar?: string;
+  avatarUrl?: string;
+  headline?: string;
+  major?: string;
+  learnerTrustScore: number;
+  totalLearningMinutes: number;
+  totalSessionsCompleted: number;
+  skillsLearnedCount: number;
+  reviewsSubmittedCount: number;
+  rankScore: number;
+  badgeTitle?: string;
+}
+
+export interface LeaderboardResponse<T> {
+  timeframe: 'weekly' | 'monthly' | 'all';
+  items: T[];
+  total: number;
+}
+
 
 export type ReportCategory =
   | 'TOXIC_LANGUAGE'

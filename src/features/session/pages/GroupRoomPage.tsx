@@ -6,6 +6,7 @@ import { useGetMeQuery } from '@/core/api/user';
 import {
   useJoinGroupRoomMutation,
   useLeaveGroupRoomMutation,
+  useCloseGroupRoomMutation,
   useGetRoomChatMessagesQuery,
   useGetGroupRoomStatsQuery,
 } from '@/core/api/session';
@@ -28,7 +29,9 @@ import {
   SessionEndedModal,
   GroupEscrowModal,
 } from '../components';
-import { Loader2, AlertTriangle, ArrowLeft, PauseCircle, Clock } from 'lucide-react';
+import { ReportViolationModal } from '@/features/moderation';
+import { Modal, Button } from '@/shared/components/ui';
+import { Loader2, AlertTriangle, ArrowLeft, PauseCircle, Clock, LogOut, Power } from 'lucide-react';
 import { toast } from '@/shared/utils';
 
 export const GroupRoomPage: React.FC = () => {
@@ -40,6 +43,7 @@ export const GroupRoomPage: React.FC = () => {
   const [joinGroup, { data: tokenData, isLoading: isJoining, error: joinError }] =
     useJoinGroupRoomMutation();
   const [leaveGroup] = useLeaveGroupRoomMutation();
+  const [closeGroupRoom, { isLoading: isClosingRoom }] = useCloseGroupRoomMutation();
 
   const isHost = tokenData?.role === 'MENTOR';
 
@@ -60,6 +64,9 @@ export const GroupRoomPage: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEndedModalOpen, setIsEndedModalOpen] = useState(false);
   const [isEscrowModalOpen, setIsEscrowModalOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
 
   // Trạng thái hiện diện của Chủ phòng (Host) & Đóng băng phòng
   const [socketHostPresent, setSocketHostPresent] = useState<boolean | null>(null);
@@ -324,8 +331,9 @@ export const GroupRoomPage: React.FC = () => {
     },
   });
 
-  // 8. Leave Group Call
-  const handleLeaveGroup = useCallback(async () => {
+  // 8. Leave Group Call (Learners & Host Temporary Leave)
+  const handleConfirmLeave = useCallback(async () => {
+    setIsLeaveModalOpen(false);
     if (roomId) {
       try {
         await leaveGroup(roomId).unwrap();
@@ -336,6 +344,34 @@ export const GroupRoomPage: React.FC = () => {
     disconnect();
     navigate('/rooms/group');
   }, [roomId, leaveGroup, disconnect, navigate]);
+
+  const handleLeaveClick = useCallback(() => {
+    if (isHost) {
+      setIsLeaveModalOpen(true);
+    } else {
+      handleConfirmLeave();
+    }
+  }, [isHost, handleConfirmLeave]);
+
+  // 9. Close Group Call (Host permanently closes room for everyone)
+  const handleCloseRoomClick = useCallback(() => {
+    setIsCloseModalOpen(true);
+  }, []);
+
+  const handleConfirmCloseRoom = useCallback(async () => {
+    if (!roomId) return;
+    try {
+      await closeGroupRoom(roomId).unwrap();
+      toast.success('Đã đóng phòng học nhóm thành công.');
+    } catch (err) {
+      console.error('Error closing group room:', err);
+      toast.error('Không thể đóng phòng học, vui lòng thử lại.');
+    } finally {
+      setIsCloseModalOpen(false);
+      disconnect();
+      navigate('/management/classes');
+    }
+  }, [roomId, closeGroupRoom, disconnect, navigate]);
 
   // Loading Screen
   if (isJoining) {
@@ -411,7 +447,7 @@ export const GroupRoomPage: React.FC = () => {
             ? heartbeatHelper.totalCreditsCharged
             : undefined
         }
-        onLeave={handleLeaveGroup}
+        onLeave={handleLeaveClick}
       />
 
       {/* Banner Đóng băng thời gian khi Chủ phòng vắng mặt */}
@@ -515,13 +551,16 @@ export const GroupRoomPage: React.FC = () => {
         isChatOpen={isChatOpen}
         isWhiteboardOpen={isWhiteboardOpen}
         unreadCount={unreadCount}
+        isHost={isHost}
         onToggleMic={toggleMicrophone}
         onToggleCamera={toggleCamera}
         onToggleScreenShare={toggleScreenShare}
         onToggleChat={toggleChat}
         onToggleWhiteboard={() => setIsWhiteboardOpen((prev) => !prev)}
         onOpenSettings={() => setIsSettingsOpen(true)}
-        onLeave={handleLeaveGroup}
+        onReport={!isHost ? () => setIsReportOpen(true) : undefined}
+        onLeave={handleLeaveClick}
+        onCloseRoom={handleCloseRoomClick}
       />
 
       {/* 4. Whiteboard Modal */}
@@ -546,7 +585,103 @@ export const GroupRoomPage: React.FC = () => {
         onClose={() => setIsSettingsOpen(false)}
       />
 
-      {/* 7. Ended Modal */}
+      {/* 6. Violation Report Modal */}
+      <ReportViolationModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        targetUserId={tokenData?.mentorId || ''}
+        targetUserName={isHost ? 'Phòng học nhóm' : 'Chủ phòng (Mentor)'}
+        targetType="SESSION"
+        targetId={roomId}
+        onSuccess={() => {
+          toast.success('Báo cáo vi phạm đã được gửi đến ban kiểm duyệt.');
+          setIsReportOpen(false);
+        }}
+      />
+
+      {/* 7. Host Leave Confirmation Modal */}
+      <Modal
+        isOpen={isLeaveModalOpen}
+        onClose={() => setIsLeaveModalOpen(false)}
+        size="sm"
+        title={
+          <div className="flex items-center gap-2.5 text-slate-800">
+            <div className="p-2 rounded-full bg-amber-50 text-amber-600">
+              <LogOut className="w-5 h-5" />
+            </div>
+            <span>Tạm rời phòng học?</span>
+          </div>
+        }
+      >
+        <div className="space-y-4 pt-1">
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Bạn đang là <strong className="text-slate-900">Chủ phòng (Host)</strong>. Khi bạn rời đi mà không đóng phòng, phòng học sẽ tiếp tục duy trì và tạm đóng băng tính phí trong tối đa <strong className="text-amber-700">5 phút</strong> chờ bạn quay lại.
+          </p>
+          <div className="flex items-center justify-end gap-2.5 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsLeaveModalOpen(false)}
+              className="text-xs"
+            >
+              Ở lại
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleConfirmLeave}
+              className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold"
+            >
+              Rời phòng
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 8. Host Close Room Confirmation Modal */}
+      <Modal
+        isOpen={isCloseModalOpen}
+        onClose={() => setIsCloseModalOpen(false)}
+        size="sm"
+        title={
+          <div className="flex items-center gap-2.5 text-slate-800">
+            <div className="p-2 rounded-full bg-rose-50 text-rose-600">
+              <Power className="w-5 h-5" />
+            </div>
+            <span>Đóng phòng học nhóm?</span>
+          </div>
+        }
+      >
+        <div className="space-y-4 pt-1">
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Hành động này sẽ <strong className="text-slate-900">kết thúc hoàn toàn buổi học</strong> cho tất cả học viên trong phòng, quyết toán quỹ tạm giữ và giải tán phòng.
+          </p>
+          <div className="flex items-center justify-end gap-2.5 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCloseModalOpen(false)}
+              disabled={isClosingRoom}
+              className="text-xs"
+            >
+              Hủy
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleConfirmCloseRoom}
+              disabled={isClosingRoom}
+              className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold min-w-[110px]"
+            >
+              {isClosingRoom ? 'Đang đóng...' : 'Xác nhận đóng'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 9. Ended Modal */}
       <SessionEndedModal
         isOpen={isEndedModalOpen}
         creditsTransferred={heartbeatHelper.totalCreditsCharged}
@@ -555,7 +690,7 @@ export const GroupRoomPage: React.FC = () => {
         description={roomEndReason?.description}
       />
 
-      {/* 8. Group Escrow & Participant Breakdown Modal (Host) */}
+      {/* 10. Group Escrow & Participant Breakdown Modal (Host) */}
       <GroupEscrowModal
         isOpen={isEscrowModalOpen}
         onClose={() => setIsEscrowModalOpen(false)}

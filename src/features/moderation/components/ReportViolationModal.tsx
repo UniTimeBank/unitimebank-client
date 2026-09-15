@@ -1,9 +1,17 @@
-import React, { useState } from 'react';
-import { AlertTriangle, ShieldAlert, FileText, Loader2, Link2 } from 'lucide-react';
-import { Modal, Button } from '@/shared/components/ui';
-import { useReportViolationMutation } from '@/core/api/moderation';
-import type { ReportCategory } from '../types';
-import toast from 'react-hot-toast';
+import React from 'react';
+import {
+  AlertTriangle,
+  ShieldAlert,
+  FileText,
+  Loader2,
+  UploadCloud,
+  FileImage,
+  Trash2,
+  Plus,
+} from 'lucide-react';
+import { Modal, Button, Radio } from '@/shared/components/ui';
+import { REPORT_CATEGORIES } from '../utils';
+import { useReportViolationForm } from '../hooks';
 
 export interface ReportViolationModalProps {
   isOpen: boolean;
@@ -15,15 +23,6 @@ export interface ReportViolationModalProps {
   onSuccess?: () => void;
 }
 
-const REPORT_CATEGORIES: Array<{ id: ReportCategory; label: string; desc: string }> = [
-  { id: 'AFK_ABUSE', label: 'Vắng mặt / Không đến lớp', desc: 'Người dùng không vào phòng học hoặc rời phòng giữa chừng không lý do' },
-  { id: 'TOXIC_LANGUAGE', label: 'Lời nói / Thái độ xúc phạm', desc: 'Có hành vi thiếu tôn trọng, quấy rối hoặc ngôn từ thù địch' },
-  { id: 'FRAUD', label: 'Gian lận Credit / Lừa đảo', desc: 'Yêu cầu thanh toán tiền mặt ngoài hệ thống hoặc lừa đảo thời gian' },
-  { id: 'INAPPROPRIATE_CONTENT', label: 'Nội dung không phù hợp', desc: 'Chia sẻ tài liệu vi phạm bản quyền hoặc hình ảnh phản cảm' },
-  { id: 'SPAM', label: 'Spam / Tin nhắn rác', desc: 'Gửi quảng cáo hoặc spam tin nhắn liên tục' },
-  { id: 'OTHER', label: 'Lý do khác', desc: 'Các vấn đề phát sinh khác trong quá trình trao đổi' },
-];
-
 export const ReportViolationModal: React.FC<ReportViolationModalProps> = ({
   isOpen,
   onClose,
@@ -33,45 +32,30 @@ export const ReportViolationModal: React.FC<ReportViolationModalProps> = ({
   targetId,
   onSuccess,
 }) => {
-  const [category, setCategory] = useState<ReportCategory>('AFK_ABUSE');
-  const [description, setDescription] = useState<string>('');
-  const [evidenceUrl, setEvidenceUrl] = useState<string>('');
-
-  const [reportViolation, { isLoading }] = useReportViolationMutation();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!description.trim()) {
-      toast.error('Vui lòng nhập mô tả chi tiết sự cố');
-      return;
-    }
-
-    try {
-      const evidenceUrls = evidenceUrl.trim()
-        ? [{ url: evidenceUrl.trim(), kind: 'SCREENSHOT' }]
-        : undefined;
-
-      await reportViolation({
-        targetUserId,
-        targetType,
-        targetId: targetId || targetUserId,
-        category,
-        description: description.trim(),
-        evidenceUrls,
-      }).unwrap();
-
-      toast.success('Báo cáo của bạn đã được tiếp nhận và sẽ được xử lý sớm nhất.');
-      onSuccess?.();
-      onClose();
-    } catch (err: any) {
-      const msg = err?.data?.message || 'Không thể gửi báo cáo vi phạm, vui lòng thử lại sau.';
-      toast.error(msg);
-    }
-  };
+  const {
+    category,
+    setCategory,
+    description,
+    setDescription,
+    selectedFiles,
+    isSubmitting,
+    isUploadingFiles,
+    fileInputRef,
+    handleFileChange,
+    handleRemoveFile,
+    handleSubmit,
+    maxFiles,
+  } = useReportViolationForm({
+    targetUserId,
+    targetType,
+    targetId,
+    onSuccess,
+    onClose,
+  });
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md" title="Báo cáo vi phạm">
-      <form onSubmit={handleSubmit} className="space-y-5 pt-1">
+      <form onSubmit={handleSubmit} className="space-y-4 pt-1">
         <div className="flex items-start gap-3 bg-amber-50/70 p-3.5 rounded-2xl border border-amber-200/80 text-amber-900">
           <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs leading-relaxed text-amber-800">
@@ -85,31 +69,31 @@ export const ReportViolationModal: React.FC<ReportViolationModalProps> = ({
             <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
             <span>Loại vi phạm *</span>
           </label>
-          <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
             {REPORT_CATEGORIES.map((cat) => {
               const isSelected = category === cat.id;
               return (
-                <label
+                <div
                   key={cat.id}
                   onClick={() => setCategory(cat.id)}
-                  className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
+                  className={`flex items-center justify-between p-3 rounded-2xl border cursor-pointer transition-all ${
                     isSelected
-                      ? 'bg-primary-50/70 border-primary-400 text-primary-950'
+                      ? 'bg-emerald-50/60 border-emerald-500 text-emerald-950 ring-1 ring-emerald-500/30 shadow-2xs'
                       : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
                   }`}
                 >
-                  <div className="pr-3">
+                  <div className="pr-3 flex-1 min-w-0">
                     <p className="text-xs font-bold text-gray-900">{cat.label}</p>
-                    <p className="text-[11px] text-gray-500 line-clamp-1">{cat.desc}</p>
+                    <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">{cat.desc}</p>
                   </div>
-                  <input
-                    type="radio"
+                  <Radio
+                    id={`report-category-${cat.id}`}
                     name="reportCategory"
                     checked={isSelected}
                     onChange={() => setCategory(cat.id)}
-                    className="text-primary-600 focus:ring-primary-500"
+                    size="sm"
                   />
-                </label>
+                </div>
               );
             })}
           </div>
@@ -131,37 +115,109 @@ export const ReportViolationModal: React.FC<ReportViolationModalProps> = ({
           />
         </div>
 
-        {/* Evidence Link */}
+        {/* File Upload Evidence (Max 3 files) */}
         <div>
-          <label className="block text-xs font-semibold text-gray-700 mb-1.5 flex items-center gap-1.5">
-            <Link2 className="w-3.5 h-3.5 text-gray-500" />
-            <span>Link hình ảnh / video bằng chứng (tùy chọn)</span>
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+              <UploadCloud className="w-3.5 h-3.5 text-gray-500" />
+              <span>Ảnh / Video bằng chứng</span>
+            </span>
+            <span className="text-[11px] font-medium text-slate-400">
+              {selectedFiles.length}/{maxFiles} file
+            </span>
+          </div>
+
           <input
-            type="url"
-            value={evidenceUrl}
-            onChange={(e) => setEvidenceUrl(e.target.value)}
-            placeholder="https://drive.google.com/... hoặc link ảnh màn hình"
-            className="w-full text-xs p-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all placeholder:text-gray-400"
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,video/*"
+            onChange={handleFileChange}
+            className="hidden"
           />
+
+          {/* List of Selected Files */}
+          {selectedFiles.length > 0 && (
+            <div className="space-y-2 mb-2">
+              {selectedFiles.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-2 bg-slate-50 border border-slate-200/90 rounded-2xl"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {item.previewUrl ? (
+                      <img
+                        src={item.previewUrl}
+                        alt="Xem trước"
+                        className="w-9 h-9 object-cover rounded-xl border border-slate-200 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                        <FileImage className="w-4 h-4" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-800 truncate">{item.file.name}</p>
+                      <p className="text-[10px] text-slate-400 font-medium">
+                        {(item.file.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFile(item.id)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                    title="Xóa file này"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Upload Dropzone (When < maxFiles) */}
+          {selectedFiles.length < maxFiles && (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-slate-200 hover:border-emerald-500 bg-slate-50/60 hover:bg-emerald-50/30 rounded-2xl p-3 text-center cursor-pointer transition-all group"
+            >
+              {selectedFiles.length === 0 ? (
+                <>
+                  <UploadCloud className="w-5 h-5 text-slate-400 group-hover:text-emerald-600 mx-auto mb-1 transition-colors" />
+                  <p className="text-xs font-semibold text-slate-700 group-hover:text-emerald-900 transition-colors">
+                    Chọn ảnh hoặc video từ thiết bị
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    PNG, JPG, MP4 (Tối đa {maxFiles} file, mỗi file &le; 10MB)
+                  </p>
+                </>
+              ) : (
+                <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-600 group-hover:text-emerald-700 py-0.5">
+                  <Plus className="w-4 h-4" />
+                  <span>Thêm file bằng chứng khác ({selectedFiles.length}/{maxFiles})</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isLoading}>
+          <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
             Hủy
           </Button>
           <Button
             type="submit"
             variant="primary"
             size="sm"
-            disabled={isLoading}
+            disabled={isSubmitting}
             className="bg-red-600 hover:bg-red-700 border-red-600 min-w-[120px]"
           >
-            {isLoading ? (
+            {isSubmitting ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Đang gửi...</span>
+                <span>{isUploadingFiles ? 'Đang tải file...' : 'Đang gửi...'}</span>
               </span>
             ) : (
               'Gửi báo cáo'

@@ -371,7 +371,7 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
       onClose={() => setIsReportOpen(false)}
       targetUserId={isMentor ? booking.learnerId : booking.mentorId}
       targetUserName={isMentor ? booking.learnerName : booking.mentorName}
-      targetType="BOOKING"
+      targetType="SESSION"
       targetId={booking.id}
       onSuccess={() => {
         setIsReportOpen(false);

@@ -21,6 +21,7 @@ import {
   DeviceSettingsModal,
   AudioTrackRenderer,
 } from '../components';
+import { ReportViolationModal } from '@/features/moderation';
 import { Modal, Button } from '@/shared/components/ui';
 import { Loader2, AlertCircle, ArrowLeft, LogOut } from 'lucide-react';
 import { toast } from '@/shared/utils';
@@ -44,6 +45,7 @@ export const OneOnOneRoomPage: React.FC = () => {
   // Modals & UI States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const displayName =
     userProfile?.displayName ||
@@ -315,6 +317,7 @@ export const OneOnOneRoomPage: React.FC = () => {
             onToggleCamera={toggleCamera}
             onToggleScreenShare={toggleScreenShare}
             onOpenSettings={() => setIsSettingsOpen(true)}
+            onReport={() => setIsReportOpen(true)}
             onLeave={handleLeaveRoom}
           />
         </div>
@@ -347,7 +350,23 @@ export const OneOnOneRoomPage: React.FC = () => {
         onClose={() => setIsSettingsOpen(false)}
       />
 
-      {/* 5. Leave Room Confirmation Modal (Standard Shared UI) */}
+      {/* 5. Violation Report Modal */}
+      <ReportViolationModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        targetUserId={
+          (isMentor ? bookingDetail?.learnerId : bookingDetail?.mentorId) || ''
+        }
+        targetUserName={partnerName}
+        targetType="SESSION"
+        targetId={bookingId}
+        onSuccess={() => {
+          toast.success('Báo cáo vi phạm đã được gửi đến ban kiểm duyệt.');
+          setIsReportOpen(false);
+        }}
+      />
+
+      {/* 6. Leave Room Confirmation Modal (Standard Shared UI) */}
       <Modal
         isOpen={isLeaveModalOpen}
         onClose={() => setIsLeaveModalOpen(false)}

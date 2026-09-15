@@ -21,7 +21,7 @@ export const useManageBookings = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useUserProfile();
   const authUser = useAppSelector(selectCurrentUser);
-  const currentUserId = profile?.userId || authUser?.id;
+  const currentUserId = profile?.userId || (profile as any)?.id || authUser?.id || (authUser as any)?.userId;
 
   const urlRole = searchParams.get('role')?.toUpperCase() as BookingRoleType | undefined;
   const urlTab = searchParams.get('tab')?.toUpperCase() as BookingTabType | undefined;

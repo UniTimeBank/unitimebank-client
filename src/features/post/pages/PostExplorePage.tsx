@@ -15,6 +15,7 @@ import { useMentorPosts, useLearnerRequests } from '../hooks';
 import { UnifiedPostCard } from '../components/cards';
 import { type ExploreCardItem } from '../types';
 import { SKILL_CATEGORY_LABELS } from '../constants';
+import { mapMentorPostToCardItem, mapLearnerRequestToCardItem } from '../utils';
 import { LiveGroupRoomsBanner } from '@/features/session/components';
 
 // Danh mục filter pills chuẩn theo UniTime Bank
@@ -53,60 +54,12 @@ export const PostExplorePage: React.FC = () => {
   // Chuyển đổi dữ liệu từ API sang định dạng ExploreCardItem
   const rawItems: ExploreCardItem[] = useMemo(() => {
     if (exploreTab === 'LEARNER_REQUESTS') {
-      // Hiển thị các bài yêu cầu tìm người dạy của học viên
-      return learnerRequests.map((req) => ({
-        id: req._id,
-        type: 'LEARNER' as const,
-        title: req.skillNeeded,
-        description: req.shortDescription || req.description || '',
-        category: req.category || 'PROGRAMMING',
-        coverImage: (req as any).coverImage,
-        tagSkill: req.skillNeeded?.toUpperCase().slice(0, 16) || 'HỌC TẬP',
-        secondaryTag: 'Cần hỗ trợ',
-        authorId: req.learnerId,
-        authorName: req.learnerName || 'Học viên UniTime',
-        authorAvatar: req.learnerAvatar,
-        authorUniversity: 'Sinh viên UniTime',
-        rateCreditText: `${req.expectedCreditAmount || req.expectedDurationMinutes || 60} credit`,
-        trustScore: 100,
-        sessionType: req.sessionType || 'ONE_ON_ONE',
-        detailUrl: `/posts/learner/${req._id}`,
-        createdAt: (req as any).createdAt || (req as any).created_at,
-      }));
+      return learnerRequests.map(mapLearnerRequestToCardItem);
     } else {
-      // Hiển thị các bài dạy của Mentor
-      return mentorPosts.map((post) => {
-        const cat = post.tags?.[0]?.category || 'PROGRAMMING';
-        const categoryLabel = (SKILL_CATEGORY_LABELS[cat.toUpperCase()] || cat).toUpperCase();
-        const allSkills = post.tags?.map((t) => t.skillName).filter(Boolean) || [];
-
-        const totalSlots = post.availableSlots?.length || 0;
-        const rateText = totalSlots > 0 ? `${totalSlots} khung giờ` : 'Lịch mở';
-
-        return {
-          id: post._id,
-          type: 'MENTOR' as const,
-          title: post.title,
-          description: post.shortDescription || post.description || '',
-          category: cat,
-          coverImage: (post as any).coverImage || (post as any).thumbnail,
-          tagSkill: categoryLabel,
-          secondaryTag: allSkills.join(', '),
-          allSkills,
-          authorId: post.mentorId,
-          authorName: post.mentorName || 'Mentor UniTime',
-          authorAvatar: post.mentorAvatar,
-          authorUniversity: 'Mentor UniTime',
-          rateCreditText: rateText,
-          trustScore: post.trustScoreSnapshot || 100,
-          sessionType: post.sessionType || 'BOTH',
-          scheduleType: (post.scheduleType as 'ALWAYS_OPEN' | 'LIMITED_TIME') || 'ALWAYS_OPEN',
-          detailUrl: `/posts/mentor/${post._id}`,
-          createdAt: (post as any).createdAt || (post as any).created_at,
-        };
-      });
+      return mentorPosts.map(mapMentorPostToCardItem);
     }
   }, [exploreTab, mentorPosts, learnerRequests]);
+
 
   // Lọc dữ liệu theo từ khóa, danh mục & bộ lọc nâng cao
   const filteredItems = useMemo(() => {
@@ -288,7 +241,7 @@ export const PostExplorePage: React.FC = () => {
 
             {/* Xem Tất Cả */}
             <Link
-              to={exploreTab === 'LEARNER_REQUESTS' ? '/requests' : '/explore'}
+              to={exploreTab === 'LEARNER_REQUESTS' ? '/posts/all?tab=LEARNER_REQUESTS' : '/posts/all?tab=MENTOR_POSTS'}
               className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-primary-700 transition-colors cursor-pointer py-1 group shrink-0"
             >
               <span>Xem tất cả</span>

@@ -75,6 +75,36 @@ export const moderationApi = baseApi.injectEndpoints({
       query: () => '/moderation/reports/my',
       providesTags: ['Moderation'],
     }),
+
+    // 8. Bảng Xếp Hạng Top Người Dạy Tiêu Biểu
+    getMentorLeaderboard: builder.query<
+      import('@/features/moderation/types').LeaderboardResponse<
+        import('@/features/moderation/types').MentorLeaderboardItem
+      >,
+      { timeframe?: string; limit?: number } | void
+    >({
+      query: (params) => {
+        const tf = params && params.timeframe ? params.timeframe : 'all';
+        const lim = params && params.limit ? params.limit : 20;
+        return `/moderation/leaderboard/mentors?timeframe=${tf}&limit=${lim}`;
+      },
+      providesTags: ['Moderation'],
+    }),
+
+    // 9. Bảng Xếp Hạng Top Học Viên Tích Cực
+    getLearnerLeaderboard: builder.query<
+      import('@/features/moderation/types').LeaderboardResponse<
+        import('@/features/moderation/types').LearnerLeaderboardItem
+      >,
+      { timeframe?: string; limit?: number } | void
+    >({
+      query: (params) => {
+        const tf = params && params.timeframe ? params.timeframe : 'all';
+        const lim = params && params.limit ? params.limit : 20;
+        return `/moderation/leaderboard/learners?timeframe=${tf}&limit=${lim}`;
+      },
+      providesTags: ['Moderation'],
+    }),
   }),
 });
 
@@ -86,4 +116,7 @@ export const {
   useGetTrustScoreHistoryQuery,
   useReportViolationMutation,
   useGetMyReportsQuery,
+  useGetMentorLeaderboardQuery,
+  useGetLearnerLeaderboardQuery,
 } = moderationApi;
+
