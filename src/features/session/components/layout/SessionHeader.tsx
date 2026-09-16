@@ -64,51 +64,6 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
           <GraduationCap className="w-3.5 h-3.5 text-primary-600 shrink-0" />
           <span className="truncate">{title}</span>
         </div>
-
-        {/* Real-time REC badge (Zoom-style) */}
-        {isRecording && (
-          <button
-            type="button"
-            onClick={onOpenRecordings}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold transition-all cursor-pointer shadow-2xs ${
-              isPaused
-                ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100'
-                : 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse hover:bg-rose-100'
-            }`}
-            title={isPaused ? 'Đã tạm dừng ghi hình. Bấm để xem chi tiết' : 'Đang ghi hình buổi học. Bấm để xem chi tiết'}
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isPaused ? 'bg-amber-500' : 'bg-rose-600'
-              }`}
-            />
-            <span>
-              {isPaused ? 'TẠM DỪNG' : 'REC'}{' '}
-              {recordingDurationSeconds !== undefined
-                ? `${Math.floor(recordingDurationSeconds / 60)
-                    .toString()
-                    .padStart(2, '0')}:${(recordingDurationSeconds % 60)
-                    .toString()
-                    .padStart(2, '0')}`
-                : ''}
-              {recordingCurrentMB ? ` (${recordingCurrentMB} MB)` : ''}
-              {recordingTotalMB ? ` • Tổng: ${recordingTotalMB}/100MB` : ''}
-            </span>
-          </button>
-        )}
-
-        {/* Saved clips badge when not recording */}
-        {!isRecording && recordingClipsCount > 0 && (
-          <button
-            type="button"
-            onClick={onOpenRecordings}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300/70 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
-            title="Xem danh sách bản ghi màn hình buổi học"
-          >
-            <span className="w-2 h-2 rounded-full bg-indigo-600" />
-            <span>{recordingClipsCount} bản ghi ({recordingTotalMB || '0'}MB/100MB)</span>
-          </button>
-        )}
       </div>
 
       {/* Right: Notification Bell Dropdown + Profile Avatar */}

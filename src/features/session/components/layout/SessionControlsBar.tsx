@@ -13,9 +13,6 @@ import {
   Power,
   Users,
   CircleDot,
-  Pause,
-  Play,
-  Square,
 } from 'lucide-react';
 
 interface SessionControlsBarProps {
@@ -171,39 +168,22 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
         </button>
       )}
 
-      {/* Screen Recording Controls (Zoom-style Pause/Resume & Stop) */}
+      {/* Screen Recording Controls (Pulsing Red Dot Indicator when active) */}
       {isRecording ? (
-        <div className="flex items-center gap-1 bg-rose-50 p-0.5 rounded-xl border border-rose-200 shadow-xs">
-          {/* Pause / Resume Button */}
-          {isPaused ? (
-            <button
-              onClick={onResumeRecording}
-              className="p-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-all shadow-xs flex items-center justify-center cursor-pointer animate-pulse"
-              title="Tiếp tục ghi hình"
-            >
-              <Play className="w-4 h-4 fill-current" />
-            </button>
-          ) : (
-            <button
-              onClick={onPauseRecording}
-              className="p-2 rounded-lg bg-white text-slate-700 hover:bg-amber-50 hover:text-amber-700 border border-slate-200/60 transition-all shadow-xs flex items-center justify-center cursor-pointer"
-              title="Tạm dừng ghi hình"
-            >
-              <Pause className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* Stop Button */}
-          <button
-            onClick={onStopRecording || onToggleRecording}
-            className="p-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700 transition-all shadow-xs flex items-center justify-center cursor-pointer"
-            title="Dừng ghi hình & Lưu clip"
-          >
-            <Square className="w-4 h-4 fill-current" />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onStopRecording || onToggleRecording}
+          className="relative p-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all shadow-xs flex items-center justify-center cursor-pointer"
+          title="Đang ghi hình buổi học. Bấm để dừng & lưu clip"
+        >
+          <span className="relative flex h-5 w-5 items-center justify-center">
+            <span className="animate-ping absolute inline-flex h-3.5 w-3.5 rounded-full bg-rose-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600" />
+          </span>
+        </button>
       ) : (
         <button
+          type="button"
           onClick={
             recordingClipsCount > 0 ? onOpenRecordings : onToggleRecording
           }
@@ -215,7 +195,7 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
           title={
             recordingClipsCount > 0
               ? `Xem ${recordingClipsCount} video đã quay (${recordingTotalMB || '0'} MB / 100 MB)`
-              : 'Ghi hình buổi học (Giống Zoom - Tối đa 100MB)'
+              : 'Ghi hình buổi học (Tối đa 100MB)'
           }
         >
           <CircleDot className="w-5 h-5 text-slate-700" />
@@ -230,6 +210,7 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
       {/* Device Settings */}
       {onOpenSettings && (
         <button
+          type="button"
           onClick={onOpenSettings}
           className="p-3 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60 transition-all shadow-xs flex items-center justify-center cursor-pointer"
           title="Cài đặt thiết bị"
@@ -241,6 +222,7 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
       {/* Report Button */}
       {onReport && (
         <button
+          type="button"
           onClick={onReport}
           className="p-3 rounded-xl bg-slate-100 text-slate-700 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 border border-slate-200/60 transition-all shadow-xs flex items-center justify-center cursor-pointer"
           title="Báo cáo vi phạm phòng học"
@@ -251,36 +233,39 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
 
       {/* Action Buttons: Host has both 'Rời phòng' and 'Đóng phòng', Learners have 'Rời phòng' */}
       {isHost && onCloseRoom ? (
-        <div className="flex items-center gap-1.5 ml-1">
+        <div className="flex items-center gap-2 ml-1">
           {/* Host Leave Room (Temporary) */}
           <button
+            type="button"
             onClick={onLeave}
-            className="p-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200/60 font-semibold transition-all shadow-xs flex items-center gap-1.5 px-3.5 cursor-pointer"
+            className="h-11 px-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200/80 font-semibold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             title="Tạm thời rời khỏi phòng (Phòng học vẫn tiếp tục)"
           >
-            <LogOut className="w-5 h-5 text-slate-600" />
-            <span className="text-xs hidden md:inline">Rời phòng</span>
+            <LogOut className="w-4 h-4 text-slate-600 shrink-0" />
+            <span className="hidden sm:inline">Rời phòng</span>
           </button>
 
           {/* Host Close Room (Permanently close for everyone) */}
           <button
+            type="button"
             onClick={onCloseRoom}
-            className="p-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold transition-all shadow-md shadow-rose-600/30 flex items-center gap-1.5 px-3.5 cursor-pointer"
+            className="h-11 px-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs transition-all shadow-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             title="Đóng phòng học cho tất cả thành viên"
           >
-            <Power className="w-5 h-5" />
-            <span className="text-xs hidden md:inline">Đóng phòng</span>
+            <Power className="w-4 h-4 text-white shrink-0" />
+            <span className="hidden sm:inline">Đóng phòng</span>
           </button>
         </div>
       ) : (
         /* Learner Leave Call */
         <button
+          type="button"
           onClick={onLeave}
-          className="p-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold transition-all shadow-md shadow-rose-600/30 flex items-center gap-1.5 px-4 ml-1 cursor-pointer"
+          className="h-11 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs transition-all shadow-xs flex items-center gap-1.5 ml-1 cursor-pointer whitespace-nowrap"
           title="Rời khỏi phòng học"
         >
-          <LogOut className="w-5 h-5" />
-          <span className="text-xs hidden md:inline">Rời phòng</span>
+          <LogOut className="w-4 h-4 text-white shrink-0" />
+          <span className="hidden sm:inline">Rời phòng</span>
         </button>
       )}
     </div>
