@@ -1,5 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
+import {
+  saveRecordingToStorage,
+  getRecordingsByRoomFromStorage,
+  deleteRecordingFromStorage,
+  clearRecordingsByRoomFromStorage,
+} from '../utils/recordingStorage';
 
 export const MAX_SESSION_RECORDING_BYTES = 100 * 1024 * 1024; // 100MB
 
@@ -101,6 +107,35 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
     clipsRef.current = clips;
   }, [clips]);
 
+  // Load persisted recording clips from IndexedDB on mount / room enter
+  useEffect(() => {
+    if (!roomId) return;
+    let isMounted = true;
+
+    getRecordingsByRoomFromStorage(roomId).then((stored) => {
+      if (!isMounted || stored.length === 0) return;
+      const loadedClips: SessionRecordingClip[] = stored.map((s) => {
+        const file = new File([s.blob], s.fileName, { type: s.mimeType || s.blob.type });
+        const previewUrl = URL.createObjectURL(s.blob);
+        return {
+          id: s.id,
+          name: s.name,
+          blob: s.blob,
+          file,
+          sizeBytes: s.sizeBytes,
+          durationSeconds: s.durationSeconds,
+          createdAt: new Date(s.createdAt),
+          previewUrl,
+        };
+      });
+      setClips(loadedClips);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [roomId]);
+
   // Clean up object URLs and active tracks on unmount / room exit
   useEffect(() => {
     return () => {
@@ -166,6 +201,19 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
           createdAt: timestamp,
           previewUrl,
         };
+
+        // Persist to IndexedDB so clips survive page reload and room re-entry
+        saveRecordingToStorage({
+          id: newClip.id,
+          roomId: roomId || 'default_room',
+          name: newClip.name,
+          fileName: newClip.file.name,
+          mimeType,
+          blob,
+          sizeBytes,
+          durationSeconds,
+          createdAt: timestamp.getTime(),
+        });
 
         setClips((prev) => [...prev, newClip]);
         setCurrentDuration(0);
@@ -338,6 +386,7 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
   }, []);
 
   const deleteClip = useCallback((id: string) => {
+    deleteRecordingFromStorage(id);
     setClips((prev) => {
       const target = prev.find((c) => c.id === id);
       if (target?.previewUrl) {
@@ -365,13 +414,16 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
   }, []);
 
   const clearAllClips = useCallback(() => {
+    if (roomId) {
+      clearRecordingsByRoomFromStorage(roomId);
+    }
     clipsRef.current.forEach((c) => {
       if (c.previewUrl) URL.revokeObjectURL(c.previewUrl);
     });
     setClips([]);
     setCurrentClipBytes(0);
     setCurrentDuration(0);
-  }, []);
+  }, [roomId]);
 
   return {
     isRecording,
