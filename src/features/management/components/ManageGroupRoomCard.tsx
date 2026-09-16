@@ -9,6 +9,7 @@ export interface ManageGroupRoomCardProps {
   currentUserId?: string;
   onCloseRoom?: (roomId: string) => void;
   isClosing?: boolean;
+  hideRoleBadge?: boolean;
 }
 
 export const ManageGroupRoomCard: React.FC<ManageGroupRoomCardProps> = ({
@@ -16,6 +17,7 @@ export const ManageGroupRoomCard: React.FC<ManageGroupRoomCardProps> = ({
   currentUserId,
   onCloseRoom,
   isClosing = false,
+  hideRoleBadge = false,
 }) => {
   const navigate = useNavigate();
   const isHost = Boolean(currentUserId && room.mentorId && String(currentUserId) === String(room.mentorId));
@@ -99,16 +101,18 @@ export const ManageGroupRoomCard: React.FC<ManageGroupRoomCardProps> = ({
               {categoryLabel}
             </span>
 
-            {isHost ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 text-[10px] font-bold">
-                <Crown className="w-3 h-3 text-blue-600" aria-hidden="true" />
-                <span>Host (Phòng của bạn)</span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200/80 text-[10px] font-semibold">
-                <UserCheck className="w-3 h-3 text-slate-500" aria-hidden="true" />
-                <span>Thành viên tham gia</span>
-              </span>
+            {!hideRoleBadge && (
+              isHost ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 text-[10px] font-bold">
+                  <Crown className="w-3 h-3 text-blue-600" aria-hidden="true" />
+                  <span>Host (Phòng của bạn)</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200/80 text-[10px] font-semibold">
+                  <UserCheck className="w-3 h-3 text-slate-500" aria-hidden="true" />
+                  <span>Thành viên tham gia</span>
+                </span>
+              )
             )}
           </div>
 

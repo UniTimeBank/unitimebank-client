@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Plus, Radio, Search, X, CalendarCheck, Users, Clock, Crown, UserCheck, GraduationCap, BookOpen, Coins, Star } from 'lucide-react';
+import { Plus, Radio, Search, X, CalendarCheck, Users, Clock, UserCheck, GraduationCap, BookOpen, Coins, Star } from 'lucide-react';
 import { CreateGroupRoomModal } from '@/features/session';
 import { PostSessionRatingModal } from '@/features/moderation';
 import { ManageGroupRoomCard } from '../components';
@@ -358,6 +358,7 @@ export const GroupSessionsManagementPage: React.FC = () => {
                   currentUserId={currentUserId}
                   onCloseRoom={handleCloseGroupRoom}
                   isClosing={isClosingGroupRoom}
+                  hideRoleBadge
                 />
               ))}
             </div>
@@ -416,10 +417,6 @@ export const GroupSessionsManagementPage: React.FC = () => {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
                             {categoryLabel}
-                          </span>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">
-                            <Crown className="w-3 h-3 text-blue-600" />
-                            <span>Host (Phòng của bạn)</span>
                           </span>
                         </div>
 
