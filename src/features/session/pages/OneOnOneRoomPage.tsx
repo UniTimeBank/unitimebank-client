@@ -53,6 +53,7 @@ export const OneOnOneRoomPage: React.FC = () => {
   // In-App Screen Recording (Tổng hạn mức tích lũy tối đa 100MB)
   const {
     isRecording,
+    isPaused: isRecordingPaused,
     currentDuration: recordingDurationSeconds,
     currentClipBytes,
     clips: recordingClips,
@@ -60,6 +61,8 @@ export const OneOnOneRoomPage: React.FC = () => {
     remainingBytes: recordingRemainingBytes,
     usedPercentage: recordingUsedPercentage,
     startRecording,
+    pauseRecording,
+    resumeRecording,
     stopRecording,
     deleteClip,
     downloadClip,
@@ -312,6 +315,7 @@ export const OneOnOneRoomPage: React.FC = () => {
         title={bookingDetail?.title || 'Phòng học trực tuyến 1-1'}
         roomType="ONE_ON_ONE"
         isRecording={isRecording}
+        isPaused={isRecordingPaused}
         recordingDurationSeconds={recordingDurationSeconds}
         recordingCurrentMB={(currentClipBytes / (1024 * 1024)).toFixed(1)}
         recordingTotalMB={(recordingTotalBytes / (1024 * 1024)).toFixed(1)}
@@ -337,6 +341,7 @@ export const OneOnOneRoomPage: React.FC = () => {
             isCameraEnabled={isCameraEnabled}
             isScreenSharing={isScreenSharing}
             isRecording={isRecording}
+            isPaused={isRecordingPaused}
             recordingClipsCount={recordingClips.length}
             onToggleMic={toggleMicrophone}
             onToggleCamera={toggleCamera}
@@ -348,6 +353,9 @@ export const OneOnOneRoomPage: React.FC = () => {
                 startRecording();
               }
             }}
+            onPauseRecording={pauseRecording}
+            onResumeRecording={resumeRecording}
+            onStopRecording={() => stopRecording().then(() => setIsRecordingsModalOpen(true))}
             onOpenRecordings={() => setIsRecordingsModalOpen(true)}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onReport={() => setIsReportOpen(true)}

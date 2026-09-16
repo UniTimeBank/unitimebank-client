@@ -81,6 +81,7 @@ export const GroupRoomPage: React.FC = () => {
   // In-App Screen Recording (Tổng hạn mức tích lũy tối đa 100MB)
   const {
     isRecording,
+    isPaused: isRecordingPaused,
     currentDuration: recordingDurationSeconds,
     currentClipBytes,
     clips: recordingClips,
@@ -88,6 +89,8 @@ export const GroupRoomPage: React.FC = () => {
     remainingBytes: recordingRemainingBytes,
     usedPercentage: recordingUsedPercentage,
     startRecording,
+    pauseRecording,
+    resumeRecording,
     stopRecording,
     deleteClip,
     downloadClip,
@@ -264,14 +267,19 @@ export const GroupRoomPage: React.FC = () => {
     onHostPresenceChanged: (evt) => {
       setSocketHostPresent(evt.isHostPresent);
       if (evt.isHostPresent) {
-        toast.success('Chủ phòng đã trở lại! Buổi học tiếp tục.');
+        // Chỉ thông báo cho học viên và CHỈ KHI trước đó Host thực sự bị ngắt kết nối
+        if (!isHost && hostDisconnectedAtRef.current !== null) {
+          toast.success('Chủ phòng đã trở lại! Buổi học tiếp tục.');
+        }
         hostDisconnectedAtRef.current = null;
         setHostAbsentSecondsRemaining(300);
       } else {
-        toast.warning(
-          'Chủ phòng tạm vắng mặt',
-          'Thời gian tính phí đã tạm dừng. Phòng sẽ tự đóng sau 5 phút nếu chủ phòng không quay lại.',
-        );
+        if (!isHost) {
+          toast.warning(
+            'Chủ phòng tạm vắng mặt',
+            'Thời gian tính phí đã tạm dừng. Phòng sẽ tự đóng sau 5 phút nếu chủ phòng không quay lại.',
+          );
+        }
         if (evt.absentSince) {
           const absentMs = new Date(evt.absentSince).getTime();
           hostDisconnectedAtRef.current = absentMs;
@@ -464,9 +472,11 @@ export const GroupRoomPage: React.FC = () => {
         isHost={isHost}
         hostAccumulatedCredits={hostAccumulatedCredits}
         isRecording={isRecording}
+        isPaused={isRecordingPaused}
         recordingDurationSeconds={recordingDurationSeconds}
         recordingCurrentMB={(currentClipBytes / (1024 * 1024)).toFixed(1)}
         recordingTotalMB={(recordingTotalBytes / (1024 * 1024)).toFixed(1)}
+        recordingClipsCount={recordingClips.length}
         onOpenRecordings={() => setIsRecordingsModalOpen(true)}
         onOpenEscrowModal={() => {
           refetchStats();
@@ -600,6 +610,7 @@ export const GroupRoomPage: React.FC = () => {
         participantCount={1 + remoteParticipants.length}
         onOpenParticipants={() => setIsParticipantsModalOpen(true)}
         isRecording={isRecording}
+        isPaused={isRecordingPaused}
         recordingClipsCount={recordingClips.length}
         recordingTotalMB={(recordingTotalBytes / (1024 * 1024)).toFixed(1)}
         onToggleRecording={() => {
@@ -609,6 +620,9 @@ export const GroupRoomPage: React.FC = () => {
             startRecording();
           }
         }}
+        onPauseRecording={pauseRecording}
+        onResumeRecording={resumeRecording}
+        onStopRecording={() => stopRecording().then(() => setIsRecordingsModalOpen(true))}
         onOpenRecordings={() => setIsRecordingsModalOpen(true)}
         onToggleMic={toggleMicrophone}
         onToggleCamera={toggleCamera}

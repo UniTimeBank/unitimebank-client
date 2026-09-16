@@ -16,6 +16,7 @@ export interface SessionRecordingClip {
 
 export interface UseSessionRecorderReturn {
   isRecording: boolean;
+  isPaused: boolean;
   currentDuration: number;
   currentClipBytes: number;
   clips: SessionRecordingClip[];
@@ -24,6 +25,8 @@ export interface UseSessionRecorderReturn {
   usedPercentage: number;
   latestClip: SessionRecordingClip | null;
   startRecording: () => Promise<boolean>;
+  pauseRecording: () => void;
+  resumeRecording: () => void;
   stopRecording: () => Promise<SessionRecordingClip | null>;
   deleteClip: (id: string) => void;
   downloadClip: (id: string) => void;
@@ -32,6 +35,7 @@ export interface UseSessionRecorderReturn {
 
 export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn => {
   const [isRecording, setIsRecording] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [currentDuration, setCurrentDuration] = useState(0);
   const [currentClipBytes, setCurrentClipBytes] = useState(0);
   const [clips, setClips] = useState<SessionRecordingClip[]>([]);
@@ -84,6 +88,7 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
       recorder.onstop = () => {
         if (durationTimerRef.current) clearInterval(durationTimerRef.current);
         setIsRecording(false);
+        setIsPaused(false);
 
         // Stop all media tracks
         if (streamRef.current) {
@@ -140,8 +145,8 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
 
   const startRecording = useCallback(async (): Promise<boolean> => {
     // Check remaining quota
-    const currentTotal = clipsRef.current.reduce((acc, c) => acc + c.sizeBytes, 0);
-    const available = MAX_SESSION_RECORDING_BYTES - currentTotal;
+    const total = clipsRef.current.reduce((acc, c) => acc + c.sizeBytes, 0);
+    const available = MAX_SESSION_RECORDING_BYTES - total;
 
     if (available < 1024 * 1024) {
       toast.error('Bạn đã sử dụng hết hạn mức 100MB cho buổi học này. Vui lòng xóa bớt clip cũ để quay tiếp.');
@@ -149,14 +154,18 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
     }
 
     try {
-      // Prompt user to pick screen/window/tab to capture with audio
+      // Prompt user to pick screen/window/tab to capture with audio (prefer current tab like Zoom)
       const displayStream = await navigator.mediaDevices.getDisplayMedia({
         video: {
           displaySurface: 'browser',
           frameRate: { ideal: 30, max: 30 },
         },
         audio: true,
-      });
+        preferCurrentTab: true,
+        selfBrowserSurface: 'include',
+        systemAudio: 'include',
+        surfaceSwitching: 'include',
+      } as any);
 
       // Optionally mix microphone audio if available
       let combinedStream = displayStream;
@@ -192,7 +201,7 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
       const videoTrack = displayStream.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.onended = () => {
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          if (mediaRecorderRef.current && (mediaRecorderRef.current.state === 'recording' || mediaRecorderRef.current.state === 'paused')) {
             stopRecordingInternal();
           }
         };
@@ -234,11 +243,12 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
 
       recorder.start(1000); // Collect data every 1 second
       setIsRecording(true);
+      setIsPaused(false);
       setCurrentDuration(0);
 
-      // Start duration timer
+      // Start duration timer (increments every second while active)
       durationTimerRef.current = setInterval(() => {
-        setCurrentDuration(Math.floor((Date.now() - startTimeRef.current) / 1000));
+        setCurrentDuration((prev) => prev + 1);
       }, 1000);
 
       toast.success('Bắt đầu ghi hình buổi học (Giới hạn tối đa 100MB)');
@@ -252,6 +262,31 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
       return false;
     }
   }, [stopRecordingInternal]);
+
+  const pauseRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state === 'recording') {
+      recorder.pause();
+      setIsPaused(true);
+      if (durationTimerRef.current) {
+        clearInterval(durationTimerRef.current);
+        durationTimerRef.current = null;
+      }
+      toast('Đã tạm dừng ghi hình buổi học', { icon: '⏸️' });
+    }
+  }, []);
+
+  const resumeRecording = useCallback(() => {
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state === 'paused') {
+      recorder.resume();
+      setIsPaused(false);
+      durationTimerRef.current = setInterval(() => {
+        setCurrentDuration((prev) => prev + 1);
+      }, 1000);
+      toast('Đã tiếp tục ghi hình buổi học', { icon: '▶️' });
+    }
+  }, []);
 
   const deleteClip = useCallback((id: string) => {
     setClips((prev) => {
@@ -291,6 +326,7 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
 
   return {
     isRecording,
+    isPaused,
     currentDuration,
     currentClipBytes,
     clips,
@@ -299,6 +335,8 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
     usedPercentage,
     latestClip,
     startRecording,
+    pauseRecording,
+    resumeRecording,
     stopRecording: stopRecordingInternal,
     deleteClip,
     downloadClip,

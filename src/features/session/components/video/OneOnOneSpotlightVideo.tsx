@@ -15,6 +15,9 @@ import {
   Sparkles,
   Flag,
   CircleDot,
+  Pause,
+  Play,
+  Square,
 } from 'lucide-react';
 import { toast } from '@/shared/utils';
 
@@ -33,11 +36,15 @@ interface OneOnOneSpotlightVideoProps {
   isCameraEnabled: boolean;
   isScreenSharing: boolean;
   isRecording?: boolean;
+  isPaused?: boolean;
   recordingClipsCount?: number;
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleScreenShare: () => void;
   onToggleRecording?: () => void;
+  onPauseRecording?: () => void;
+  onResumeRecording?: () => void;
+  onStopRecording?: () => void;
   onOpenRecordings?: () => void;
   onOpenSettings: () => void;
   onReport?: () => void;
@@ -56,11 +63,15 @@ export const OneOnOneSpotlightVideo: React.FC<OneOnOneSpotlightVideoProps> = ({
   isCameraEnabled,
   isScreenSharing,
   isRecording = false,
+  isPaused = false,
   recordingClipsCount = 0,
   onToggleMic,
   onToggleCamera,
   onToggleScreenShare,
   onToggleRecording,
+  onPauseRecording,
+  onResumeRecording,
+  onStopRecording,
   onOpenRecordings,
   onOpenSettings,
   onReport,
@@ -295,25 +306,56 @@ export const OneOnOneSpotlightVideo: React.FC<OneOnOneSpotlightVideoProps> = ({
             <Monitor className="w-5 h-5" />
           </button>
 
-          {/* 4. Screen Recording Toggle */}
+          {/* 4. Screen Recording Controls (Zoom-style) */}
           {onToggleRecording && (
-            <button
-              type="button"
-              onClick={onToggleRecording}
-              title={isRecording ? 'Dừng quay màn hình (Tối đa 100MB)' : 'Quay màn hình buổi học (Tối đa 100MB)'}
-              className={`relative w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm ${
-                isRecording
-                  ? 'bg-rose-600 hover:bg-rose-700 text-white ring-2 ring-rose-400 animate-pulse'
-                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white'
-              }`}
-            >
-              <CircleDot className="w-5 h-5" />
-              {recordingClipsCount > 0 && !isRecording && (
-                <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-indigo-600 text-[10px] font-bold text-white flex items-center justify-center border-2 border-slate-900">
-                  {recordingClipsCount}
-                </span>
-              )}
-            </button>
+            isRecording ? (
+              <div className="flex items-center gap-1.5 p-1 rounded-full bg-slate-800/90 border border-white/20">
+                {/* Pause/Resume */}
+                {isPaused ? (
+                  <button
+                    type="button"
+                    onClick={onResumeRecording}
+                    title="Tiếp tục ghi hình"
+                    className="w-9 h-9 rounded-full bg-amber-500 hover:bg-amber-600 text-white flex items-center justify-center transition-all cursor-pointer animate-pulse"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onPauseRecording}
+                    title="Tạm dừng ghi hình"
+                    className="w-9 h-9 rounded-full bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center transition-all cursor-pointer"
+                  >
+                    <Pause className="w-4 h-4" />
+                  </button>
+                )}
+
+                {/* Stop */}
+                <button
+                  type="button"
+                  onClick={onStopRecording || onToggleRecording}
+                  title="Dừng ghi hình & Lưu clip"
+                  className="w-9 h-9 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center transition-all cursor-pointer"
+                >
+                  <Square className="w-3.5 h-3.5 fill-current" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={onToggleRecording}
+                title="Ghi hình buổi học (Giống Zoom - Tối đa 100MB)"
+                className="relative w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
+              >
+                <CircleDot className="w-5 h-5" />
+                {recordingClipsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-indigo-600 text-[10px] font-bold text-white flex items-center justify-center border-2 border-slate-900">
+                    {recordingClipsCount}
+                  </span>
+                )}
+              </button>
+            )
           )}
 
           {/* 5. Settings Toggle */}

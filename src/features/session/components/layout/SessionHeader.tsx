@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock3, Coins, GraduationCap } from 'lucide-react';
+import { Clock3, Coins, GraduationCap, Users } from 'lucide-react';
 import LogoImage from '@/assets/images/Logo.png';
 import { NotificationDropdown } from '@/features/notification';
 
@@ -7,6 +7,7 @@ interface SessionHeaderProps {
   title?: string;
   roomType?: 'ONE_ON_ONE' | 'GROUP';
   isRecording?: boolean;
+  isPaused?: boolean;
   recordingDurationSeconds?: number;
   recordingCurrentMB?: string;
   recordingTotalMB?: string;
@@ -38,6 +39,7 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
   isHost = false,
   hostAccumulatedCredits = 0,
   isRecording = false,
+  isPaused = false,
   recordingDurationSeconds,
   recordingCurrentMB,
   recordingTotalMB,
@@ -63,17 +65,25 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
           <span className="truncate">{title}</span>
         </div>
 
-        {/* Real-time REC badge */}
+        {/* Real-time REC badge (Zoom-style) */}
         {isRecording && (
           <button
             type="button"
             onClick={onOpenRecordings}
-            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold animate-pulse hover:bg-rose-100 transition-colors cursor-pointer"
-            title="Đang ghi hình buổi học. Bấm để xem chi tiết"
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+              isPaused
+                ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100'
+                : 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse hover:bg-rose-100'
+            }`}
+            title={isPaused ? 'Đã tạm dừng ghi hình. Bấm để xem chi tiết' : 'Đang ghi hình buổi học. Bấm để xem chi tiết'}
           >
-            <span className="w-2 h-2 rounded-full bg-rose-600" />
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isPaused ? 'bg-amber-500' : 'bg-rose-600'
+              }`}
+            />
             <span>
-              REC{' '}
+              {isPaused ? 'TẠM DỪNG' : 'REC'}{' '}
               {recordingDurationSeconds !== undefined
                 ? `${Math.floor(recordingDurationSeconds / 60)
                     .toString()
@@ -146,9 +156,10 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
         )}
 
         {roomType === 'GROUP' && participantCount !== undefined && (
-          <span className="hidden lg:inline text-xs font-medium text-slate-500">
-            {participantCount} người
-          </span>
+          <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100/90 border border-slate-200/80 text-xs font-semibold text-slate-700 shadow-2xs">
+            <Users className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+            <span>{participantCount} người</span>
+          </div>
         )}
 
         {/* Real-time Notification Dropdown */}

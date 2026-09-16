@@ -13,6 +13,9 @@ import {
   Power,
   Users,
   CircleDot,
+  Pause,
+  Play,
+  Square,
 } from 'lucide-react';
 
 interface SessionControlsBarProps {
@@ -26,6 +29,7 @@ interface SessionControlsBarProps {
   isHost?: boolean;
   participantCount?: number;
   isRecording?: boolean;
+  isPaused?: boolean;
   recordingClipsCount?: number;
   recordingTotalMB?: string;
   onToggleMic: () => void;
@@ -37,6 +41,9 @@ interface SessionControlsBarProps {
   onOpenSettings?: () => void;
   onOpenParticipants?: () => void;
   onToggleRecording?: () => void;
+  onPauseRecording?: () => void;
+  onResumeRecording?: () => void;
+  onStopRecording?: () => void;
   onOpenRecordings?: () => void;
   onReport?: () => void;
   onLeave: () => void;
@@ -54,6 +61,7 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
   isHost = false,
   participantCount,
   isRecording = false,
+  isPaused = false,
   recordingClipsCount = 0,
   recordingTotalMB,
   onToggleMic,
@@ -65,13 +73,16 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
   onOpenSettings,
   onOpenParticipants,
   onToggleRecording,
+  onPauseRecording,
+  onResumeRecording,
+  onStopRecording,
   onOpenRecordings,
   onReport,
   onLeave,
   onCloseRoom,
 }) => {
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 md:gap-3 bg-white/95 backdrop-blur-xl px-4 md:px-6 py-2 rounded-2xl border border-slate-200/90 shadow-xl">
+    <div className="fixed bottom-6 sm:bottom-7 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 md:gap-2.5 bg-white/95 backdrop-blur-xl px-4 md:px-5 py-2 rounded-2xl border border-slate-200/90 shadow-xl">
       {/* Microphone */}
       <button
         onClick={onToggleMic}
@@ -144,32 +155,53 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
         )}
       </button>
 
-      {/* Participants Button */}
+      {/* Participants Button (Clean Zoom-style layout) */}
       {onOpenParticipants && (
         <button
           onClick={onOpenParticipants}
-          className="relative p-3 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60 transition-all shadow-xs flex items-center justify-center cursor-pointer"
+          className="h-11 px-3 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer font-semibold text-xs"
           title="Danh sách thành viên & Quản lý"
         >
-          <Users className="w-5 h-5" />
-          {participantCount !== undefined && participantCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-slate-700 text-white text-[10px] font-bold px-1.5 h-4 min-w-4 rounded-full flex items-center justify-center border border-white">
+          <Users className="w-4 h-4 text-slate-600 shrink-0" />
+          {participantCount !== undefined && (
+            <span className="bg-white text-slate-800 text-[11px] font-bold px-1.5 py-0.2 rounded-md border border-slate-200 shadow-2xs">
               {participantCount}
             </span>
           )}
         </button>
       )}
 
-      {/* Screen Recording Button (100MB Total Quota) */}
+      {/* Screen Recording Controls (Zoom-style Pause/Resume & Stop) */}
       {isRecording ? (
-        <button
-          onClick={onToggleRecording}
-          className="p-3 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition-all shadow-md shadow-rose-600/30 flex items-center gap-1.5 px-3 cursor-pointer animate-pulse"
-          title="Đang ghi hình! Nhấn để dừng quay"
-        >
-          <CircleDot className="w-5 h-5 text-white" />
-          <span className="text-xs font-bold hidden sm:inline">REC</span>
-        </button>
+        <div className="flex items-center gap-1 bg-rose-50 p-0.5 rounded-xl border border-rose-200 shadow-xs">
+          {/* Pause / Resume Button */}
+          {isPaused ? (
+            <button
+              onClick={onResumeRecording}
+              className="p-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-all shadow-xs flex items-center justify-center cursor-pointer animate-pulse"
+              title="Tiếp tục ghi hình"
+            >
+              <Play className="w-4 h-4 fill-current" />
+            </button>
+          ) : (
+            <button
+              onClick={onPauseRecording}
+              className="p-2 rounded-lg bg-white text-slate-700 hover:bg-amber-50 hover:text-amber-700 border border-slate-200/60 transition-all shadow-xs flex items-center justify-center cursor-pointer"
+              title="Tạm dừng ghi hình"
+            >
+              <Pause className="w-4 h-4" />
+            </button>
+          )}
+
+          {/* Stop Button */}
+          <button
+            onClick={onStopRecording || onToggleRecording}
+            className="p-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700 transition-all shadow-xs flex items-center justify-center cursor-pointer"
+            title="Dừng ghi hình & Lưu clip"
+          >
+            <Square className="w-4 h-4 fill-current" />
+          </button>
+        </div>
       ) : (
         <button
           onClick={
@@ -183,10 +215,10 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
           title={
             recordingClipsCount > 0
               ? `Xem ${recordingClipsCount} video đã quay (${recordingTotalMB || '0'} MB / 100 MB)`
-              : 'Quay màn hình buổi học (Tối đa 100MB)'
+              : 'Ghi hình buổi học (Giống Zoom - Tối đa 100MB)'
           }
         >
-          <Video className="w-5 h-5" />
+          <CircleDot className="w-5 h-5 text-slate-700" />
           {recordingClipsCount > 0 && (
             <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
               {recordingClipsCount}

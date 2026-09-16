@@ -11,6 +11,8 @@ import {
   User,
   Clock,
   Coins,
+  Shield,
+  Search,
 } from 'lucide-react';
 import { Modal, Button } from '@/shared/components/ui';
 
@@ -50,6 +52,7 @@ export const InRoomParticipantsModal: React.FC<InRoomParticipantsModalProps> = (
   onReportParticipant,
 }) => {
   const isHost = mentorId && currentUserId ? mentorId === currentUserId : false;
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Confirm state for Kick or Block action
   const [confirmAction, setConfirmAction] = useState<{
@@ -63,6 +66,16 @@ export const InRoomParticipantsModal: React.FC<InRoomParticipantsModalProps> = (
     ...(localParticipant ? [{ participant: localParticipant, isLocal: true }] : []),
     ...remoteParticipants.map((p) => ({ participant: p, isLocal: false })),
   ];
+
+  const filteredParticipants = allParticipants.filter(({ participant, isLocal }) => {
+    if (!searchQuery.trim()) return true;
+    const name = participant.name || (isLocal ? 'Bạn' : participant.identity);
+    return name.toLowerCase().includes(searchQuery.toLowerCase().trim());
+  });
+
+  const learnersOnly = allParticipants.filter(
+    ({ participant }) => participant.identity !== mentorId,
+  );
 
   const handleConfirmAction = () => {
     if (!confirmAction) return;
@@ -79,22 +92,55 @@ export const InRoomParticipantsModal: React.FC<InRoomParticipantsModalProps> = (
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} size="md" title="Thành viên trong phòng">
-        <div className="space-y-4 pt-1">
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-500 pb-2 border-b border-slate-100">
-            <span className="flex items-center gap-1.5">
-              <Users className="w-4 h-4 text-slate-600" />
-              Tổng cộng: {allParticipants.length} người
-            </span>
-            {isHost && (
-              <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                Quyền Host: Quản lý phòng
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="md"
+        title={
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-primary-50 text-primary-700 flex items-center justify-center shrink-0">
+              <Users className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">Thành viên buổi học</h3>
+              <p className="text-[11px] text-slate-500 font-medium">
+                {allParticipants.length} người đang có mặt trong phòng
+              </p>
+            </div>
+          </div>
+        }
+      >
+        <div className="space-y-3 pt-1">
+          {/* Host Privilege Pill / Search */}
+          <div className="flex items-center justify-between gap-2 pb-1">
+            {isHost ? (
+              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/80 flex items-center gap-1.5 shadow-2xs">
+                <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Quyền Host: Quản lý phòng học</span>
               </span>
+            ) : (
+              <span className="text-[11px] text-slate-500 font-medium">
+                Danh sách người tham gia
+              </span>
+            )}
+
+            {allParticipants.length > 3 && (
+              <div className="relative w-44">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm thành viên..."
+                  className="w-full pl-8 pr-2.5 py-1 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
             )}
           </div>
 
-          <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
-            {allParticipants.map(({ participant, isLocal }) => {
+          {/* Participant List */}
+          <div className="space-y-2 max-h-80 overflow-y-auto pr-0.5">
+            {filteredParticipants.map(({ participant, isLocal }) => {
               const participantId = participant.identity;
               const isParticipantHost = mentorId === participantId;
               const isSelf = currentUserId === participantId;
@@ -114,38 +160,50 @@ export const InRoomParticipantsModal: React.FC<InRoomParticipantsModalProps> = (
                   key={participantId}
                   className={`flex items-center justify-between p-3 rounded-2xl border transition-all ${
                     isParticipantHost
-                      ? 'bg-amber-50/40 border-amber-200/80 shadow-2xs'
+                      ? 'bg-amber-50/30 border-amber-200/60 shadow-2xs'
                       : isSelf
-                      ? 'bg-primary-50/30 border-primary-200/80'
-                      : 'bg-white border-slate-200/80 hover:bg-slate-50'
+                      ? 'bg-slate-50/80 border-slate-200/80'
+                      : 'bg-white border-slate-200/70 hover:border-slate-300 hover:bg-slate-50/50'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div
-                      className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-sm shrink-0 ${
-                        isParticipantHost
-                          ? 'bg-amber-500 text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      {isParticipantHost ? (
-                        <Crown className="w-5 h-5 text-white" />
-                      ) : (
-                        <User className="w-5 h-5 text-slate-500" />
-                      )}
+                    {/* Avatar with role ring */}
+                    <div className="relative shrink-0">
+                      <div
+                        className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs ${
+                          isParticipantHost
+                            ? 'bg-amber-100 text-amber-800 ring-2 ring-amber-300/80'
+                            : isSelf
+                            ? 'bg-primary-100 text-primary-800 ring-2 ring-primary-200'
+                            : 'bg-slate-100 text-slate-700 border border-slate-200'
+                        }`}
+                      >
+                        {isParticipantHost ? (
+                          <Crown className="w-4 h-4 text-amber-600" />
+                        ) : (
+                          displayName.substring(0, 1).toUpperCase() || <User className="w-4 h-4" />
+                        )}
+                      </div>
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white absolute -bottom-0.5 -right-0.5" />
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="text-xs font-bold text-slate-800 truncate">
-                          {displayName} {isSelf && '(Bạn)'}
-                        </p>
+                        <span className="text-xs font-bold text-slate-800 truncate max-w-[160px] sm:max-w-[200px]">
+                          {displayName}
+                        </span>
+                        {isSelf && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200/60">
+                            Bạn
+                          </span>
+                        )}
                         {isParticipantHost ? (
-                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">
-                            Host
+                          <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-amber-100/90 text-amber-800 border border-amber-200/70 flex items-center gap-1">
+                            <Crown className="w-2.5 h-2.5 text-amber-600" />
+                            Chủ phòng
                           </span>
                         ) : (
-                          <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                          <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-100 text-slate-500">
                             Học viên
                           </span>
                         )}
@@ -153,17 +211,17 @@ export const InRoomParticipantsModal: React.FC<InRoomParticipantsModalProps> = (
 
                       {/* Thời gian học & Credit nếu là học viên */}
                       {!isParticipantHost && (activeMinutes !== undefined || credits !== undefined) && (
-                        <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-400">
+                        <div className="flex items-center gap-2.5 mt-1 text-[11px] text-slate-500 font-medium">
                           {activeMinutes !== undefined && (
-                            <span className="flex items-center gap-0.5">
-                              <Clock className="w-3 h-3" />
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-slate-400" />
                               {activeMinutes} phút
                             </span>
                           )}
                           {credits !== undefined && (
-                            <span className="flex items-center gap-0.5 text-emerald-600 font-semibold">
-                              <Coins className="w-3 h-3" />
-                              {credits} cr
+                            <span className="flex items-center gap-1 text-emerald-600 font-semibold">
+                              <Coins className="w-3 h-3 text-emerald-500" />
+                              {credits} Credit
                             </span>
                           )}
                         </div>
@@ -171,36 +229,36 @@ export const InRoomParticipantsModal: React.FC<InRoomParticipantsModalProps> = (
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 shrink-0 ml-2">
+                  {/* Right Actions & Status */}
+                  <div className="flex items-center gap-1.5 shrink-0 ml-2">
                     {/* Mic Status Icon */}
                     <div
-                      className={`p-1.5 rounded-lg ${
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
                         participant.isMicrophoneEnabled
-                          ? 'text-slate-600 bg-slate-100'
-                          : 'text-rose-500 bg-rose-50'
+                          ? 'text-emerald-700 bg-emerald-50 border border-emerald-200/60'
+                          : 'text-slate-400 bg-slate-100 border border-slate-200/60'
                       }`}
                       title={participant.isMicrophoneEnabled ? 'Micro đang bật' : 'Micro đang tắt'}
                     >
                       {participant.isMicrophoneEnabled ? (
-                        <Mic className="w-4 h-4" />
+                        <Mic className="w-3.5 h-3.5" />
                       ) : (
-                        <MicOff className="w-4 h-4" />
+                        <MicOff className="w-3.5 h-3.5" />
                       )}
                     </div>
 
                     {/* Moderation Controls (Host only, not targeting self or other hosts) */}
                     {isHost && !isSelf && !isParticipantHost && (
-                      <>
+                      <div className="flex items-center gap-1 pl-1 border-l border-slate-200">
                         {/* Mute toggle */}
                         {onMuteParticipant && (
                           <button
                             type="button"
                             onClick={() => onMuteParticipant(participantId)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-                            title="Tắt tiếng thành viên này"
+                            className="w-7 h-7 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors flex items-center justify-center cursor-pointer"
+                            title="Tắt tiếng học viên"
                           >
-                            <MicOff className="w-4 h-4 text-slate-600" />
+                            <MicOff className="w-3.5 h-3.5" />
                           </button>
                         )}
 
@@ -215,10 +273,10 @@ export const InRoomParticipantsModal: React.FC<InRoomParticipantsModalProps> = (
                                 userName: displayName,
                               })
                             }
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer"
-                            title="Mời ra khỏi phòng học (Kick)"
+                            className="w-7 h-7 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition-colors flex items-center justify-center cursor-pointer"
+                            title="Mời ra khỏi phòng (Kick)"
                           >
-                            <UserX className="w-4 h-4" />
+                            <UserX className="w-3.5 h-3.5" />
                           </button>
                         )}
 
@@ -233,10 +291,10 @@ export const InRoomParticipantsModal: React.FC<InRoomParticipantsModalProps> = (
                                 userName: displayName,
                               })
                             }
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            className="w-7 h-7 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors flex items-center justify-center cursor-pointer"
                             title="Chặn vĩnh viễn không cho vào lại (Block)"
                           >
-                            <Ban className="w-4 h-4" />
+                            <Ban className="w-3.5 h-3.5" />
                           </button>
                         )}
 
@@ -248,22 +306,44 @@ export const InRoomParticipantsModal: React.FC<InRoomParticipantsModalProps> = (
                               onClose();
                               onReportParticipant(participantId, displayName);
                             }}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                            title="Báo cáo vi phạm thành viên này"
+                            className="w-7 h-7 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors flex items-center justify-center cursor-pointer"
+                            title="Báo cáo vi phạm"
                           >
-                            <ShieldAlert className="w-4 h-4" />
+                            <ShieldAlert className="w-3.5 h-3.5" />
                           </button>
                         )}
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
               );
             })}
+
+            {/* Empty state when only host is present */}
+            {learnersOnly.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-7 px-4 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200/90 text-center my-1">
+                <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200/70 shadow-2xs flex items-center justify-center text-slate-400 mb-2">
+                  <Users className="w-5 h-5" />
+                </div>
+                <p className="text-xs font-bold text-slate-700">Chưa có học viên nào tham gia</p>
+                <p className="text-[11px] text-slate-400 mt-0.5 max-w-xs leading-relaxed">
+                  Khi học viên tham gia vào phòng học, thông tin thời lượng và quyền quản trị sẽ hiển thị tại đây.
+                </p>
+              </div>
+            )}
           </div>
 
-          <div className="pt-2 border-t border-slate-100 flex justify-end">
-            <Button onClick={onClose} variant="primary" size="sm" className="rounded-xl px-5">
+          {/* Modal Footer */}
+          <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+            <span className="text-[11px] text-slate-400 font-medium">
+              UniTime Bank • Phòng học nhóm
+            </span>
+            <Button
+              onClick={onClose}
+              variant="primary"
+              size="sm"
+              className="bg-primary-700 hover:bg-primary-800 text-white rounded-xl px-5 text-xs font-bold shadow-xs cursor-pointer"
+            >
               Đóng
             </Button>
           </div>
@@ -327,7 +407,7 @@ export const InRoomParticipantsModal: React.FC<InRoomParticipantsModalProps> = (
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-xl"
+                className="rounded-xl text-xs cursor-pointer"
                 onClick={() => setConfirmAction(null)}
               >
                 Hủy
@@ -335,7 +415,7 @@ export const InRoomParticipantsModal: React.FC<InRoomParticipantsModalProps> = (
               <Button
                 variant={confirmAction.type === 'BLOCK' ? 'danger' : 'primary'}
                 size="sm"
-                className="rounded-xl"
+                className="rounded-xl text-xs font-bold cursor-pointer"
                 onClick={handleConfirmAction}
               >
                 {confirmAction.type === 'BLOCK' ? 'Chặn ngay' : 'Mời ra'}
