@@ -17,6 +17,7 @@ export interface PostSessionRatingModalProps {
   mentorName?: string;
   mentorAvatar?: string;
   sessionId?: string;
+  initialStars?: number;
   onSuccess?: () => void;
 }
 
@@ -46,12 +47,19 @@ export const PostSessionRatingModal: React.FC<PostSessionRatingModalProps> = ({
   mentorName = 'Người hướng dẫn',
   mentorAvatar,
   sessionId,
+  initialStars,
   onSuccess,
 }) => {
-  const [stars, setStars] = useState<number>(5);
+  const [stars, setStars] = useState<number>(initialStars || 5);
   const [hoverStars, setHoverStars] = useState<number | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [comment, setComment] = useState<string>('');
+
+  React.useEffect(() => {
+    if (isOpen && initialStars) {
+      setStars(initialStars);
+    }
+  }, [isOpen, initialStars]);
 
   const authUser = useAppSelector(selectCurrentUser);
   const { profile } = useUserProfile();

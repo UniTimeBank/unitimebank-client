@@ -21,6 +21,7 @@ import {
   DeviceSettingsModal,
   AudioTrackRenderer,
   SessionRecordingsModal,
+  SessionEndedModal,
 } from '../components';
 import { ReportViolationModal } from '@/features/moderation';
 import { Modal, Button } from '@/shared/components/ui';
@@ -229,13 +230,13 @@ export const OneOnOneRoomPage: React.FC = () => {
   // 6. Auto-finish and exit when remaining time expires
   const [completeBookingMutation] = useCompleteBookingMutation();
   const [hasAutoEnded, setHasAutoEnded] = useState(false);
+  const [isEndedModalOpen, setIsEndedModalOpen] = useState(false);
 
   useEffect(() => {
     if (bookingDetail?.scheduledEnd && !hasAutoEnded && !isJoining) {
       const endTime = new Date(bookingDetail.scheduledEnd).getTime();
       if (Date.now() >= endTime) {
         setHasAutoEnded(true);
-        toast.info('Thời gian buổi học đã kết thúc. Đang lưu kết quả và chuyển về trang quản lý...');
         if (bookingId) {
           completeBookingMutation(bookingId)
             .unwrap()
@@ -244,13 +245,10 @@ export const OneOnOneRoomPage: React.FC = () => {
             });
         }
         disconnect();
-        const timeout = setTimeout(() => {
-          navigate('/manage/bookings');
-        }, 2000);
-        return () => clearTimeout(timeout);
+        setIsEndedModalOpen(true);
       }
     }
-  }, [now, bookingDetail, hasAutoEnded, isJoining, disconnect, navigate, bookingId, completeBookingMutation]);
+  }, [now, bookingDetail, hasAutoEnded, isJoining, disconnect, bookingId, completeBookingMutation]);
 
   // 7. Safe Leave Room handler with Shared Modal
   const handleLeaveRoom = () => {
@@ -462,6 +460,19 @@ export const OneOnOneRoomPage: React.FC = () => {
           setReportInitialFiles([clip.file]);
           setIsReportOpen(true);
         }}
+      />
+      {/* 8. Session Ended Modal (Rating & Result summary) */}
+      <SessionEndedModal
+        isOpen={isEndedModalOpen}
+        creditsTransferred={bookingDetail?.totalCreditEscrowed || 0}
+        durationFormatted={`${bookingDetail?.durationMinutes || 60} phút`}
+        isHost={isMentor}
+        bookingId={bookingId}
+        sessionType="ONE_ON_ONE"
+        mentorId={bookingDetail?.mentorId}
+        mentorName={bookingDetail?.mentorName || partnerName}
+        mentorAvatar={bookingDetail?.mentorAvatar || partnerAvatar}
+        redirectUrl="/manage/bookings"
       />
     </div>
   );
