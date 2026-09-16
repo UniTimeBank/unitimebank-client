@@ -21,10 +21,17 @@ export const moderationApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, _error, { mentorId, bookingId }) => [
         { type: 'Moderation', id: `USER_${mentorId}` },
         { type: 'Moderation', id: `BOOKING_${bookingId}` },
+        { type: 'Moderation', id: 'MY_RATED_SESSIONS' },
         { type: 'Booking', id: bookingId },
         { type: 'Booking', id: 'LIST' },
         'User',
       ],
+    }),
+
+    // 1b. Lấy danh sách các session/booking đã được đánh giá bởi chính tôi
+    getMyRatedSessions: builder.query<{ id: string; bookingId?: string; roomId?: string; stars?: number }[], void>({
+      query: () => '/moderation/ratings/my-rated-sessions',
+      providesTags: [{ type: 'Moderation', id: 'MY_RATED_SESSIONS' }],
     }),
 
     // 2. Lấy danh sách đánh giá của 1 người dùng
@@ -118,5 +125,6 @@ export const {
   useGetMyReportsQuery,
   useGetMentorLeaderboardQuery,
   useGetLearnerLeaderboardQuery,
+  useGetMyRatedSessionsQuery,
 } = moderationApi;
 

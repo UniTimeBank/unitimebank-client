@@ -1,14 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Plus, CalendarCheck, Search, X, GraduationCap, BookOpen } from 'lucide-react';
 import { BookingCard, CancelBookingModal } from '../components';
 import { BookingDetailModal } from '@/features/booking';
 import { PostSessionRatingModal } from '@/features/moderation';
+import { useGetMyRatedSessionsQuery } from '@/core/api/moderation';
 import { Button, Tabs, Pagination } from '@/shared/components/ui';
 import { useManageBookings, type BookingRoleType, type BookingTabType } from '../hooks';
 import type { BookingItem } from '../types';
 
 export const BookingManagementPage: React.FC = () => {
   const [ratingBooking, setRatingBooking] = useState<BookingItem | null>(null);
+
+  // Lấy danh sách các buổi học đã được người dùng gửi đánh giá
+  const { data: myRatedSessions = [] } = useGetMyRatedSessionsQuery(undefined, {
+    refetchOnFocus: true,
+  });
+
+  const ratedBookingIds = useMemo(() => {
+    return new Set(myRatedSessions.map((r: any) => r.bookingId).filter(Boolean));
+  }, [myRatedSessions]);
 
   const {
     currentUserId,
@@ -246,6 +256,7 @@ export const BookingManagementPage: React.FC = () => {
                 isAccepting={isAccepting}
                 isRejecting={isRejecting}
                 isCancelling={isCancelling}
+                isRated={ratedBookingIds.has(b.id)}
               />
             ))}
           </div>

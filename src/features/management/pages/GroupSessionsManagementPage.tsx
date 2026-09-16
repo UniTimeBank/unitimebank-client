@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Plus, Radio, Search, X, CalendarCheck, Users, Clock, GraduationCap, BookOpen, Shield } from 'lucide-react';
+import { Plus, Radio, Search, X, CalendarCheck, Users, Clock, GraduationCap, BookOpen, Shield, Check } from 'lucide-react';
 import { CreateGroupRoomModal } from '@/features/session';
 import { PostSessionRatingModal } from '@/features/moderation';
+import { useGetMyRatedSessionsQuery } from '@/core/api/moderation';
 import { ManageGroupRoomCard } from '../components';
 import {
   useGetActiveGroupRoomsQuery,
@@ -44,6 +45,15 @@ export const GroupSessionsManagementPage: React.FC = () => {
   } = useGetGroupRoomsHistoryQuery(undefined, {
     refetchOnFocus: true,
   });
+
+  // Query danh sách session đã được người dùng đánh giá
+  const { data: myRatedSessions = [] } = useGetMyRatedSessionsQuery(undefined, {
+    refetchOnFocus: true,
+  });
+
+  const ratedRoomIdsSet = useMemo(() => {
+    return new Set(myRatedSessions.map((r: any) => r.roomId).filter(Boolean));
+  }, [myRatedSessions]);
 
   const [closeGroupRoom, { isLoading: isClosingGroupRoom }] = useCloseGroupRoomMutation();
 
@@ -538,6 +548,7 @@ export const GroupSessionsManagementPage: React.FC = () => {
               const rawCat = (room.category || 'PROGRAMMING').toUpperCase();
               const categoryLabel = (SKILL_CATEGORY_LABELS[rawCat] || room.category || 'HỌC NHÓM').toUpperCase();
               const coverUrl = room.coverImage || getCategoryCover(room.category);
+              const isRoomRated = Boolean(room.isRated || (room.roomId && ratedRoomIdsSet.has(room.roomId)));
 
               return (
                 <div
@@ -670,15 +681,22 @@ export const GroupSessionsManagementPage: React.FC = () => {
 
                   {/* Actions - subtle primary touch matching brand */}
                   <div className="shrink-0 flex items-center justify-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedRatingRoom(room)}
-                      className="rounded-lg bg-white hover:bg-primary-50 border border-primary-200 text-primary-700 hover:text-primary-800 font-semibold text-xs py-1.5 px-3.5 shadow-2xs transition-colors cursor-pointer"
-                    >
-                      Đánh giá
-                    </Button>
+                    {isRoomRated ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 font-medium text-xs select-none">
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Đã đánh giá</span>
+                      </span>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedRatingRoom(room)}
+                        className="rounded-lg bg-white hover:bg-primary-50 border border-primary-200 text-primary-700 hover:text-primary-800 font-semibold text-xs py-1.5 px-3.5 shadow-2xs transition-colors cursor-pointer"
+                      >
+                        Đánh giá
+                      </Button>
+                    )}
                   </div>
                 </div>
               );

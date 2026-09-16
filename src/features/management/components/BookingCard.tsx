@@ -6,6 +6,7 @@ import {
   MessageSquare,
   Shield,
   Star,
+  Check,
 } from 'lucide-react';
 import { BookingStatus, type BookingItem } from '../types';
 import { Button } from '@/shared/components/ui';
@@ -25,6 +26,7 @@ export interface BookingCardProps {
   isAccepting?: boolean;
   isRejecting?: boolean;
   isCancelling?: boolean;
+  isRated?: boolean;
 }
 
 export const BookingCard: React.FC<BookingCardProps> = ({
@@ -40,6 +42,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   isAccepting = false,
   isRejecting = false,
   isCancelling = false,
+  isRated = false,
 }) => {
   const isMentor = currentUserId ? booking.mentorId === currentUserId : true;
 
@@ -367,15 +370,22 @@ export const BookingCard: React.FC<BookingCardProps> = ({
                 </Button>
                 {/* Chỉ Học viên mới được đánh giá Người dạy */}
                 {!isMentor && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onRate?.(booking)}
-                    className="rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-medium text-xs py-1.5 px-3 cursor-pointer"
-                  >
-                    Đánh giá
-                  </Button>
+                  isRated ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 font-medium text-xs select-none">
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Đã đánh giá</span>
+                    </span>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onRate?.(booking)}
+                      className="rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-medium text-xs py-1.5 px-3 cursor-pointer"
+                    >
+                      Đánh giá
+                    </Button>
+                  )
                 )}
               </>
             )}
