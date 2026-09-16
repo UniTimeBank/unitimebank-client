@@ -5,3 +5,4 @@ export * from './useHeartbeat';
 export * from './useInRoomChat';
 export * from './useWhiteboard';
 export * from './useCodeEditor';
+export * from './useSessionRecorder';

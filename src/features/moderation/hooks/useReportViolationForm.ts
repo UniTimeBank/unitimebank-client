@@ -17,6 +17,7 @@ export interface UseReportViolationFormOptions {
   onSuccess?: () => void;
   onClose: () => void;
   maxFiles?: number;
+  initialFiles?: File[];
 }
 
 export const useReportViolationForm = ({
@@ -26,10 +27,20 @@ export const useReportViolationForm = ({
   onSuccess,
   onClose,
   maxFiles = 3,
+  initialFiles,
 }: UseReportViolationFormOptions) => {
   const [category, setCategory] = useState<ReportCategory>('AFK_ABUSE');
   const [description, setDescription] = useState<string>('');
-  const [selectedFiles, setSelectedFiles] = useState<SelectedEvidenceFile[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<SelectedEvidenceFile[]>(() => {
+    if (initialFiles && initialFiles.length > 0) {
+      return initialFiles.slice(0, maxFiles).map((file) => ({
+        id: `${file.name}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        file,
+        previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+      }));
+    }
+    return [];
+  });
   const [isUploadingFiles, setIsUploadingFiles] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -51,8 +62,10 @@ export const useReportViolationForm = ({
     const filesArray = Array.from(fileList).slice(0, availableSlots);
 
     for (const file of filesArray) {
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`File "${file.name}" vượt quá dung lượng tối đa 10MB`);
+      const isVideo = file.type.startsWith('video/');
+      const maxSizeBytes = isVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        toast.error(`File "${file.name}" vượt quá dung lượng tối đa ${isVideo ? '100MB' : '10MB'}`);
         continue;
       }
 
@@ -74,6 +87,28 @@ export const useReportViolationForm = ({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const attachFile = (file: File) => {
+    if (selectedFiles.length >= maxFiles) {
+      toast.error(`Bạn chỉ được tải lên tối đa ${maxFiles} file bằng chứng`);
+      return;
+    }
+    const isVideo = file.type.startsWith('video/');
+    const maxSizeBytes = isVideo ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      toast.error(`File "${file.name}" vượt quá dung lượng tối đa ${isVideo ? '100MB' : '10MB'}`);
+      return;
+    }
+    const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
+    setSelectedFiles((prev) => [
+      ...prev,
+      {
+        id: `${file.name}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        file,
+        previewUrl,
+      },
+    ]);
   };
 
   const handleRemoveFile = (id: string) => {
@@ -170,6 +205,7 @@ export const useReportViolationForm = ({
     fileInputRef,
     handleFileChange,
     handleRemoveFile,
+    attachFile,
     cleanupAllFiles,
     handleSubmit,
     maxFiles,

@@ -25,6 +25,8 @@ export interface LiveKitTokenResponse {
   role: ParticipantRole;
   bookingId?: string;
   mentorId: string;
+  mentorName?: string;
+  mentorAvatar?: string;
   learnerId?: string;
   escrowedCredit?: number;
   availableBalance?: number;

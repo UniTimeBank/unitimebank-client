@@ -16,6 +16,7 @@ import {
   useInRoomChat,
   useWhiteboard,
   useHeartbeat,
+  useSessionRecorder,
 } from '../hooks';
 import type { InRoomChatMessage } from '../types';
 import {
@@ -28,6 +29,8 @@ import {
   DeviceSettingsModal,
   SessionEndedModal,
   GroupEscrowModal,
+  InRoomParticipantsModal,
+  SessionRecordingsModal,
 } from '../components';
 import { ReportViolationModal } from '@/features/moderation';
 import { Modal, Button } from '@/shared/components/ui';
@@ -67,6 +70,28 @@ export const GroupRoomPage: React.FC = () => {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
+  const [isRecordingsModalOpen, setIsRecordingsModalOpen] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{
+    userId: string;
+    userName: string;
+    initialFiles?: File[];
+  } | null>(null);
+
+  // In-App Screen Recording (Tổng hạn mức tích lũy tối đa 100MB)
+  const {
+    isRecording,
+    currentDuration: recordingDurationSeconds,
+    currentClipBytes,
+    clips: recordingClips,
+    totalBytes: recordingTotalBytes,
+    remainingBytes: recordingRemainingBytes,
+    usedPercentage: recordingUsedPercentage,
+    startRecording,
+    stopRecording,
+    deleteClip,
+    downloadClip,
+  } = useSessionRecorder(roomId);
 
   // Trạng thái hiện diện của Chủ phòng (Host) & Đóng băng phòng
   const [socketHostPresent, setSocketHostPresent] = useState<boolean | null>(null);
@@ -222,7 +247,18 @@ export const GroupRoomPage: React.FC = () => {
       if (evt.userId === authUser?.id) {
         toast.error('Bạn đã bị mời ra khỏi phòng học nhóm.');
         disconnect();
-        navigate('/rooms/group');
+        navigate('/manage/group-sessions');
+      }
+    },
+    onParticipantBlocked: (evt) => {
+      if (evt.userId === authUser?.id) {
+        toast.error(
+          evt.reason
+            ? `Bạn đã bị chủ phòng chặn vĩnh viễn: ${evt.reason}`
+            : 'Bạn đã bị chủ phòng chặn vĩnh viễn khỏi phòng học này do vi phạm quy chế.',
+        );
+        disconnect();
+        navigate('/manage/group-sessions');
       }
     },
     onHostPresenceChanged: (evt) => {
@@ -342,8 +378,12 @@ export const GroupRoomPage: React.FC = () => {
       }
     }
     disconnect();
-    navigate('/rooms/group');
-  }, [roomId, leaveGroup, disconnect, navigate]);
+    if (!isHost) {
+      setIsEndedModalOpen(true);
+    } else {
+      navigate('/manage/group-sessions');
+    }
+  }, [roomId, leaveGroup, disconnect, navigate, isHost]);
 
   const handleLeaveClick = useCallback(() => {
     if (isHost) {
@@ -369,7 +409,7 @@ export const GroupRoomPage: React.FC = () => {
     } finally {
       setIsCloseModalOpen(false);
       disconnect();
-      navigate('/management/classes');
+      navigate('/manage/group-sessions');
     }
   }, [roomId, closeGroupRoom, disconnect, navigate]);
 
@@ -423,6 +463,11 @@ export const GroupRoomPage: React.FC = () => {
         participantCount={1 + remoteParticipants.length}
         isHost={isHost}
         hostAccumulatedCredits={hostAccumulatedCredits}
+        isRecording={isRecording}
+        recordingDurationSeconds={recordingDurationSeconds}
+        recordingCurrentMB={(currentClipBytes / (1024 * 1024)).toFixed(1)}
+        recordingTotalMB={(recordingTotalBytes / (1024 * 1024)).toFixed(1)}
+        onOpenRecordings={() => setIsRecordingsModalOpen(true)}
         onOpenEscrowModal={() => {
           refetchStats();
           setIsEscrowModalOpen(true);
@@ -552,6 +597,19 @@ export const GroupRoomPage: React.FC = () => {
         isWhiteboardOpen={isWhiteboardOpen}
         unreadCount={unreadCount}
         isHost={isHost}
+        participantCount={1 + remoteParticipants.length}
+        onOpenParticipants={() => setIsParticipantsModalOpen(true)}
+        isRecording={isRecording}
+        recordingClipsCount={recordingClips.length}
+        recordingTotalMB={(recordingTotalBytes / (1024 * 1024)).toFixed(1)}
+        onToggleRecording={() => {
+          if (isRecording) {
+            stopRecording().then(() => setIsRecordingsModalOpen(true));
+          } else {
+            startRecording();
+          }
+        }}
+        onOpenRecordings={() => setIsRecordingsModalOpen(true)}
         onToggleMic={toggleMicrophone}
         onToggleCamera={toggleCamera}
         onToggleScreenShare={toggleScreenShare}
@@ -588,14 +646,19 @@ export const GroupRoomPage: React.FC = () => {
       {/* 6. Violation Report Modal */}
       <ReportViolationModal
         isOpen={isReportOpen}
-        onClose={() => setIsReportOpen(false)}
-        targetUserId={tokenData?.mentorId || ''}
-        targetUserName={isHost ? 'Phòng học nhóm' : 'Chủ phòng (Mentor)'}
+        onClose={() => {
+          setIsReportOpen(false);
+          setReportTarget(null);
+        }}
+        targetUserId={reportTarget?.userId || tokenData?.mentorId || ''}
+        targetUserName={reportTarget?.userName || (isHost ? 'Phòng học nhóm' : 'Chủ phòng (Mentor)')}
         targetType="SESSION"
         targetId={roomId}
+        initialFiles={reportTarget?.initialFiles}
         onSuccess={() => {
           toast.success('Báo cáo vi phạm đã được gửi đến ban kiểm duyệt.');
           setIsReportOpen(false);
+          setReportTarget(null);
         }}
       />
 
@@ -681,13 +744,20 @@ export const GroupRoomPage: React.FC = () => {
         </div>
       </Modal>
 
-      {/* 9. Ended Modal */}
+      {/* 9. Ended Modal (Supports Group Session Rating for Learners) */}
       <SessionEndedModal
         isOpen={isEndedModalOpen}
         creditsTransferred={heartbeatHelper.totalCreditsCharged}
         isHost={tokenData?.role === 'MENTOR'}
+        roomId={tokenData?.roomId || roomId}
+        sessionType="GROUP"
+        mentorId={tokenData?.mentorId}
+        mentorName={tokenData?.mentorName || 'Người hướng dẫn'}
+        mentorAvatar={tokenData?.mentorAvatar}
+        durationFormatted={heartbeatHelper.durationFormatted}
         title={roomEndReason?.title}
         description={roomEndReason?.description}
+        redirectUrl="/manage/group-sessions"
       />
 
       {/* 10. Group Escrow & Participant Breakdown Modal (Host) */}
@@ -697,6 +767,47 @@ export const GroupRoomPage: React.FC = () => {
         stats={mergedStats}
         isLoading={isLoadingStats}
         onRefresh={refetchStats}
+      />
+
+      {/* 11. In-Room Participants & Moderation Modal */}
+      <InRoomParticipantsModal
+        isOpen={isParticipantsModalOpen}
+        onClose={() => setIsParticipantsModalOpen(false)}
+        localParticipant={localParticipant}
+        remoteParticipants={remoteParticipants}
+        mentorId={tokenData?.mentorId}
+        currentUserId={authUser?.id}
+        roomStats={mergedStats || undefined}
+        onMuteParticipant={(id) => socketHelper.muteParticipant(id, true)}
+        onKickParticipant={(id, reason) => socketHelper.kickParticipant(id, reason)}
+        onBlockParticipant={(id, reason) => socketHelper.blockParticipant(id, reason)}
+        onReportParticipant={(id, name) => {
+          setReportTarget({ userId: id, userName: name || 'Học viên' });
+          setIsReportOpen(true);
+        }}
+      />
+
+      {/* 12. Session Screen Recordings Modal (100MB Total Quota) */}
+      <SessionRecordingsModal
+        isOpen={isRecordingsModalOpen}
+        onClose={() => setIsRecordingsModalOpen(false)}
+        clips={recordingClips}
+        totalBytes={recordingTotalBytes}
+        remainingBytes={recordingRemainingBytes}
+        usedPercentage={recordingUsedPercentage}
+        isRecording={isRecording}
+        onStartRecording={startRecording}
+        onStopRecording={stopRecording}
+        onDeleteClip={deleteClip}
+        onDownloadClip={downloadClip}
+        onReportWithClip={(clip) => {
+          setReportTarget({
+            userId: tokenData?.mentorId || '',
+            userName: isHost ? 'Thành viên' : 'Chủ phòng (Mentor)',
+            initialFiles: [clip.file],
+          });
+          setIsReportOpen(true);
+        }}
       />
     </div>
   );

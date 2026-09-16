@@ -10,7 +10,9 @@ import toast from 'react-hot-toast';
 export interface PostSessionRatingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  bookingId: string;
+  bookingId?: string;
+  roomId?: string;
+  sessionType?: 'ONE_ON_ONE' | 'GROUP';
   mentorId: string;
   mentorName?: string;
   mentorAvatar?: string;
@@ -38,6 +40,8 @@ export const PostSessionRatingModal: React.FC<PostSessionRatingModalProps> = ({
   isOpen,
   onClose,
   bookingId,
+  roomId,
+  sessionType,
   mentorId,
   mentorName = 'Người hướng dẫn',
   mentorAvatar,
@@ -79,8 +83,10 @@ export const PostSessionRatingModal: React.FC<PostSessionRatingModalProps> = ({
       const reviewerAvatar = profile?.avatarUrl || '';
 
       await submitRating({
-        bookingId,
-        sessionId,
+        bookingId: bookingId || undefined,
+        roomId: roomId || undefined,
+        sessionType: sessionType || (roomId ? 'GROUP' : 'ONE_ON_ONE'),
+        sessionId: sessionId || bookingId || roomId,
         mentorId,
         stars,
         comment: fullComment || undefined,

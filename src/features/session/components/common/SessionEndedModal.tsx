@@ -9,11 +9,14 @@ interface SessionEndedModalProps {
   durationFormatted?: string;
   isHost?: boolean;
   bookingId?: string;
+  roomId?: string;
+  sessionType?: 'ONE_ON_ONE' | 'GROUP';
   mentorId?: string;
   mentorName?: string;
   mentorAvatar?: string;
   title?: string;
   description?: string;
+  redirectUrl?: string;
 }
 
 export const SessionEndedModal: React.FC<SessionEndedModalProps> = ({
@@ -22,16 +25,22 @@ export const SessionEndedModal: React.FC<SessionEndedModalProps> = ({
   durationFormatted = '00:00',
   isHost = false,
   bookingId,
+  roomId,
+  sessionType = 'ONE_ON_ONE',
   mentorId,
   mentorName,
   mentorAvatar,
   title,
   description,
+  redirectUrl,
 }) => {
   const navigate = useNavigate();
   const [isRatingOpen, setIsRatingOpen] = useState(false);
 
   if (!isOpen) return null;
+
+  const defaultRedirect =
+    redirectUrl || (sessionType === 'GROUP' ? '/manage/group-sessions' : '/manage/bookings');
 
   return (
     <>
@@ -69,11 +78,11 @@ export const SessionEndedModal: React.FC<SessionEndedModalProps> = ({
 
           {/* Action Buttons */}
           <div className="space-y-2.5">
-            {bookingId && mentorId && !isHost && (
+            {(bookingId || roomId) && mentorId && !isHost && (
               <button
                 type="button"
                 onClick={() => setIsRatingOpen(true)}
-                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-semibold py-3 px-4 rounded-xl transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Star className="w-4 h-4 fill-white text-white" />
                 <span>Đánh giá Người hướng dẫn</span>
@@ -82,8 +91,8 @@ export const SessionEndedModal: React.FC<SessionEndedModalProps> = ({
 
             <button
               type="button"
-              onClick={() => navigate('/manage/bookings')}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2"
+              onClick={() => navigate(defaultRedirect)}
+              className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>Quay lại trang Quản lý</span>
               <ArrowRight className="w-4 h-4" />
@@ -92,19 +101,21 @@ export const SessionEndedModal: React.FC<SessionEndedModalProps> = ({
         </div>
       </div>
 
-      {bookingId && mentorId && (
+      {(bookingId || roomId) && mentorId && (
         <PostSessionRatingModal
           isOpen={isRatingOpen}
           onClose={() => {
             setIsRatingOpen(false);
-            navigate('/manage/bookings');
+            navigate(defaultRedirect);
           }}
           bookingId={bookingId}
+          roomId={roomId}
+          sessionType={sessionType}
           mentorId={mentorId}
           mentorName={mentorName}
           mentorAvatar={mentorAvatar}
           onSuccess={() => {
-            navigate('/manage/bookings');
+            navigate(defaultRedirect);
           }}
         />
       )}

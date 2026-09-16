@@ -20,6 +20,7 @@ export interface ReportViolationModalProps {
   targetUserName?: string;
   targetType?: string;
   targetId?: string;
+  initialFiles?: File[];
   onSuccess?: () => void;
 }
 
@@ -30,6 +31,7 @@ export const ReportViolationModal: React.FC<ReportViolationModalProps> = ({
   targetUserName = 'Thành viên này',
   targetType = 'USER',
   targetId,
+  initialFiles,
   onSuccess,
 }) => {
   const {
@@ -49,6 +51,7 @@ export const ReportViolationModal: React.FC<ReportViolationModalProps> = ({
     targetUserId,
     targetType,
     targetId,
+    initialFiles,
     onSuccess,
     onClose,
   });
@@ -189,7 +192,7 @@ export const ReportViolationModal: React.FC<ReportViolationModalProps> = ({
                     Chọn ảnh hoặc video từ thiết bị
                   </p>
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    PNG, JPG, MP4 (Tối đa {maxFiles} file, mỗi file &le; 10MB)
+                    PNG, JPG, MP4, WEBM (Ảnh &le; 10MB, Video quay màn hình &le; 100MB)
                   </p>
                 </>
               ) : (

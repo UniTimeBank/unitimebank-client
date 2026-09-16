@@ -12,7 +12,9 @@ export interface RatingItem {
 }
 
 export interface CreateRatingPayload {
-  bookingId: string;
+  bookingId?: string;
+  roomId?: string;
+  sessionType?: 'ONE_ON_ONE' | 'GROUP';
   sessionId?: string;
   mentorId: string;
   stars: number;

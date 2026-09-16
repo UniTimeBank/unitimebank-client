@@ -7,6 +7,11 @@ interface SessionHeaderProps {
   title?: string;
   roomType?: 'ONE_ON_ONE' | 'GROUP';
   isRecording?: boolean;
+  recordingDurationSeconds?: number;
+  recordingCurrentMB?: string;
+  recordingTotalMB?: string;
+  recordingClipsCount?: number;
+  onOpenRecordings?: () => void;
   userAvatar?: string;
   userName?: string;
   participantCount?: number;
@@ -32,6 +37,12 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
   totalCreditsCharged = 0,
   isHost = false,
   hostAccumulatedCredits = 0,
+  isRecording = false,
+  recordingDurationSeconds,
+  recordingCurrentMB,
+  recordingTotalMB,
+  recordingClipsCount = 0,
+  onOpenRecordings,
   onOpenEscrowModal,
 }) => {
   return (
@@ -51,6 +62,43 @@ export const SessionHeader: React.FC<SessionHeaderProps> = ({
           <GraduationCap className="w-3.5 h-3.5 text-primary-600 shrink-0" />
           <span className="truncate">{title}</span>
         </div>
+
+        {/* Real-time REC badge */}
+        {isRecording && (
+          <button
+            type="button"
+            onClick={onOpenRecordings}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold animate-pulse hover:bg-rose-100 transition-colors cursor-pointer"
+            title="Đang ghi hình buổi học. Bấm để xem chi tiết"
+          >
+            <span className="w-2 h-2 rounded-full bg-rose-600" />
+            <span>
+              REC{' '}
+              {recordingDurationSeconds !== undefined
+                ? `${Math.floor(recordingDurationSeconds / 60)
+                    .toString()
+                    .padStart(2, '0')}:${(recordingDurationSeconds % 60)
+                    .toString()
+                    .padStart(2, '0')}`
+                : ''}
+              {recordingCurrentMB ? ` (${recordingCurrentMB} MB)` : ''}
+              {recordingTotalMB ? ` • Tổng: ${recordingTotalMB}/100MB` : ''}
+            </span>
+          </button>
+        )}
+
+        {/* Saved clips badge when not recording */}
+        {!isRecording && recordingClipsCount > 0 && (
+          <button
+            type="button"
+            onClick={onOpenRecordings}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300/70 text-xs font-semibold transition-colors cursor-pointer shadow-2xs"
+            title="Xem danh sách bản ghi màn hình buổi học"
+          >
+            <span className="w-2 h-2 rounded-full bg-indigo-600" />
+            <span>{recordingClipsCount} bản ghi ({recordingTotalMB || '0'}MB/100MB)</span>
+          </button>
+        )}
       </div>
 
       {/* Right: Notification Bell Dropdown + Profile Avatar */}

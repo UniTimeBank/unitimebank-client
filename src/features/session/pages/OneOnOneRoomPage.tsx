@@ -11,7 +11,7 @@ import {
   useGetBookingByIdQuery,
   useCompleteBookingMutation,
 } from '@/core/api/booking';
-import { useLiveKitRoom, useSessionSocket, useInRoomChat } from '../hooks';
+import { useLiveKitRoom, useSessionSocket, useInRoomChat, useSessionRecorder } from '../hooks';
 import type { InRoomChatMessage } from '../types';
 import type { DirectUploadAsset } from '@/core/api/upload';
 import {
@@ -20,6 +20,7 @@ import {
   OneOnOneSessionSidebar,
   DeviceSettingsModal,
   AudioTrackRenderer,
+  SessionRecordingsModal,
 } from '../components';
 import { ReportViolationModal } from '@/features/moderation';
 import { Modal, Button } from '@/shared/components/ui';
@@ -46,6 +47,23 @@ export const OneOnOneRoomPage: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isRecordingsModalOpen, setIsRecordingsModalOpen] = useState(false);
+  const [reportInitialFiles, setReportInitialFiles] = useState<File[] | undefined>(undefined);
+
+  // In-App Screen Recording (Tổng hạn mức tích lũy tối đa 100MB)
+  const {
+    isRecording,
+    currentDuration: recordingDurationSeconds,
+    currentClipBytes,
+    clips: recordingClips,
+    totalBytes: recordingTotalBytes,
+    remainingBytes: recordingRemainingBytes,
+    usedPercentage: recordingUsedPercentage,
+    startRecording,
+    stopRecording,
+    deleteClip,
+    downloadClip,
+  } = useSessionRecorder(bookingId);
 
   const displayName =
     userProfile?.displayName ||
@@ -102,7 +120,7 @@ export const OneOnOneRoomPage: React.FC = () => {
     onDataReceived: handleNewMessage,
     onDisconnected: () => {
       toast.info('Bạn đã rời khỏi phòng học.');
-      navigate('/management/classes');
+      navigate('/manage/bookings');
     },
   });
 
@@ -224,7 +242,7 @@ export const OneOnOneRoomPage: React.FC = () => {
         }
         disconnect();
         const timeout = setTimeout(() => {
-          navigate('/management/classes');
+          navigate('/manage/bookings');
         }, 2000);
         return () => clearTimeout(timeout);
       }
@@ -239,7 +257,7 @@ export const OneOnOneRoomPage: React.FC = () => {
   const handleConfirmLeave = () => {
     setIsLeaveModalOpen(false);
     disconnect();
-    navigate('/management/classes');
+    navigate('/manage/bookings');
   };
 
   // ════════════════════════════════════════════════════════════
@@ -293,7 +311,12 @@ export const OneOnOneRoomPage: React.FC = () => {
       <SessionHeader
         title={bookingDetail?.title || 'Phòng học trực tuyến 1-1'}
         roomType="ONE_ON_ONE"
-        isRecording={true}
+        isRecording={isRecording}
+        recordingDurationSeconds={recordingDurationSeconds}
+        recordingCurrentMB={(currentClipBytes / (1024 * 1024)).toFixed(1)}
+        recordingTotalMB={(recordingTotalBytes / (1024 * 1024)).toFixed(1)}
+        recordingClipsCount={recordingClips.length}
+        onOpenRecordings={() => setIsRecordingsModalOpen(true)}
         userAvatar={avatarUrl}
         userName={displayName}
       />
@@ -313,9 +336,19 @@ export const OneOnOneRoomPage: React.FC = () => {
             isMicEnabled={isMicEnabled}
             isCameraEnabled={isCameraEnabled}
             isScreenSharing={isScreenSharing}
+            isRecording={isRecording}
+            recordingClipsCount={recordingClips.length}
             onToggleMic={toggleMicrophone}
             onToggleCamera={toggleCamera}
             onToggleScreenShare={toggleScreenShare}
+            onToggleRecording={() => {
+              if (isRecording) {
+                stopRecording().then(() => setIsRecordingsModalOpen(true));
+              } else {
+                startRecording();
+              }
+            }}
+            onOpenRecordings={() => setIsRecordingsModalOpen(true)}
             onOpenSettings={() => setIsSettingsOpen(true)}
             onReport={() => setIsReportOpen(true)}
             onLeave={handleLeaveRoom}
@@ -353,16 +386,21 @@ export const OneOnOneRoomPage: React.FC = () => {
       {/* 5. Violation Report Modal */}
       <ReportViolationModal
         isOpen={isReportOpen}
-        onClose={() => setIsReportOpen(false)}
+        onClose={() => {
+          setIsReportOpen(false);
+          setReportInitialFiles(undefined);
+        }}
         targetUserId={
           (isMentor ? bookingDetail?.learnerId : bookingDetail?.mentorId) || ''
         }
         targetUserName={partnerName}
         targetType="SESSION"
         targetId={bookingId}
+        initialFiles={reportInitialFiles}
         onSuccess={() => {
           toast.success('Báo cáo vi phạm đã được gửi đến ban kiểm duyệt.');
           setIsReportOpen(false);
+          setReportInitialFiles(undefined);
         }}
       />
 
@@ -398,6 +436,25 @@ export const OneOnOneRoomPage: React.FC = () => {
           </Button>
         </div>
       </Modal>
+
+      {/* 7. Session Screen Recordings Modal (100MB Total Quota) */}
+      <SessionRecordingsModal
+        isOpen={isRecordingsModalOpen}
+        onClose={() => setIsRecordingsModalOpen(false)}
+        clips={recordingClips}
+        totalBytes={recordingTotalBytes}
+        remainingBytes={recordingRemainingBytes}
+        usedPercentage={recordingUsedPercentage}
+        isRecording={isRecording}
+        onStartRecording={startRecording}
+        onStopRecording={stopRecording}
+        onDeleteClip={deleteClip}
+        onDownloadClip={downloadClip}
+        onReportWithClip={(clip) => {
+          setReportInitialFiles([clip.file]);
+          setIsReportOpen(true);
+        }}
+      />
     </div>
   );
 };

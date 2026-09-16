@@ -16,6 +16,8 @@ export * from './collaboration/LiveCodeEditorModal';
 export * from './common/AutoJoinNotification';
 export * from './common/SessionEndedModal';
 export * from './modals/GroupEscrowModal';
+export * from './modals/InRoomParticipantsModal';
+export * from './modals/SessionRecordingsModal';
 
 export * from './lobby/GroupRoomCard';
 export * from './lobby/FeaturedGroupRoomCard';

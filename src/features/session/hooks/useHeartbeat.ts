@@ -123,11 +123,15 @@ export const useHeartbeat = ({
     };
   }, [roomId, isGroupRoom, isLearner, initialCreditsCharged]);
 
+  const totalActiveSeconds = (FREE_LIMIT - freeSecondsRemaining) + paidSeconds;
+  const durationFormatted = `${Math.floor(totalActiveSeconds / 60)} phút ${totalActiveSeconds % 60} giây`;
+
   return {
     currentBalance,
     totalCreditsCharged,
     freeSecondsRemaining,
     paidSeconds,
+    durationFormatted,
     isFrozen,
   };
 };

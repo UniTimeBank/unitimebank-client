@@ -11,6 +11,8 @@ import {
   ShieldAlert,
   LogOut,
   Power,
+  Users,
+  CircleDot,
 } from 'lucide-react';
 
 interface SessionControlsBarProps {
@@ -22,6 +24,10 @@ interface SessionControlsBarProps {
   isEditorOpen?: boolean;
   unreadCount?: number;
   isHost?: boolean;
+  participantCount?: number;
+  isRecording?: boolean;
+  recordingClipsCount?: number;
+  recordingTotalMB?: string;
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleScreenShare: () => void;
@@ -29,6 +35,9 @@ interface SessionControlsBarProps {
   onToggleWhiteboard: () => void;
   onToggleEditor?: () => void;
   onOpenSettings?: () => void;
+  onOpenParticipants?: () => void;
+  onToggleRecording?: () => void;
+  onOpenRecordings?: () => void;
   onReport?: () => void;
   onLeave: () => void;
   onCloseRoom?: () => void;
@@ -43,6 +52,10 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
   isEditorOpen,
   unreadCount = 0,
   isHost = false,
+  participantCount,
+  isRecording = false,
+  recordingClipsCount = 0,
+  recordingTotalMB,
   onToggleMic,
   onToggleCamera,
   onToggleScreenShare,
@@ -50,6 +63,9 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
   onToggleWhiteboard,
   onToggleEditor,
   onOpenSettings,
+  onOpenParticipants,
+  onToggleRecording,
+  onOpenRecordings,
   onReport,
   onLeave,
   onCloseRoom,
@@ -127,6 +143,57 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
           </span>
         )}
       </button>
+
+      {/* Participants Button */}
+      {onOpenParticipants && (
+        <button
+          onClick={onOpenParticipants}
+          className="relative p-3 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60 transition-all shadow-xs flex items-center justify-center cursor-pointer"
+          title="Danh sách thành viên & Quản lý"
+        >
+          <Users className="w-5 h-5" />
+          {participantCount !== undefined && participantCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-slate-700 text-white text-[10px] font-bold px-1.5 h-4 min-w-4 rounded-full flex items-center justify-center border border-white">
+              {participantCount}
+            </span>
+          )}
+        </button>
+      )}
+
+      {/* Screen Recording Button (100MB Total Quota) */}
+      {isRecording ? (
+        <button
+          onClick={onToggleRecording}
+          className="p-3 rounded-xl bg-rose-600 text-white hover:bg-rose-700 transition-all shadow-md shadow-rose-600/30 flex items-center gap-1.5 px-3 cursor-pointer animate-pulse"
+          title="Đang ghi hình! Nhấn để dừng quay"
+        >
+          <CircleDot className="w-5 h-5 text-white" />
+          <span className="text-xs font-bold hidden sm:inline">REC</span>
+        </button>
+      ) : (
+        <button
+          onClick={
+            recordingClipsCount > 0 ? onOpenRecordings : onToggleRecording
+          }
+          className={`relative p-3 rounded-xl transition-all shadow-xs flex items-center justify-center cursor-pointer ${
+            recordingClipsCount > 0
+              ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60'
+          }`}
+          title={
+            recordingClipsCount > 0
+              ? `Xem ${recordingClipsCount} video đã quay (${recordingTotalMB || '0'} MB / 100 MB)`
+              : 'Quay màn hình buổi học (Tối đa 100MB)'
+          }
+        >
+          <Video className="w-5 h-5" />
+          {recordingClipsCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
+              {recordingClipsCount}
+            </span>
+          )}
+        </button>
+      )}
 
       {/* Device Settings */}
       {onOpenSettings && (

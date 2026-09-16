@@ -20,6 +20,7 @@ export interface UseSessionSocketProps {
   onNoteUpdate?: (content: string) => void;
   onParticipantMuted?: (evt: ParticipantMutedEvent) => void;
   onParticipantKicked?: (evt: ParticipantKickedEvent) => void;
+  onParticipantBlocked?: (evt: any) => void;
   onHeartbeatAck?: (ack: HeartbeatAckEvent) => void;
   onHostPresenceChanged?: (data: {
     isHostPresent: boolean;
@@ -51,6 +52,7 @@ export const useSessionSocket = ({
   onNoteUpdate,
   onParticipantMuted,
   onParticipantKicked,
+  onParticipantBlocked,
   onHeartbeatAck,
   onHostPresenceChanged,
   onRoomClosed,
@@ -67,6 +69,7 @@ export const useSessionSocket = ({
     onNoteUpdate,
     onParticipantMuted,
     onParticipantKicked,
+    onParticipantBlocked,
     onHeartbeatAck,
     onHostPresenceChanged,
     onRoomClosed,
@@ -81,6 +84,7 @@ export const useSessionSocket = ({
       onNoteUpdate,
       onParticipantMuted,
       onParticipantKicked,
+      onParticipantBlocked,
       onHeartbeatAck,
       onHostPresenceChanged,
       onRoomClosed,
@@ -158,6 +162,10 @@ export const useSessionSocket = ({
 
     socket.on('participant-kicked', (evt: ParticipantKickedEvent) => {
       callbacksRef.current.onParticipantKicked?.(evt);
+    });
+
+    socket.on('participant-blocked', (evt: any) => {
+      callbacksRef.current.onParticipantBlocked?.(evt);
     });
 
     // Escrow Metering Sync
@@ -324,6 +332,19 @@ export const useSessionSocket = ({
     [roomId],
   );
 
+  // Host Block participant (cấm vĩnh viễn không cho vào lại)
+  const blockParticipant = useCallback(
+    (participantId: string, reason?: string) => {
+      if (!socketRef.current || !roomId) return;
+      socketRef.current.emit('block-participant', {
+        roomId,
+        participantId,
+        reason,
+      });
+    },
+    [roomId],
+  );
+
   return {
     socket: socketRef.current,
     isConnected,
@@ -335,5 +356,6 @@ export const useSessionSocket = ({
     sendMeteringTick,
     muteParticipant,
     kickParticipant,
+    blockParticipant,
   };
 };

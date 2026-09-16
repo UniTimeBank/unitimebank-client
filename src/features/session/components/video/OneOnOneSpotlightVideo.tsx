@@ -14,6 +14,7 @@ import {
   PhoneOff,
   Sparkles,
   Flag,
+  CircleDot,
 } from 'lucide-react';
 import { toast } from '@/shared/utils';
 
@@ -31,9 +32,13 @@ interface OneOnOneSpotlightVideoProps {
   isMicEnabled: boolean;
   isCameraEnabled: boolean;
   isScreenSharing: boolean;
+  isRecording?: boolean;
+  recordingClipsCount?: number;
   onToggleMic: () => void;
   onToggleCamera: () => void;
   onToggleScreenShare: () => void;
+  onToggleRecording?: () => void;
+  onOpenRecordings?: () => void;
   onOpenSettings: () => void;
   onReport?: () => void;
   onLeave: () => void;
@@ -50,9 +55,13 @@ export const OneOnOneSpotlightVideo: React.FC<OneOnOneSpotlightVideoProps> = ({
   isMicEnabled,
   isCameraEnabled,
   isScreenSharing,
+  isRecording = false,
+  recordingClipsCount = 0,
   onToggleMic,
   onToggleCamera,
   onToggleScreenShare,
+  onToggleRecording,
+  onOpenRecordings,
   onOpenSettings,
   onReport,
   onLeave,
@@ -286,7 +295,28 @@ export const OneOnOneSpotlightVideo: React.FC<OneOnOneSpotlightVideoProps> = ({
             <Monitor className="w-5 h-5" />
           </button>
 
-          {/* 4. Settings Toggle */}
+          {/* 4. Screen Recording Toggle */}
+          {onToggleRecording && (
+            <button
+              type="button"
+              onClick={onToggleRecording}
+              title={isRecording ? 'Dừng quay màn hình (Tối đa 100MB)' : 'Quay màn hình buổi học (Tối đa 100MB)'}
+              className={`relative w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm ${
+                isRecording
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white ring-2 ring-rose-400 animate-pulse'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white'
+              }`}
+            >
+              <CircleDot className="w-5 h-5" />
+              {recordingClipsCount > 0 && !isRecording && (
+                <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-indigo-600 text-[10px] font-bold text-white flex items-center justify-center border-2 border-slate-900">
+                  {recordingClipsCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {/* 5. Settings Toggle */}
           <button
             type="button"
             onClick={onOpenSettings}
@@ -296,7 +326,7 @@ export const OneOnOneSpotlightVideo: React.FC<OneOnOneSpotlightVideoProps> = ({
             <Settings className="w-5 h-5" />
           </button>
 
-          {/* 5. Report / Báo cáo sự cố Toggle */}
+          {/* 6. Report / Báo cáo sự cố Toggle */}
           <button
             type="button"
             onClick={
