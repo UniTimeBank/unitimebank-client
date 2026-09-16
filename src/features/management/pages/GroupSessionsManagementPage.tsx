@@ -658,16 +658,15 @@ export const GroupSessionsManagementPage: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="shrink-0 flex items-center gap-2">
-                    <Button
+                  <div className="shrink-0 flex items-center justify-end">
+                    <button
                       type="button"
-                      size="sm"
                       onClick={() => setSelectedRatingRoom(room)}
-                      className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs py-2 px-3.5 shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-amber-300 bg-white hover:bg-amber-50/60 text-slate-700 hover:text-amber-800 font-semibold text-xs transition-all shadow-2xs cursor-pointer group active:scale-[0.98]"
                     >
-                      <Star className="w-3.5 h-3.5 fill-white text-white" />
-                      <span>Đánh giá Mentor</span>
-                    </Button>
+                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-400/20 group-hover:fill-amber-400 transition-colors" />
+                      <span>Đánh giá</span>
+                    </button>
                   </div>
                 </div>
               );
