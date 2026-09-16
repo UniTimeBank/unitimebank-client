@@ -41,6 +41,9 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
   const [clips, setClips] = useState<SessionRecordingClip[]>([]);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const displayStreamRef = useRef<MediaStream | null>(null);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
   const durationTimerRef = useRef<any>(null);
@@ -48,12 +51,57 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
   const currentBytesRef = useRef<number>(0);
   const clipsRef = useRef<SessionRecordingClip[]>([]);
 
+  // Stop and release ALL media tracks (display video/audio, mic audio, audioContext)
+  const stopAllMediaTracks = useCallback(() => {
+    if (displayStreamRef.current) {
+      displayStreamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch (e) {
+          console.debug('Error stopping display track:', e);
+        }
+      });
+      displayStreamRef.current = null;
+    }
+
+    if (micStreamRef.current) {
+      micStreamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch (e) {
+          console.debug('Error stopping mic track:', e);
+        }
+      });
+      micStreamRef.current = null;
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch (e) {
+          console.debug('Error stopping combined track:', e);
+        }
+      });
+      streamRef.current = null;
+    }
+
+    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+      try {
+        audioCtxRef.current.close();
+      } catch (e) {
+        console.debug('Error closing audioContext:', e);
+      }
+      audioCtxRef.current = null;
+    }
+  }, []);
+
   // Sync ref with state
   useEffect(() => {
     clipsRef.current = clips;
   }, [clips]);
 
-  // Clean up object URLs on unmount
+  // Clean up object URLs and active tracks on unmount / room exit
   useEffect(() => {
     return () => {
       clipsRef.current.forEach((c) => {
@@ -64,11 +112,9 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
       if (durationTimerRef.current) {
         clearInterval(durationTimerRef.current);
       }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-      }
+      stopAllMediaTracks();
     };
-  }, []);
+  }, [stopAllMediaTracks]);
 
   const totalBytes = clips.reduce((acc, c) => acc + c.sizeBytes, 0);
   const remainingBytes = Math.max(0, MAX_SESSION_RECORDING_BYTES - totalBytes);
@@ -81,6 +127,7 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
       if (!recorder || recorder.state === 'inactive') {
         setIsRecording(false);
         if (durationTimerRef.current) clearInterval(durationTimerRef.current);
+        stopAllMediaTracks();
         resolve(null);
         return;
       }
@@ -90,11 +137,8 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
         setIsRecording(false);
         setIsPaused(false);
 
-        // Stop all media tracks
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((t) => t.stop());
-          streamRef.current = null;
-        }
+        // Stop all display, mic and combined media tracks completely
+        stopAllMediaTracks();
 
         const chunks = recordedChunksRef.current;
         if (chunks.length === 0) {
@@ -138,10 +182,11 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
         recorder.stop();
       } catch (err) {
         console.error('Error stopping recorder:', err);
+        stopAllMediaTracks();
         resolve(null);
       }
     });
-  }, [roomId]);
+  }, [roomId, stopAllMediaTracks]);
 
   const startRecording = useCallback(async (): Promise<boolean> => {
     // Check remaining quota
@@ -167,12 +212,17 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
         surfaceSwitching: 'include',
       } as any);
 
+      displayStreamRef.current = displayStream;
+
       // Optionally mix microphone audio if available
       let combinedStream = displayStream;
       try {
         const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
         const dest = audioCtx.createMediaStreamDestination();
+
+        micStreamRef.current = micStream;
+        audioCtxRef.current = audioCtx;
 
         if (displayStream.getAudioTracks().length > 0) {
           const displayAudioSource = audioCtx.createMediaStreamSource(displayStream);
@@ -201,9 +251,7 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
       const videoTrack = displayStream.getVideoTracks()[0];
       if (videoTrack) {
         videoTrack.onended = () => {
-          if (mediaRecorderRef.current && (mediaRecorderRef.current.state === 'recording' || mediaRecorderRef.current.state === 'paused')) {
-            stopRecordingInternal();
-          }
+          stopRecordingInternal();
         };
       }
 
@@ -254,6 +302,7 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
       toast.success('Bắt đầu ghi hình buổi học (Giới hạn tối đa 100MB)');
       return true;
     } catch (err: any) {
+      stopAllMediaTracks();
       if (err?.name === 'NotAllowedError') {
         toast.error('Bạn đã hủy chia sẻ màn hình để quay video.');
       } else {
@@ -261,7 +310,7 @@ export const useSessionRecorder = (roomId?: string): UseSessionRecorderReturn =>
       }
       return false;
     }
-  }, [stopRecordingInternal]);
+  }, [stopRecordingInternal, stopAllMediaTracks]);
 
   const pauseRecording = useCallback(() => {
     const recorder = mediaRecorderRef.current;
