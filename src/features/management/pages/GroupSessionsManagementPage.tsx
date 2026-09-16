@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Plus, Radio, Search, X, CalendarCheck, Users, Clock, GraduationCap, BookOpen } from 'lucide-react';
+import { Plus, Radio, Search, X, CalendarCheck, Users, Clock, GraduationCap, BookOpen, Shield } from 'lucide-react';
 import { CreateGroupRoomModal } from '@/features/session';
 import { PostSessionRatingModal } from '@/features/moderation';
 import { ManageGroupRoomCard } from '../components';
@@ -415,7 +415,7 @@ export const GroupSessionsManagementPage: React.FC = () => {
                       {/* Info */}
                       <div className="flex-1 min-w-0 space-y-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary-700 bg-primary-50 px-2 py-0.5 rounded-md border border-primary-100/80">
                             {categoryLabel}
                           </span>
                         </div>
@@ -565,7 +565,7 @@ export const GroupSessionsManagementPage: React.FC = () => {
                     {/* Info */}
                     <div className="flex-1 min-w-0 space-y-1.5">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-primary-700 bg-primary-50 px-2 py-0.5 rounded-md border border-primary-100/80">
                           {categoryLabel}
                         </span>
                       </div>
@@ -574,13 +574,52 @@ export const GroupSessionsManagementPage: React.FC = () => {
                         {room.title}
                       </h3>
 
-                      {/* Mentor Preview Row */}
+                      {/* Mentor Preview Row with Avatar & Clickable Profile Link */}
                       {room.mentorName && (
                         <div className="flex items-center gap-2 text-xs text-gray-600 flex-wrap">
-                          <span>Người hướng dẫn:</span>
-                          <span className="font-semibold text-gray-900">{room.mentorName}</span>
+                          <span className="text-gray-500">Người hướng dẫn:</span>
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (room.mentorId) {
+                                navigate(`/profile/${room.mentorId}`);
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if ((e.key === 'Enter' || e.key === ' ') && room.mentorId) {
+                                e.preventDefault();
+                                navigate(`/profile/${room.mentorId}`);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 group cursor-pointer"
+                            title="Xem trang cá nhân người hướng dẫn"
+                          >
+                            {room.mentorAvatar ? (
+                              <img
+                                src={room.mentorAvatar}
+                                alt={room.mentorName}
+                                className="w-5.5 h-5.5 rounded-full object-cover border border-primary-200/80 group-hover:ring-2 group-hover:ring-primary-300 transition-all shadow-2xs"
+                              />
+                            ) : (
+                              <div className="w-5.5 h-5.5 rounded-full bg-primary-100 text-primary-700 text-[10px] font-bold flex items-center justify-center border border-primary-200">
+                                {room.mentorName.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="font-semibold text-gray-900 group-hover:text-primary-600 group-hover:underline transition-colors">
+                              {room.mentorName}
+                            </span>
+                          </div>
+
                           {typeof room.mentorTrustScore === 'number' && (
-                            <span className="text-gray-400 text-[11px]">({room.mentorTrustScore} uy tín)</span>
+                            <span
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded-md border border-emerald-200/70"
+                              title={`Điểm uy tín: ${room.mentorTrustScore}`}
+                            >
+                              <Shield className="w-2.5 h-2.5 text-emerald-600 fill-emerald-100" />
+                              <span>{room.mentorTrustScore}</span>
+                            </span>
                           )}
                         </div>
                       )}
@@ -595,8 +634,16 @@ export const GroupSessionsManagementPage: React.FC = () => {
 
                         <span className="text-gray-600">
                           Chi phí:{' '}
-                          <span className="font-medium text-gray-800">
-                            {room.myCreditCharged > 0 ? `-${room.myCreditCharged} Credit` : '0 Credit (Miễn phí 5p)'}
+                          <span
+                            className={
+                              room.myCreditCharged > 0
+                                ? 'font-semibold text-gray-900'
+                                : 'font-semibold text-emerald-600'
+                            }
+                          >
+                            {room.myCreditCharged > 0
+                              ? `-${room.myCreditCharged} Credit`
+                              : '0 Credit (Miễn phí 5p)'}
                           </span>
                         </span>
 
@@ -621,14 +668,14 @@ export const GroupSessionsManagementPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Actions - matching BookingCard outline button */}
+                  {/* Actions - subtle primary touch matching brand */}
                   <div className="shrink-0 flex items-center justify-end">
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedRatingRoom(room)}
-                      className="rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-medium text-xs py-1.5 px-3 cursor-pointer"
+                      className="rounded-lg bg-white hover:bg-primary-50 border border-primary-200 text-primary-700 hover:text-primary-800 font-semibold text-xs py-1.5 px-3.5 shadow-2xs transition-colors cursor-pointer"
                     >
                       Đánh giá
                     </Button>
