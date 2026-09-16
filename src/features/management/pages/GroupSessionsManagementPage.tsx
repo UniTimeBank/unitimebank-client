@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Plus, Radio, Search, X, CalendarCheck, Users, Clock, Crown, UserCheck, GraduationCap, BookOpen } from 'lucide-react';
+import { Plus, Radio, Search, X, CalendarCheck, Users, Clock, Crown, UserCheck, GraduationCap, BookOpen, Coins, Star } from 'lucide-react';
 import { CreateGroupRoomModal } from '@/features/session';
+import { PostSessionRatingModal } from '@/features/moderation';
 import { ManageGroupRoomCard } from '../components';
 import {
   useGetActiveGroupRoomsQuery,
@@ -23,6 +24,7 @@ export const GroupSessionsManagementPage: React.FC = () => {
   const [groupTab, setGroupTab] = useState<'ACTIVE' | 'HISTORY'>('ACTIVE');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+  const [selectedRatingRoom, setSelectedRatingRoom] = useState<any | null>(null);
 
   // Active Group Rooms Query
   const {
@@ -384,7 +386,7 @@ export const GroupSessionsManagementPage: React.FC = () => {
               {filteredHostHistoryRooms.map((room: any) => {
                 const rawCat = (room.category || 'PROGRAMMING').toUpperCase();
                 const categoryLabel = (SKILL_CATEGORY_LABELS[rawCat] || room.category || 'HỌC NHÓM').toUpperCase();
-                const coverUrl = getCategoryCover(room.category);
+                const coverUrl = room.coverImage || getCategoryCover(room.category);
 
                 return (
                   <div
@@ -444,9 +446,13 @@ export const GroupSessionsManagementPage: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Status label */}
-                    <div className="shrink-0 text-xs font-semibold text-slate-500 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200/60 text-center">
-                      Lịch sử đã lưu
+                    {/* Status / Earnings label */}
+                    <div className="shrink-0 flex flex-col items-end gap-1.5">
+                      <div className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200/80 flex items-center gap-1 shadow-2xs">
+                        <Coins className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>+{room.totalCreditsEarned || 0} Credit</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-medium">Đã kết thúc & quyết toán</span>
                     </div>
                   </div>
                 );
@@ -534,7 +540,7 @@ export const GroupSessionsManagementPage: React.FC = () => {
             {filteredParticipantRooms.map((room: any) => {
               const rawCat = (room.category || 'PROGRAMMING').toUpperCase();
               const categoryLabel = (SKILL_CATEGORY_LABELS[rawCat] || room.category || 'HỌC NHÓM').toUpperCase();
-              const coverUrl = getCategoryCover(room.category);
+              const coverUrl = room.coverImage || getCategoryCover(room.category);
 
               return (
                 <div
@@ -547,7 +553,7 @@ export const GroupSessionsManagementPage: React.FC = () => {
                       <img
                         src={coverUrl}
                         alt={room.title}
-                        className="w-full h-full object-cover grayscale-30"
+                        className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20 pointer-events-none" />
                       <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-800/90 backdrop-blur-md text-slate-300 text-[10px] font-bold tracking-wide">
@@ -560,14 +566,14 @@ export const GroupSessionsManagementPage: React.FC = () => {
                     </div>
 
                     {/* Info */}
-                    <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex-1 min-w-0 space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
                           {categoryLabel}
                         </span>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[10px] font-semibold">
-                          <UserCheck className="w-3 h-3 text-slate-500" />
-                          <span>Thành viên tham gia</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary-50 text-primary-700 border border-primary-200 text-[10px] font-bold">
+                          <UserCheck className="w-3 h-3 text-primary-600" />
+                          <span>Học viên tham gia</span>
                         </span>
                       </div>
 
@@ -575,18 +581,75 @@ export const GroupSessionsManagementPage: React.FC = () => {
                         {room.title}
                       </h3>
 
+                      {/* Mentor Preview Row */}
+                      {room.mentorName && (
+                        <div className="flex items-center gap-2 text-xs text-slate-600 flex-wrap">
+                          <span className="text-[11px] text-slate-400 font-medium">Người hướng dẫn:</span>
+                          <div className="flex items-center gap-1.5">
+                            {room.mentorAvatar ? (
+                              <img
+                                src={room.mentorAvatar}
+                                alt={room.mentorName}
+                                className="w-5 h-5 rounded-full object-cover border border-slate-200 shadow-2xs"
+                              />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-primary-100 text-primary-700 text-[10px] font-bold flex items-center justify-center">
+                                {room.mentorName.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="font-bold text-slate-800">{room.mentorName}</span>
+                            {typeof room.mentorTrustScore === 'number' && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-50 text-amber-700 border border-amber-200/60 flex items-center gap-0.5">
+                                <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                                {room.mentorTrustScore}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap pt-0.5">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Thời lượng: <strong className="text-slate-800 font-bold">{room.durationMinutes || 0} phút</strong></span>
+                          <span>
+                            Thời gian học:{' '}
+                            <strong className="text-slate-800 font-bold">
+                              {room.myDurationMinutes || room.durationMinutes || 0} phút
+                            </strong>
+                          </span>
+                        </span>
+                        <span className="text-slate-300">•</span>
+                        <span className="flex items-center gap-1">
+                          <Coins className="w-3.5 h-3.5 text-amber-500" />
+                          <span>
+                            Chi phí:{' '}
+                            <strong
+                              className={
+                                room.myCreditCharged > 0
+                                  ? 'text-slate-900 font-bold'
+                                  : 'text-emerald-600 font-bold'
+                              }
+                            >
+                              {room.myCreditCharged > 0
+                                ? `-${room.myCreditCharged} Credit`
+                                : '0 Credit (Miễn phí 5p)'}
+                            </strong>
+                          </span>
                         </span>
                         {room.openedAt && (
                           <>
                             <span className="text-slate-300">•</span>
                             <span className="text-slate-400 text-[11px]">
-                              {new Date(room.openedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}{' '}
+                              {new Date(room.openedAt).toLocaleTimeString('vi-VN', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}{' '}
                               -{' '}
-                              {new Date(room.openedAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              {new Date(room.openedAt).toLocaleDateString('vi-VN', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                              })}
                             </span>
                           </>
                         )}
@@ -594,9 +657,17 @@ export const GroupSessionsManagementPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Status label */}
-                  <div className="shrink-0 text-xs font-semibold text-slate-500 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200/60 text-center">
-                    Lịch sử đã lưu
+                  {/* Actions */}
+                  <div className="shrink-0 flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => setSelectedRatingRoom(room)}
+                      className="rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs py-2 px-3.5 shadow-xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
+                    >
+                      <Star className="w-3.5 h-3.5 fill-white text-white" />
+                      <span>Đánh giá Mentor</span>
+                    </Button>
                   </div>
                 </div>
               );
@@ -613,6 +684,22 @@ export const GroupSessionsManagementPage: React.FC = () => {
           refetchGroupRooms();
         }}
       />
+
+      {/* Modal Đánh Giá Sau Phòng Nhóm */}
+      {selectedRatingRoom && (
+        <PostSessionRatingModal
+          isOpen={!!selectedRatingRoom}
+          onClose={() => setSelectedRatingRoom(null)}
+          roomId={selectedRatingRoom.roomId}
+          sessionType="GROUP"
+          mentorId={selectedRatingRoom.mentorId}
+          mentorName={selectedRatingRoom.mentorName || 'Người hướng dẫn'}
+          mentorAvatar={selectedRatingRoom.mentorAvatar}
+          onSuccess={() => {
+            refetchHistoryRooms();
+          }}
+        />
+      )}
     </div>
   );
 };
