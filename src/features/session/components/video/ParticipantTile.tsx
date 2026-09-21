@@ -153,19 +153,14 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
               <span className="bg-primary-50 text-primary-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-primary-200 flex items-center gap-1">
                 <Crown className="w-3 h-3 text-primary-600" /> Host
               </span>
-            ) : (
-              <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-slate-200">
-                Học viên
+            ) : isLocal ? (
+              <span className="text-[11px] text-primary-700 font-bold bg-primary-50 px-2 py-0.5 rounded-full border border-primary-200">
+                Tôi
               </span>
-            )}
+            ) : null}
             {displayName !== 'Host' && displayName !== 'Học viên' && displayName !== 'Tôi' && (
               <span className="text-slate-800 font-bold text-sm md:text-base">
                 {displayName}
-              </span>
-            )}
-            {isLocal && (
-              <span className="text-[11px] text-primary-700 font-bold bg-primary-50 px-2 py-0.5 rounded-full border border-primary-200">
-                Tôi
               </span>
             )}
           </div>
@@ -187,11 +182,7 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
           <span className="bg-primary-50 text-primary-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-primary-200 shrink-0">
             <Crown className="w-3 h-3 text-primary-600" /> Host
           </span>
-        ) : (
-          <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200 shrink-0">
-            Học viên
-          </span>
-        )}
+        ) : null}
         {displayName !== 'Host' && displayName !== 'Học viên' && displayName !== 'Tôi' && (
           <span className="text-xs font-bold truncate max-w-[120px] md:max-w-[160px]">
             {displayName}

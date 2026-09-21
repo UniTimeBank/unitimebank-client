@@ -12,6 +12,8 @@ export interface SelectedEvidenceFile {
 
 export interface UseReportViolationFormOptions {
   targetUserId: string;
+  targetUserName?: string;
+  targetRole?: 'LEARNER' | 'MENTOR' | string;
   targetType?: string;
   targetId?: string;
   onSuccess?: () => void;
@@ -22,6 +24,7 @@ export interface UseReportViolationFormOptions {
 
 export const useReportViolationForm = ({
   targetUserId,
+  targetRole,
   targetType = 'USER',
   targetId,
   onSuccess,
@@ -29,7 +32,9 @@ export const useReportViolationForm = ({
   maxFiles = 3,
   initialFiles,
 }: UseReportViolationFormOptions) => {
-  const [category, setCategory] = useState<ReportCategory>('AFK_ABUSE');
+  const [category, setCategory] = useState<ReportCategory>(
+    targetRole === 'LEARNER' ? 'TOXIC_LANGUAGE' : 'AFK_ABUSE',
+  );
   const [description, setDescription] = useState<string>('');
   const [selectedFiles, setSelectedFiles] = useState<SelectedEvidenceFile[]>(() => {
     if (initialFiles && initialFiles.length > 0) {

@@ -20,6 +20,7 @@ interface SessionControlsBarProps {
   isCameraEnabled: boolean;
   isScreenSharing: boolean;
   isChatOpen: boolean;
+  isParticipantsOpen?: boolean;
   isWhiteboardOpen: boolean;
   isEditorOpen?: boolean;
   unreadCount?: number;
@@ -52,6 +53,7 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
   isCameraEnabled,
   isScreenSharing,
   isChatOpen,
+  isParticipantsOpen = false,
   isWhiteboardOpen,
   isEditorOpen,
   unreadCount = 0,
@@ -156,55 +158,67 @@ export const SessionControlsBar: React.FC<SessionControlsBarProps> = ({
       {onOpenParticipants && (
         <button
           onClick={onOpenParticipants}
-          className="h-11 px-3 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60 transition-all shadow-xs flex items-center gap-1.5 cursor-pointer font-semibold text-xs"
-          title="Danh sách thành viên & Quản lý"
+          className={`h-11 px-3 rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer font-semibold text-xs ${
+            isParticipantsOpen
+              ? 'bg-primary-700 text-white shadow-primary-700/20'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60'
+          }`}
+          title="Danh sách thành viên"
         >
-          <Users className="w-4 h-4 text-slate-600 shrink-0" />
+          <Users className={`w-4 h-4 shrink-0 ${isParticipantsOpen ? 'text-white' : 'text-slate-600'}`} />
           {participantCount !== undefined && (
-            <span className="bg-white text-slate-800 text-[11px] font-bold px-1.5 py-0.2 rounded-md border border-slate-200 shadow-2xs">
+            <span
+              className={`text-[11px] font-bold px-1.5 py-0.2 rounded-md border shadow-2xs ${
+                isParticipantsOpen
+                  ? 'bg-white/20 text-white border-white/30'
+                  : 'bg-white text-slate-800 border-slate-200'
+              }`}
+            >
               {participantCount}
             </span>
           )}
         </button>
       )}
 
-      {/* Screen Recording Controls (Pulsing Red Dot Indicator when active) */}
-      {isRecording ? (
-        <button
-          type="button"
-          onClick={onStopRecording || onToggleRecording}
-          className="relative p-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all shadow-xs flex items-center justify-center cursor-pointer"
-          title="Đang ghi hình buổi học. Bấm để dừng & lưu clip"
-        >
-          <span className="relative flex h-5 w-5 items-center justify-center">
-            <span className="animate-ping absolute inline-flex h-3.5 w-3.5 rounded-full bg-rose-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600" />
-          </span>
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={
-            recordingClipsCount > 0 ? onOpenRecordings : onToggleRecording
-          }
-          className={`relative p-3 rounded-xl transition-all shadow-xs flex items-center justify-center cursor-pointer ${
-            recordingClipsCount > 0
-              ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60'
-          }`}
-          title={
-            recordingClipsCount > 0
-              ? `Xem ${recordingClipsCount} video đã quay (${recordingTotalMB || '0'} MB / 100 MB)`
-              : 'Ghi hình buổi học (Tối đa 100MB)'
-          }
-        >
-          <CircleDot className="w-5 h-5 text-slate-700" />
-          {recordingClipsCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
-              {recordingClipsCount}
+      {/* Screen Recording Controls (Only rendered if onToggleRecording or onOpenRecordings is supported) */}
+      {(onToggleRecording || onOpenRecordings) && (
+        isRecording ? (
+          <button
+            type="button"
+            onClick={onStopRecording || onToggleRecording}
+            className="relative p-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all shadow-xs flex items-center justify-center cursor-pointer"
+            title="Đang ghi hình buổi học. Bấm để dừng & lưu clip"
+          >
+            <span className="relative flex h-5 w-5 items-center justify-center">
+              <span className="animate-ping absolute inline-flex h-3.5 w-3.5 rounded-full bg-rose-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-600" />
             </span>
-          )}
-        </button>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={
+              recordingClipsCount > 0 ? onOpenRecordings : onToggleRecording
+            }
+            className={`relative p-3 rounded-xl transition-all shadow-xs flex items-center justify-center cursor-pointer ${
+              recordingClipsCount > 0
+                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/60'
+            }`}
+            title={
+              recordingClipsCount > 0
+                ? `Xem ${recordingClipsCount} video đã quay (${recordingTotalMB || '0'} MB / 100 MB)`
+                : 'Ghi hình buổi học (Tối đa 100MB)'
+            }
+          >
+            <CircleDot className="w-5 h-5 text-slate-700" />
+            {recordingClipsCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white">
+                {recordingClipsCount}
+              </span>
+            )}
+          </button>
+        )
       )}
 
       {/* Device Settings */}

@@ -192,21 +192,16 @@ export const InRoomParticipantsModal: React.FC<InRoomParticipantsModalProps> = (
                         <span className="text-xs font-bold text-slate-800 truncate max-w-[160px] sm:max-w-[200px]">
                           {displayName}
                         </span>
-                        {isSelf && (
-                          <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200/60">
-                            Bạn
-                          </span>
-                        )}
                         {isParticipantHost ? (
                           <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-amber-100/90 text-amber-800 border border-amber-200/70 flex items-center gap-1">
                             <Crown className="w-2.5 h-2.5 text-amber-600" />
                             Chủ phòng
                           </span>
-                        ) : (
-                          <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-slate-100 text-slate-500">
-                            Học viên
+                        ) : isSelf ? (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 border border-slate-200/60">
+                            Bạn
                           </span>
-                        )}
+                        ) : null}
                       </div>
 
                       {/* Thời gian học & Credit nếu là học viên */}

@@ -241,6 +241,28 @@ export const useLiveKitRoom = ({
     }
   }, []);
 
+  // Set Microphone Enabled state directly
+  const setMicrophoneEnabled = useCallback(async (enabled: boolean) => {
+    if (!roomRef.current || !roomRef.current.localParticipant) return;
+    try {
+      await roomRef.current.localParticipant.setMicrophoneEnabled(enabled);
+      setIsMicEnabled(enabled);
+    } catch (err) {
+      console.error('Failed to set mic enabled:', err);
+    }
+  }, []);
+
+  // Set Camera Enabled state directly
+  const setCameraEnabled = useCallback(async (enabled: boolean) => {
+    if (!roomRef.current || !roomRef.current.localParticipant) return;
+    try {
+      await roomRef.current.localParticipant.setCameraEnabled(enabled);
+      setIsCameraEnabled(enabled);
+    } catch (err) {
+      console.error('Failed to set camera enabled:', err);
+    }
+  }, []);
+
   // Toggle Microphone
   const toggleMicrophone = useCallback(async () => {
     if (!roomRef.current) return;
@@ -314,6 +336,8 @@ export const useLiveKitRoom = ({
     isMicEnabled,
     isCameraEnabled,
     isScreenSharing,
+    setMicrophoneEnabled,
+    setCameraEnabled,
     toggleMicrophone,
     toggleCamera,
     toggleScreenShare,

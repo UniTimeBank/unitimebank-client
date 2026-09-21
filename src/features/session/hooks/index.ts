@@ -6,3 +6,4 @@ export * from './useInRoomChat';
 export * from './useWhiteboard';
 export * from './useCodeEditor';
 export * from './useSessionRecorder';
+export * from './useInRoomParticipants';

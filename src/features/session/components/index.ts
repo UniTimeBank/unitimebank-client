@@ -10,6 +10,9 @@ export * from './layout/DeviceSettingsModal';
 export * from './layout/OneOnOneSessionSidebar';
 
 export * from './collaboration/InRoomChatPanel';
+export * from './collaboration/InRoomParticipantsPanel';
+export * from './collaboration/ParticipantItem';
+export * from './collaboration/ParticipantActionModal';
 export * from './collaboration/WhiteboardModal';
 export * from './collaboration/LiveCodeEditorModal';
 

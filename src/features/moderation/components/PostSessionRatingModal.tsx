@@ -102,6 +102,13 @@ export const PostSessionRatingModal: React.FC<PostSessionRatingModalProps> = ({
         reviewerAvatar,
       }).unwrap();
 
+      if (roomId) {
+        localStorage.setItem(`rated_room_${roomId}`, 'true');
+      }
+      if (bookingId) {
+        localStorage.setItem(`rated_booking_${bookingId}`, 'true');
+      }
+
       toast.success('Đã gửi đánh giá');
       onSuccess?.();
       onClose();

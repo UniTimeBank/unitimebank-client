@@ -400,6 +400,7 @@ export const OneOnOneRoomPage: React.FC = () => {
           (isMentor ? bookingDetail?.learnerId : bookingDetail?.mentorId) || ''
         }
         targetUserName={partnerName}
+        targetRole={isMentor ? 'LEARNER' : 'MENTOR'}
         targetType="SESSION"
         targetId={bookingId}
         initialFiles={reportInitialFiles}
@@ -472,7 +473,7 @@ export const OneOnOneRoomPage: React.FC = () => {
         mentorId={bookingDetail?.mentorId}
         mentorName={bookingDetail?.mentorName || partnerName}
         mentorAvatar={bookingDetail?.mentorAvatar || partnerAvatar}
-        redirectUrl="/manage/bookings"
+        redirectUrl="/explore"
       />
     </div>
   );

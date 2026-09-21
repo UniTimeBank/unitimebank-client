@@ -77,16 +77,26 @@ export const VideoGrid: React.FC<VideoGridProps> = ({
       ) : (
         /* Group Room Layout (Responsive Grid) */
         <div
-          className={`w-full h-full grid gap-4 max-w-7xl mx-auto ${
-            totalCount <= 2
-              ? 'grid-cols-1 md:grid-cols-2'
-              : totalCount <= 4
-              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2'
-              : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-3'
+          className={`w-full h-full ${
+            totalCount === 1
+              ? 'flex items-center justify-center max-w-4xl mx-auto'
+              : `grid gap-4 max-w-7xl mx-auto ${
+                  totalCount === 2
+                    ? 'grid-cols-1 md:grid-cols-2'
+                    : totalCount <= 4
+                    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-2'
+                    : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-3'
+                }`
           }`}
         >
           {localParticipant && (
-            <div className="w-full h-full min-h-[180px]">
+            <div
+              className={
+                totalCount === 1
+                  ? 'w-full h-full max-w-4xl max-h-[82vh] aspect-video flex items-center justify-center'
+                  : 'w-full h-full min-h-[180px]'
+              }
+            >
               <ParticipantTile
                 participant={localParticipant}
                 isLocal
@@ -97,7 +107,14 @@ export const VideoGrid: React.FC<VideoGridProps> = ({
           )}
 
           {remoteParticipants.map((p) => (
-            <div key={p.identity} className="w-full h-full min-h-[180px]">
+            <div
+              key={p.identity}
+              className={
+                totalCount === 1
+                  ? 'w-full h-full max-w-4xl max-h-[82vh] aspect-video flex items-center justify-center'
+                  : 'w-full h-full min-h-[180px]'
+              }
+            >
               <ParticipantTile
                 participant={p}
                 isSpeaking={activeSpeakers.includes(p.identity)}

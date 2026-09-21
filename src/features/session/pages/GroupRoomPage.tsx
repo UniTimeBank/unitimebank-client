@@ -16,7 +16,6 @@ import {
   useInRoomChat,
   useWhiteboard,
   useHeartbeat,
-  useSessionRecorder,
 } from '../hooks';
 import type { InRoomChatMessage } from '../types';
 import {
@@ -25,12 +24,11 @@ import {
   VideoGrid,
   ScreenShareView,
   InRoomChatPanel,
+  InRoomParticipantsPanel,
   WhiteboardModal,
   DeviceSettingsModal,
   SessionEndedModal,
   GroupEscrowModal,
-  InRoomParticipantsModal,
-  SessionRecordingsModal,
 } from '../components';
 import { ReportViolationModal } from '@/features/moderation';
 import { Modal, Button } from '@/shared/components/ui';
@@ -70,31 +68,12 @@ export const GroupRoomPage: React.FC = () => {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
-  const [isParticipantsModalOpen, setIsParticipantsModalOpen] = useState(false);
-  const [isRecordingsModalOpen, setIsRecordingsModalOpen] = useState(false);
+  const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState<{
     userId: string;
     userName: string;
     initialFiles?: File[];
   } | null>(null);
-
-  // In-App Screen Recording (Tổng hạn mức tích lũy tối đa 100MB)
-  const {
-    isRecording,
-    isPaused: isRecordingPaused,
-    currentDuration: recordingDurationSeconds,
-    currentClipBytes,
-    clips: recordingClips,
-    totalBytes: recordingTotalBytes,
-    remainingBytes: recordingRemainingBytes,
-    usedPercentage: recordingUsedPercentage,
-    startRecording,
-    pauseRecording,
-    resumeRecording,
-    stopRecording,
-    deleteClip,
-    downloadClip,
-  } = useSessionRecorder(roomId);
 
   // Trạng thái hiện diện của Chủ phòng (Host) & Đóng băng phòng
   const [socketHostPresent, setSocketHostPresent] = useState<boolean | null>(null);
@@ -189,6 +168,7 @@ export const GroupRoomPage: React.FC = () => {
     isMicEnabled,
     isCameraEnabled,
     isScreenSharing,
+    setMicrophoneEnabled,
     toggleMicrophone,
     toggleCamera,
     toggleScreenShare,
@@ -242,8 +222,12 @@ export const GroupRoomPage: React.FC = () => {
       }
     },
     onParticipantMuted: (evt) => {
-      if (evt.userId === authUser?.id && evt.isMuted) {
-        toast.info('Host đã tắt microphone của bạn.');
+      if (
+        (evt.userId === authUser?.id || evt.participantId === authUser?.id) &&
+        evt.isMuted
+      ) {
+        setMicrophoneEnabled(false);
+        toast.info('Chủ phòng (Host) đã tắt micro của bạn.');
       }
     },
     onParticipantKicked: (evt) => {
@@ -471,13 +455,6 @@ export const GroupRoomPage: React.FC = () => {
         participantCount={1 + remoteParticipants.length}
         isHost={isHost}
         hostAccumulatedCredits={hostAccumulatedCredits}
-        isRecording={isRecording}
-        isPaused={isRecordingPaused}
-        recordingDurationSeconds={recordingDurationSeconds}
-        recordingCurrentMB={(currentClipBytes / (1024 * 1024)).toFixed(1)}
-        recordingTotalMB={(recordingTotalBytes / (1024 * 1024)).toFixed(1)}
-        recordingClipsCount={recordingClips.length}
-        onOpenRecordings={() => setIsRecordingsModalOpen(true)}
         onOpenEscrowModal={() => {
           refetchStats();
           setIsEscrowModalOpen(true);
@@ -596,6 +573,29 @@ export const GroupRoomPage: React.FC = () => {
             socketHelper.sendMessage(content, displayName, avatarUrl);
           }}
         />
+
+        {/* Participants Sidebar */}
+        <InRoomParticipantsPanel
+          isOpen={isParticipantsOpen}
+          onClose={() => setIsParticipantsOpen(false)}
+          localParticipant={localParticipant}
+          remoteParticipants={remoteParticipants}
+          mentorId={tokenData?.mentorId}
+          currentUserId={authUser?.id}
+          currentUserDisplayName={displayName}
+          currentUserAvatarUrl={avatarUrl}
+          roomStats={mergedStats || undefined}
+          onMuteParticipant={(id) => {
+            socketHelper.muteParticipant(id, true);
+            toast.success('Đã tắt micro của thành viên');
+          }}
+          onKickParticipant={(id, reason) => socketHelper.kickParticipant(id, reason)}
+          onBlockParticipant={(id, reason) => socketHelper.blockParticipant(id, reason)}
+          onReportParticipant={(id, name) => {
+            setReportTarget({ userId: id, userName: name || 'Học viên' });
+            setIsReportOpen(true);
+          }}
+        />
       </main>
 
       {/* 3. Controls Bar */}
@@ -604,30 +604,29 @@ export const GroupRoomPage: React.FC = () => {
         isCameraEnabled={isCameraEnabled}
         isScreenSharing={isScreenSharing}
         isChatOpen={isChatOpen}
+        isParticipantsOpen={isParticipantsOpen}
         isWhiteboardOpen={isWhiteboardOpen}
         unreadCount={unreadCount}
         isHost={isHost}
         participantCount={1 + remoteParticipants.length}
-        onOpenParticipants={() => setIsParticipantsModalOpen(true)}
-        isRecording={isRecording}
-        isPaused={isRecordingPaused}
-        recordingClipsCount={recordingClips.length}
-        recordingTotalMB={(recordingTotalBytes / (1024 * 1024)).toFixed(1)}
-        onToggleRecording={() => {
-          if (isRecording) {
-            stopRecording().then(() => setIsRecordingsModalOpen(true));
-          } else {
-            startRecording();
-          }
+        onOpenParticipants={() => {
+          setIsParticipantsOpen((prev) => {
+            const next = !prev;
+            if (next) {
+              closeChat();
+            }
+            return next;
+          });
         }}
-        onPauseRecording={pauseRecording}
-        onResumeRecording={resumeRecording}
-        onStopRecording={() => stopRecording().then(() => setIsRecordingsModalOpen(true))}
-        onOpenRecordings={() => setIsRecordingsModalOpen(true)}
         onToggleMic={toggleMicrophone}
         onToggleCamera={toggleCamera}
         onToggleScreenShare={toggleScreenShare}
-        onToggleChat={toggleChat}
+        onToggleChat={() => {
+          if (!isChatOpen) {
+            setIsParticipantsOpen(false);
+          }
+          toggleChat();
+        }}
         onToggleWhiteboard={() => setIsWhiteboardOpen((prev) => !prev)}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onReport={!isHost ? () => setIsReportOpen(true) : undefined}
@@ -665,7 +664,8 @@ export const GroupRoomPage: React.FC = () => {
           setReportTarget(null);
         }}
         targetUserId={reportTarget?.userId || tokenData?.mentorId || ''}
-        targetUserName={reportTarget?.userName || (isHost ? 'Phòng học nhóm' : 'Chủ phòng (Mentor)')}
+        targetUserName={reportTarget?.userName || (isHost ? 'Học viên' : 'Chủ phòng (Mentor)')}
+        targetRole={isHost ? 'LEARNER' : 'MENTOR'}
         targetType="SESSION"
         targetId={roomId}
         initialFiles={reportTarget?.initialFiles}
@@ -771,7 +771,7 @@ export const GroupRoomPage: React.FC = () => {
         durationFormatted={heartbeatHelper.durationFormatted}
         title={roomEndReason?.title}
         description={roomEndReason?.description}
-        redirectUrl="/manage/group-sessions"
+        redirectUrl="/explore"
       />
 
       {/* 10. Group Escrow & Participant Breakdown Modal (Host) */}
@@ -781,47 +781,6 @@ export const GroupRoomPage: React.FC = () => {
         stats={mergedStats}
         isLoading={isLoadingStats}
         onRefresh={refetchStats}
-      />
-
-      {/* 11. In-Room Participants & Moderation Modal */}
-      <InRoomParticipantsModal
-        isOpen={isParticipantsModalOpen}
-        onClose={() => setIsParticipantsModalOpen(false)}
-        localParticipant={localParticipant}
-        remoteParticipants={remoteParticipants}
-        mentorId={tokenData?.mentorId}
-        currentUserId={authUser?.id}
-        roomStats={mergedStats || undefined}
-        onMuteParticipant={(id) => socketHelper.muteParticipant(id, true)}
-        onKickParticipant={(id, reason) => socketHelper.kickParticipant(id, reason)}
-        onBlockParticipant={(id, reason) => socketHelper.blockParticipant(id, reason)}
-        onReportParticipant={(id, name) => {
-          setReportTarget({ userId: id, userName: name || 'Học viên' });
-          setIsReportOpen(true);
-        }}
-      />
-
-      {/* 12. Session Screen Recordings Modal (100MB Total Quota) */}
-      <SessionRecordingsModal
-        isOpen={isRecordingsModalOpen}
-        onClose={() => setIsRecordingsModalOpen(false)}
-        clips={recordingClips}
-        totalBytes={recordingTotalBytes}
-        remainingBytes={recordingRemainingBytes}
-        usedPercentage={recordingUsedPercentage}
-        isRecording={isRecording}
-        onStartRecording={startRecording}
-        onStopRecording={stopRecording}
-        onDeleteClip={deleteClip}
-        onDownloadClip={downloadClip}
-        onReportWithClip={(clip) => {
-          setReportTarget({
-            userId: tokenData?.mentorId || '',
-            userName: isHost ? 'Thành viên' : 'Chủ phòng (Mentor)',
-            initialFiles: [clip.file],
-          });
-          setIsReportOpen(true);
-        }}
       />
     </div>
   );
