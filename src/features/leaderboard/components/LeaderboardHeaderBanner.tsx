@@ -30,7 +30,7 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, '0');
       const val = `${y}-${m}`;
-      const label = i === 0 ? `Tháng ${d.getMonth() + 1}/${y} (Hiện tại)` : `Tháng ${d.getMonth() + 1}/${y}`;
+      const label =`Tháng ${d.getMonth() + 1}/${y}`;
       options.push({ value: val, label });
     }
     return options;
