@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, ShieldCheck, Sparkles } from 'lucide-react';
+import { BookOpen, ShieldCheck, Lightbulb } from 'lucide-react';
 import type { CommunityGroup } from '@/features/post/types';
 import { DEFAULT_GROUP_RULES } from '@/features/post/constants';
 
@@ -62,7 +62,7 @@ export const GroupSidebarInfo: React.FC<GroupSidebarInfoProps> = ({ group }) => 
       {/* UniTime Group Tip */}
       <div className="relative overflow-hidden bg-gradient-to-br from-[#0B2E22] via-[#134434] to-[#1A5743] border border-emerald-900/40 rounded-3xl p-5 text-white shadow-xs space-y-2">
         <div className="flex items-center gap-2 font-bold text-xs text-emerald-300">
-          <Sparkles className="w-4 h-4 text-amber-300" />
+          <Lightbulb className="w-4 h-4 text-amber-300" />
           <span>Mẹo học tập UniTime</span>
         </div>
         <p className="text-[11px] text-emerald-100/80 leading-relaxed font-normal">

@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Sparkles,
+  PenSquare,
   Send,
   Image as ImageIcon,
   HelpCircle,
@@ -48,8 +48,8 @@ export const GroupPostCreator: React.FC<GroupPostCreatorProps> = ({
   return (
     <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-100 shadow-2xs space-y-4">
       <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
-        <Sparkles className="w-4 h-4 text-primary-500" />
-        <span>Đăng thảo luận / Đặt câu hỏi cho nhóm</span>
+        <PenSquare className="w-4 h-4 text-primary-600" />
+        <span>Tạo bài viết / Đặt câu hỏi trong nhóm</span>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-3">

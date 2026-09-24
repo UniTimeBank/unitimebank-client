@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, Plus } from 'lucide-react';
+import { Users, Plus } from 'lucide-react';
 
 interface CommunityHeaderBannerProps {
   onOpenCreateModal: () => void;
@@ -15,7 +15,7 @@ export const CommunityHeaderBanner: React.FC<CommunityHeaderBannerProps> = ({ on
       {/* Left Content */}
       <div className="relative z-10 max-w-2xl">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-400/15 border border-emerald-400/25 text-emerald-300 text-[11px] font-bold uppercase tracking-wider mb-2.5 backdrop-blur-xs">
-          <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+          <Users className="w-3.5 h-3.5 text-emerald-300" />
           <span>Cộng đồng học tập UniTime</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
