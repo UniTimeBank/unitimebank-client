@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, type ChangeEvent, type DragEvent, type FormEvent } from 'react';
 import type { GroupPostTag } from '../types';
 import { useCreateGroupPostMutation } from '@/core/api/community/communityApi';
 import { useUploadFileDirectMutation } from '@/core/api/upload';
@@ -59,12 +59,12 @@ export const useCreateGroupPostForm = (groupId: string, isMember?: boolean) => {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleProcessFile(file);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
     const file = e.dataTransfer.files?.[0];
@@ -78,7 +78,7 @@ export const useCreateGroupPostForm = (groupId: string, isMember?: boolean) => {
     setIsUrlInputOpen(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!postContent.trim()) {
       toast.error('Vui lòng nhập nội dung bài viết!');
@@ -102,8 +102,9 @@ export const useCreateGroupPostForm = (groupId: string, isMember?: boolean) => {
 
       toast.success('Đăng bài thành công!');
       resetForm();
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Không thể đăng bài viết. Vui lòng thử lại!');
+    } catch (err: unknown) {
+      const errorMsg = (err as { data?: { message?: string } })?.data?.message || 'Không thể đăng bài viết. Vui lòng thử lại!';
+      toast.error(errorMsg);
     }
   };
 

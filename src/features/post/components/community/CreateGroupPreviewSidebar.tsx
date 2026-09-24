@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, HelpCircle, Users, MessageSquare, ArrowRight, UserPlus, Check } from 'lucide-react';
+import { Eye, HelpCircle, Users, MessageSquare, ArrowRight, Check } from 'lucide-react';
 
 interface CreateGroupPreviewSidebarProps {
   name: string;

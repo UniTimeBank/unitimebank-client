@@ -1,11 +1,10 @@
 import { useState, useMemo } from 'react';
 import {
   useGetGroupPostsQuery,
-  useCreateGroupPostMutation,
   useToggleLikeGroupPostMutation,
   useDeleteGroupPostMutation,
 } from '@/core/api/community/communityApi';
-import type { GroupPostTag } from '../types';
+import type { GroupPost } from '../types';
 import { toast } from 'react-hot-toast';
 
 export const useGroupPosts = (groupId: string, isMember?: boolean) => {
@@ -15,9 +14,12 @@ export const useGroupPosts = (groupId: string, isMember?: boolean) => {
 
   const posts: GroupPost[] = useMemo(() => {
     if (Array.isArray(rawPosts)) return rawPosts;
-    if (Array.isArray((rawPosts as any)?.posts)) return (rawPosts as any).posts;
-    if (Array.isArray((rawPosts as any)?.data?.posts)) return (rawPosts as any).data.posts;
-    if (Array.isArray((rawPosts as any)?.data)) return (rawPosts as any).data;
+    const obj = rawPosts as { posts?: GroupPost[]; data?: { posts?: GroupPost[] } | GroupPost[] };
+    if (Array.isArray(obj?.posts)) return obj.posts;
+    if (Array.isArray(obj?.data)) return obj.data;
+    if (obj?.data && typeof obj.data === 'object' && 'posts' in obj.data && Array.isArray(obj.data.posts)) {
+      return obj.data.posts;
+    }
     return [];
   }, [rawPosts]);
 
@@ -41,7 +43,7 @@ export const useGroupPosts = (groupId: string, isMember?: boolean) => {
     }
     try {
       await toggleLike({ groupId, postId }).unwrap();
-    } catch (err: any) {
+    } catch {
       toast.error('Không thể thực hiện tương tác thả tim');
     }
   };
@@ -51,8 +53,9 @@ export const useGroupPosts = (groupId: string, isMember?: boolean) => {
     try {
       await deletePost({ groupId, postId }).unwrap();
       toast.success('Đã xóa bài viết thành công');
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Không thể xóa bài viết');
+    } catch (err: unknown) {
+      const errorMsg = (err as { data?: { message?: string } })?.data?.message || 'Không thể xóa bài viết';
+      toast.error(errorMsg);
     }
   };
 

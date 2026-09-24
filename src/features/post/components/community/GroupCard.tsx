@@ -30,8 +30,9 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
         await joinGroup(group._id).unwrap();
         toast.success(`Đã tham gia nhóm ${group.name}!`);
       }
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại sau!');
+    } catch (err: unknown) {
+      const errorMsg = (err as { data?: { message?: string } })?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại sau!';
+      toast.error(errorMsg);
     }
   };
 

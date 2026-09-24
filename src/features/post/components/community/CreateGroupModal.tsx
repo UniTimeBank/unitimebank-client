@@ -64,8 +64,9 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
       if (onSuccess && created._id) {
         onSuccess(created._id);
       }
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Có lỗi xảy ra khi tạo nhóm. Vui lòng thử lại!');
+    } catch (err: unknown) {
+      const errorMsg = (err as { data?: { message?: string } })?.data?.message || 'Có lỗi xảy ra khi tạo nhóm. Vui lòng thử lại!';
+      toast.error(errorMsg);
     }
   };
 
