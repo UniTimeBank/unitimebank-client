@@ -1,200 +1,195 @@
 import React, { useState } from 'react';
-import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import {
   Users,
   Search,
   Sparkles,
-  TrendingUp,
-  MessageSquare,
-  Bookmark,
-  Calendar,
-  Share2,
+  Plus,
+  BookOpen,
+  Filter,
+  CheckCircle2,
+  HelpCircle,
 } from 'lucide-react';
+import { useGetGroupsQuery } from '@/core/api/community/communityApi';
+import { GroupCard } from '@/features/post/components/community/GroupCard';
+import { CreateGroupModal } from '@/features/post/components/community/CreateGroupModal';
+
+const CATEGORIES = [
+  'Tất cả',
+  'Công nghệ thông tin',
+  'Toán học & Giải tích',
+  'Ngoại ngữ & IELTS',
+  'Kinh tế & Marketing',
+  'Thiết kế & Đồ họa',
+  'Khoa học cơ bản',
+  'Đời sống sinh viên',
+];
 
 export const CommunityPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'GROUPS' | 'WORKSHOPS'>('GROUPS');
+  const navigate = useNavigate();
+
+  const [activeTab, setActiveTab] = useState<'ALL' | 'MY_GROUPS'>('ALL');
+  const [selectedCategory, setSelectedCategory] = useState<string>('Tất cả');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const groups = [
-    {
-      id: 'g-1',
-      name: 'Cộng đồng Lập trình Frontend (ReactJS / Vue / Next.js)',
-      description:
-        'Nơi trao đổi kinh nghiệm, giải đáp thắc mắc và chia sẻ dự án thực tế ngành Web Development.',
-      membersCount: 1420,
-      activeDiscussions: 48,
-      category: 'Công nghệ thông tin',
-      isJoined: false,
-    },
-    {
-      id: 'g-2',
-      name: 'Ôn thi & Luyện giải đề Toán Cao Cấp / Giải Tích 1-2',
-      description:
-        'Nhóm học tập tương trợ lẫn nhau, cùng làm bài tập lớn và chuẩn bị cho các kỳ thi giữa kỳ, cuối kỳ.',
-      membersCount: 890,
-      activeDiscussions: 32,
-      category: 'Toán học',
-      isJoined: true,
-    },
-    {
-      id: 'g-3',
-      name: 'Góc Tiếng Anh Giao Tiếp & Luyện Thi IELTS 7.0+',
-      description:
-        'Luyện nói Speaking hàng tuần qua phòng học ảo UniTime, chia sẻ tài liệu ôn thi chất lượng.',
-      membersCount: 2150,
-      activeDiscussions: 95,
-      category: 'Ngoại ngữ',
-      isJoined: false,
-    },
-  ];
+  // Fetch groups with filters
+  const { data: groups = [], isLoading } = useGetGroupsQuery({
+    search: searchQuery.trim() || undefined,
+    category: selectedCategory === 'Tất cả' ? undefined : selectedCategory,
+    myGroupsOnly: activeTab === 'MY_GROUPS',
+  });
 
-  const filteredGroups = groups.filter(
-    (g) =>
-      g.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      g.category.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  const handleGroupCreated = (groupId: string) => {
+    navigate(`/community/${groupId}`);
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-primary-600 to-teal-600 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10 max-w-2xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold text-white">
-            <Sparkles className="w-4 h-4 text-amber-300" />
-            <span>Cộng đồng học tập & chia sẻ</span>
+      <div className="bg-gradient-to-r from-primary-600 via-teal-600 to-emerald-600 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+        {/* Subtle background glow effect */}
+        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="max-w-2xl space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold text-white">
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <span>Cộng đồng học tập UniTime</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+              Nhóm Học Tập & Trao Đổi Chuyên Môn
+            </h1>
+            <p className="text-xs sm:text-sm text-primary-100 font-medium leading-relaxed">
+              Mỗi nhóm là một không gian trao đổi độc lập. Cùng nhau đặt câu hỏi, chia sẻ tài liệu ôn thi và tìm bạn đồng hành cùng tiến bộ!
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-            Kết nối Nhóm học tập & Workshop
-          </h1>
-          <p className="text-xs sm:text-sm text-primary-100 font-medium leading-relaxed">
-            Tham gia các nhóm chuyên môn cùng ngành học, đăng ký tham gia các buổi Workshop học thuật do sinh viên xuất sắc hướng dẫn.
-          </p>
+
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="px-5 py-3 rounded-2xl bg-white text-primary-800 hover:bg-primary-50 font-black text-xs transition-all shadow-md hover:shadow-lg flex items-center gap-2 shrink-0 cursor-pointer group"
+          >
+            <Plus className="w-4 h-4 text-primary-600 group-hover:scale-110 transition-transform" />
+            <span>Tạo Nhóm Mới</span>
+          </button>
         </div>
       </div>
 
-      {/* Navigation Tabs & Search */}
+      {/* Filter & Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-100 shadow-2xs">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        {/* Tab switcher */}
+        <div className="flex items-center gap-2 w-full sm:w-auto bg-gray-100/80 p-1 rounded-xl">
           <button
-            onClick={() => setActiveTab('GROUPS')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'GROUPS'
-                ? 'bg-primary-600 text-white shadow-2xs'
-                : 'text-gray-600 hover:bg-gray-100'
+            onClick={() => setActiveTab('ALL')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'ALL'
+                ? 'bg-white text-gray-900 shadow-2xs'
+                : 'text-gray-500 hover:text-gray-800'
             }`}
           >
-            Nhóm học thuật ({groups.length})
+            Khám phá tất cả nhóm
           </button>
           <button
-            onClick={() => setActiveTab('WORKSHOPS')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'WORKSHOPS'
-                ? 'bg-primary-600 text-white shadow-2xs'
-                : 'text-gray-600 hover:bg-gray-100'
+            onClick={() => setActiveTab('MY_GROUPS')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'MY_GROUPS'
+                ? 'bg-white text-gray-900 shadow-2xs'
+                : 'text-gray-500 hover:text-gray-800'
             }`}
           >
-            Workshop nổi bật
+            Nhóm của tôi
           </button>
         </div>
 
-        <div className="relative w-full sm:w-64">
+        {/* Search input */}
+        <div className="relative w-full sm:w-72">
           <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Tìm nhóm hoặc chủ đề..."
-            className="w-full pl-9 pr-4 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+            placeholder="Tìm theo tên nhóm hoặc mô tả..."
+            className="w-full pl-9 pr-4 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500 font-medium transition-all"
           />
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Category Chips Bar */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        {CATEGORIES.map((cat) => {
+          const isSelected = selectedCategory === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                isSelected
+                  ? 'bg-primary-600 text-white shadow-2xs scale-[1.02]'
+                  : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-100'
+              }`}
+            >
+              {cat}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Groups Grid */}
       <div>
-        {activeTab === 'GROUPS' ? (
+        {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredGroups.map((group) => (
+            {[1, 2, 3, 4, 5, 6].map((idx) => (
               <div
-                key={group.id}
-                className="bg-white rounded-2xl p-5 border border-gray-100 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
+                key={idx}
+                className="bg-white rounded-3xl h-72 border border-gray-100 shadow-2xs animate-pulse p-4 space-y-4"
               >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-1 bg-primary-50 text-primary-700 text-[10px] font-black rounded-lg border border-primary-100">
-                      {group.category}
-                    </span>
-                  </div>
-
-                  <h3 className="text-sm font-bold text-gray-900 line-clamp-2">
-                    {group.name}
-                  </h3>
-
-                  <p className="text-xs text-gray-500 leading-relaxed line-clamp-3">
-                    {group.description}
-                  </p>
-                </div>
-
-                <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-xs font-bold text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-primary-500" />
-                      {group.membersCount}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MessageSquare className="w-3.5 h-3.5 text-gray-400" />
-                      {group.activeDiscussions} Thảo luận
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={() => toast.success(`Đã tham gia nhóm: ${group.name}`)}
-                    className="px-4 py-2 rounded-xl text-xs font-bold bg-primary-50 text-primary-700 hover:bg-primary-600 hover:text-white transition-all cursor-pointer"
-                  >
-                    Tham gia nhóm
-                  </button>
-                </div>
+                <div className="h-32 bg-gray-200 rounded-2xl w-full" />
+                <div className="h-4 bg-gray-200 rounded-md w-3/4" />
+                <div className="h-3 bg-gray-200 rounded-md w-full" />
+                <div className="h-8 bg-gray-200 rounded-xl w-full" />
               </div>
             ))}
           </div>
+        ) : groups.length === 0 ? (
+          <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-2xs space-y-4 max-w-lg mx-auto">
+            <div className="w-16 h-16 bg-primary-50 text-primary-600 rounded-3xl mx-auto flex items-center justify-center">
+              <Users className="w-8 h-8" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-gray-900">
+                {activeTab === 'MY_GROUPS'
+                  ? 'Bạn chưa tham gia nhóm nào'
+                  : 'Không tìm thấy nhóm học tập phù hợp'}
+              </h3>
+              <p className="text-xs text-gray-500 leading-relaxed font-medium">
+                {activeTab === 'MY_GROUPS'
+                  ? 'Hãy chuyển sang tab "Khám phá tất cả nhóm" để tham gia hoặc tự tạo nhóm cho riêng mình.'
+                  : 'Hãy thử tìm kiếm với từ khóa khác hoặc tạo một nhóm học tập mới ngay hôm nay.'}
+              </p>
+            </div>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Tạo nhóm ngay</span>
+            </button>
+          </div>
         ) : (
-          <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-2xs space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-gray-900">Workshop Học Thuật Sắp Diễn Ra</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gradient-to-br from-slate-50 to-white rounded-2xl p-5 border border-gray-200/80 space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-200/60">
-                    Miễn phí tham gia
-                  </span>
-                </div>
-
-                <h3 className="text-base font-bold text-gray-900">
-                  Luyện Tập Phỏng Vấn Mock Interview & Tối Ưu CV Ngành IT / Design
-                </h3>
-
-                <p className="text-xs text-gray-600 leading-relaxed">
-                  Buổi chia sẻ trực tiếp về quy trình nghiên cứu người dùng, thiết kế wireframe và hoàn thiện hồ sơ xin việc ngành UX.
-                </p>
-
-                <div className="flex items-center justify-between pt-4 border-t border-gray-50 text-xs font-bold text-gray-500">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4 text-primary-500" />
-                    <span>Thứ 4, 18:00 (11 Thg 9)</span>
-                  </div>
-                  <button
-                    onClick={() => toast.success('Đã đăng ký tham gia Workshop thành công!')}
-                    className="px-4 py-2 rounded-xl bg-primary-500 hover:bg-primary-600 text-white transition-colors cursor-pointer"
-                  >
-                    Đăng ký tham gia
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {groups.map((group) => (
+              <GroupCard key={group._id} group={group} />
+            ))}
           </div>
         )}
       </div>
+
+      {/* Create Group Modal */}
+      <CreateGroupModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleGroupCreated}
+      />
     </div>
   );
 };
