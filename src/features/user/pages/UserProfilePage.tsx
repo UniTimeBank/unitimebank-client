@@ -11,7 +11,6 @@ import {
   DailyCheckinWidget,
   CreditTasksModal,
   CreditLedgerTable,
-  RecommendedSkillsSection,
   PublicProfileHeader,
   PublicStatsGrid,
   PeerReviewsSection,
@@ -151,44 +150,7 @@ export const UserProfilePage: React.FC = () => {
     await addSkill({ skillName: name, category, isStrong });
   };
 
-  const recommendedSkills = [
-    {
-      id: '1',
-      title: 'Nhập môn Python cho Khoa học Dữ liệu',
-      category: 'LẬP TRÌNH',
-      categoryBg: 'bg-primary-50 text-primary-700 border border-primary-100',
-      image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600',
-      rating: 4.9,
-      rate: '1 phút = 1 credit',
-    },
-    {
-      id: '2',
-      title: 'Tư duy Component trong Figma',
-      category: 'THIẾT KẾ',
-      categoryBg: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
-      image: 'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?auto=format&fit=crop&q=80&w=600',
-      rating: 5.0,
-      rate: '1 phút = 1 credit',
-    },
-    {
-      id: '3',
-      title: 'Tiếng Nhật Giao tiếp Thực chiến',
-      category: 'NGOẠI NGỮ',
-      categoryBg: 'bg-teal-50 text-teal-800 border border-teal-100',
-      image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&q=80&w=600',
-      rating: 4.8,
-      rate: '1 phút = 1 credit',
-    },
-    {
-      id: '4',
-      title: 'Bí quyết Thuyết trình Đám đông',
-      category: 'KỸ NĂNG MỀM',
-      categoryBg: 'bg-amber-50 text-amber-800 border border-amber-100',
-      image: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&q=80&w=600',
-      rating: 4.7,
-      rate: '1 phút = 1 credit',
-    },
-  ];
+
 
   const ledgerTransactions = [
     {
@@ -512,10 +474,7 @@ export const UserProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* 4. GỢI Ý KỸ NĂNG NỔI BẬT TRONG CỘNG ĐỒNG */}
-          <RecommendedSkillsSection recommendedSkills={recommendedSkills} />
-
-          {/* 5. SỔ CÁI GIAO DỊCH VÍ CREDIT */}
+          {/* 4. SỔ CÁI GIAO DỊCH VÍ CREDIT */}
           <CreditLedgerTable ledgerTransactions={ledgerTransactions} />
         </div>
       )}
