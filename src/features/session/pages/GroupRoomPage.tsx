@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentUser } from '@/features/auth';
 import { useGetMeQuery } from '@/core/api/user';
@@ -29,6 +29,7 @@ import {
   DeviceSettingsModal,
   SessionEndedModal,
   GroupEscrowModal,
+  PreJoinLobby,
 } from '../components';
 import { ReportViolationModal } from '@/features/moderation';
 import { Modal, Button } from '@/shared/components/ui';
@@ -38,6 +39,7 @@ import { toast } from '@/shared/utils';
 export const GroupRoomPage: React.FC = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const authUser = useAppSelector(selectCurrentUser);
   const { data: userProfile } = useGetMeQuery(undefined, { skip: !authUser });
 
@@ -59,6 +61,34 @@ export const GroupRoomPage: React.FC = () => {
 
   const { data: initialMessages } = useGetRoomChatMessagesQuery(tokenData?.roomId || '', {
     skip: !tokenData?.roomId,
+  });
+
+  // Pre-join Lobby State: Bỏ qua màn hình chờ nếu Mentor vừa tạo phòng
+  const isAutoJoin = useMemo(() => {
+    if ((location.state as any)?.autoJoin) return true;
+    if (roomId && sessionStorage.getItem(`just_created_room_${roomId}`)) {
+      sessionStorage.removeItem(`just_created_room_${roomId}`);
+      return true;
+    }
+    return false;
+  }, [location.state, roomId]);
+
+  const [hasJoinedRoom, setHasJoinedRoom] = useState(isAutoJoin);
+
+  useEffect(() => {
+    if (isAutoJoin && !hasJoinedRoom) {
+      setHasJoinedRoom(true);
+    }
+  }, [isAutoJoin, hasJoinedRoom]);
+
+  const [preJoinSettings, setPreJoinSettings] = useState<{
+    isMicEnabled: boolean;
+    isCameraEnabled: boolean;
+    audioDeviceId?: string;
+    videoDeviceId?: string;
+  }>({
+    isMicEnabled: true,
+    isCameraEnabled: true,
   });
 
   // Modals & States
@@ -172,11 +202,17 @@ export const GroupRoomPage: React.FC = () => {
     toggleMicrophone,
     toggleCamera,
     toggleScreenShare,
+    switchAudioDevice,
+    switchVideoDevice,
     disconnect,
   } = useLiveKitRoom({
     wsUrl: tokenData?.livekitWsUrl,
     token: tokenData?.livekitToken,
-    autoConnect: !!tokenData?.livekitToken,
+    autoConnect: hasJoinedRoom && !!tokenData?.livekitToken,
+    initialMicEnabled: preJoinSettings.isMicEnabled,
+    initialCameraEnabled: preJoinSettings.isCameraEnabled,
+    preferredAudioDeviceId: preJoinSettings.audioDeviceId,
+    preferredVideoDeviceId: preJoinSettings.videoDeviceId,
     onDisconnected: () => {
       setIsEndedModalOpen(true);
     },
@@ -203,7 +239,7 @@ export const GroupRoomPage: React.FC = () => {
 
   // 5. Socket.IO Real-time Helper
   const socketHelper = useSessionSocket({
-    roomId: tokenData?.roomId,
+    roomId: hasJoinedRoom ? tokenData?.roomId : undefined,
     userId: authUser?.id,
     role: tokenData?.role,
     displayName,
@@ -338,12 +374,12 @@ export const GroupRoomPage: React.FC = () => {
   }, [isHost, isHostPresent, disconnect]);
 
   // 7. Session Billing Timer Hook (Optimistic Metering)
-  // Khi isHostPresent = false, đồng hồ ĐÓNG BĂNG, không tăng giây và không trừ credit
+  // Khi isHostPresent = false hoặc khi đang ở phòng chờ, đồng hồ ĐÓNG BĂNG, không tăng giây và không trừ credit
   const heartbeatHelper = useHeartbeat({
     roomId: tokenData?.roomId,
     isGroupRoom: true,
     isLearner: tokenData?.role === 'LEARNER',
-    isFrozen: !isHostPresent,
+    isFrozen: !hasJoinedRoom || !isHostPresent,
     initialBalance:
       tokenData?.availableBalance ??
       (authUser as any)?.wallet?.availableBalance ??
@@ -443,6 +479,49 @@ export const GroupRoomPage: React.FC = () => {
           </button>
         </div>
       </div>
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // PRE-JOIN WAITING LOBBY (Google Meet / Zoom style)
+  // ════════════════════════════════════════════════════════════
+  if (!hasJoinedRoom) {
+    return (
+      <PreJoinLobby
+        title={tokenData?.title || tokenData?.livekitRoomName || 'Lớp học nhóm trực tuyến'}
+        roomType="GROUP"
+        currentUser={{
+          name: displayName,
+          avatar: avatarUrl,
+          role: tokenData?.role || (isHost ? 'MENTOR' : 'LEARNER'),
+        }}
+        partnerInfo={
+          !isHost && tokenData?.mentorName
+            ? {
+                name: tokenData.mentorName,
+                avatar: tokenData.mentorAvatar,
+                role: 'MENTOR',
+              }
+            : undefined
+        }
+        sessionMeta={{
+          category: tokenData?.category,
+          activeParticipants: 1 + remoteParticipants.length,
+          isFreeTier: true,
+        }}
+        isLoading={isJoining}
+        isJoining={false}
+        onJoin={(settings) => {
+          setPreJoinSettings(settings);
+          setHasJoinedRoom(true);
+        }}
+        onBack={() => {
+          if (roomId && !isHost) {
+            leaveGroup(roomId).catch(() => {});
+          }
+          navigate('/rooms/group');
+        }}
+      />
     );
   }
 
@@ -654,6 +733,10 @@ export const GroupRoomPage: React.FC = () => {
       <DeviceSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+        currentAudioDeviceId={preJoinSettings.audioDeviceId}
+        currentVideoDeviceId={preJoinSettings.videoDeviceId}
+        onSelectAudioDevice={switchAudioDevice}
+        onSelectVideoDevice={switchVideoDevice}
       />
 
       {/* 6. Violation Report Modal */}

@@ -12,6 +12,7 @@ export interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl';
   showCloseButton?: boolean;
   zIndex?: number;
+  className?: string;
 }
 
 export const Modal = ({
@@ -23,6 +24,7 @@ export const Modal = ({
   size = 'md',
   showCloseButton = true,
   zIndex = 50,
+  className = '',
 }: ModalProps) => {
   // ESC key handler & body overflow lock with nesting support
   useEffect(() => {
@@ -77,8 +79,8 @@ export const Modal = ({
         {/* Modal Container */}
         <div
           className={`
-            w-full ${sizeClasses[size]} bg-white border border-slate-200/90 shadow-2xl rounded-3xl p-6 sm:p-7 relative z-10
-            animate-in zoom-in-95 duration-150
+            w-full ${className.includes('max-w-') ? '' : sizeClasses[size]} bg-white border border-slate-200/90 shadow-2xl rounded-3xl relative z-10
+            animate-in zoom-in-95 duration-150 ${className ? className : 'p-6 sm:p-7'}
           `}
         >
           {showCloseButton && (

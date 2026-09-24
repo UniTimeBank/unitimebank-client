@@ -27,3 +27,5 @@ export * from './lobby/FeaturedGroupRoomCard';
 export * from './lobby/MiniGroupRoomCard';
 export * from './lobby/CreateGroupRoomModal';
 export * from './lobby/LiveGroupRoomsBanner';
+export * from './lobby/PreJoinLobby';
+export * from './lobby/PermissionPromptModal';
