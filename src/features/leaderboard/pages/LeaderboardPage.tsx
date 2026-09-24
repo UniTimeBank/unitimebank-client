@@ -17,13 +17,35 @@ import {
 export const LeaderboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'mentors' | 'learners'>('mentors');
   const [timeframe, setTimeframe] = useState<'all' | 'month' | 'quarter' | 'year'>('month');
+
+  const getDefaultPeriod = (tf: 'all' | 'month' | 'quarter' | 'year') => {
+    const now = new Date();
+    if (tf === 'month') {
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
+    if (tf === 'quarter') {
+      const q = Math.floor(now.getMonth() / 3) + 1;
+      return `${now.getFullYear()}-Q${q}`;
+    }
+    if (tf === 'year') {
+      return `${now.getFullYear()}`;
+    }
+    return '';
+  };
+
+  const [period, setPeriod] = useState<string>(() => getDefaultPeriod('month'));
   const [showFormulaModal, setShowFormulaModal] = useState(false);
+
+  const handleTimeframeChange = (newTf: 'all' | 'month' | 'quarter' | 'year') => {
+    setTimeframe(newTf);
+    setPeriod(getDefaultPeriod(newTf));
+  };
 
   const {
     data: mentorData,
     isLoading: isLoadingMentors,
   } = useGetMentorLeaderboardQuery(
-    { timeframe, limit: 30 },
+    { timeframe, period: timeframe === 'all' ? undefined : period, limit: 30 },
     { skip: activeTab !== 'mentors' },
   );
 
@@ -31,7 +53,7 @@ export const LeaderboardPage: React.FC = () => {
     data: learnerData,
     isLoading: isLoadingLearners,
   } = useGetLearnerLeaderboardQuery(
-    { timeframe, limit: 30 },
+    { timeframe, period: timeframe === 'all' ? undefined : period, limit: 30 },
     { skip: activeTab !== 'learners' },
   );
 
@@ -58,7 +80,9 @@ export const LeaderboardPage: React.FC = () => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         timeframe={timeframe}
-        onTimeframeChange={setTimeframe}
+        onTimeframeChange={handleTimeframeChange}
+        period={period}
+        onPeriodChange={setPeriod}
         onOpenFormula={() => setShowFormulaModal(true)}
       />
 

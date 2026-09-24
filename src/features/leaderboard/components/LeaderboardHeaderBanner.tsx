@@ -1,11 +1,13 @@
-import React from 'react';
-import { Trophy, HelpCircle, Award, Flame } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Trophy, HelpCircle, Award, Flame, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface LeaderboardHeaderBannerProps {
   activeTab: 'mentors' | 'learners';
   onTabChange: (tab: 'mentors' | 'learners') => void;
   timeframe: 'all' | 'month' | 'quarter' | 'year';
   onTimeframeChange: (tf: 'all' | 'month' | 'quarter' | 'year') => void;
+  period: string;
+  onPeriodChange: (period: string) => void;
   onOpenFormula: () => void;
 }
 
@@ -14,8 +16,83 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
   onTabChange,
   timeframe,
   onTimeframeChange,
+  period,
+  onPeriodChange,
   onOpenFormula,
 }) => {
+  // 1. Tạo danh sách các tháng gần nhất (12 tháng)
+  const monthOptions = useMemo(() => {
+    const options: { value: string; label: string }[] = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const val = `${y}-${m}`;
+      const label = i === 0 ? `Tháng ${d.getMonth() + 1}/${y} (Hiện tại)` : `Tháng ${d.getMonth() + 1}/${y}`;
+      options.push({ value: val, label });
+    }
+    return options;
+  }, []);
+
+  // 2. Tạo danh sách các quý gần nhất (8 quý)
+  const quarterOptions = useMemo(() => {
+    const options: { value: string; label: string }[] = [];
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curQ = Math.floor(now.getMonth() / 3) + 1;
+    let y = curYear;
+    let q = curQ;
+    for (let i = 0; i < 8; i++) {
+      const val = `${y}-Q${q}`;
+      const label = i === 0 ? `Quý ${q}/${y} (Hiện tại)` : `Quý ${q}/${y}`;
+      options.push({ value: val, label });
+      q--;
+      if (q === 0) {
+        q = 4;
+        y--;
+      }
+    }
+    return options;
+  }, []);
+
+  // 3. Tạo danh sách các năm gần nhất (5 năm)
+  const yearOptions = useMemo(() => {
+    const options: { value: string; label: string }[] = [];
+    const curYear = new Date().getFullYear();
+    for (let i = 0; i < 5; i++) {
+      const y = curYear - i;
+      const val = `${y}`;
+      const label = i === 0 ? `Năm ${y} (Hiện tại)` : `Năm ${y}`;
+      options.push({ value: val, label });
+    }
+    return options;
+  }, []);
+
+  // Lựa chọn danh sách options theo timeframe hiện tại
+  const currentOptions = useMemo(() => {
+    if (timeframe === 'month') return monthOptions;
+    if (timeframe === 'quarter') return quarterOptions;
+    if (timeframe === 'year') return yearOptions;
+    return [];
+  }, [timeframe, monthOptions, quarterOptions, yearOptions]);
+
+  const currentIndex = currentOptions.findIndex((opt) => opt.value === period);
+  const canGoNext = currentIndex > 0;
+  const canGoPrev = currentIndex >= 0 && currentIndex < currentOptions.length - 1;
+
+  const handlePrev = () => {
+    if (canGoPrev) {
+      onPeriodChange(currentOptions[currentIndex + 1].value);
+    }
+  };
+
+  const handleNext = () => {
+    if (canGoNext) {
+      onPeriodChange(currentOptions[currentIndex - 1].value);
+    }
+  };
+
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-[#0B2E22] via-[#134434] to-[#1A5743] border border-emerald-900/40 p-6 sm:p-8 lg:p-10 rounded-3xl shadow-xs text-white">
       {/* Decorative Background Glows */}
@@ -50,6 +127,7 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
 
       {/* Bottom row: Tabs & Timeframe Filter */}
       <div className="relative z-10 flex items-center justify-between mt-8 flex-wrap gap-4 pt-6 border-t border-emerald-800/60">
+        {/* Tab Selector */}
         <div className="flex items-center gap-2 bg-[#0B2E22]/70 p-1.5 rounded-2xl border border-emerald-800/60 backdrop-blur-md">
           <button
             type="button"
@@ -77,52 +155,107 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
           </button>
         </div>
 
-        {/* Timeframe Filter */}
-        <div className="flex items-center gap-1.5 bg-[#0B2E22]/70 p-1.5 rounded-2xl border border-emerald-800/60 text-xs backdrop-blur-md">
-          <button
-            type="button"
-            onClick={() => onTimeframeChange('month')}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
-              timeframe === 'month'
-                ? 'bg-white/20 text-white font-bold'
-                : 'text-emerald-200/70 hover:text-white'
-            }`}
-          >
-            Tháng này
-          </button>
-          <button
-            type="button"
-            onClick={() => onTimeframeChange('quarter')}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
-              timeframe === 'quarter'
-                ? 'bg-white/20 text-white font-bold'
-                : 'text-emerald-200/70 hover:text-white'
-            }`}
-          >
-            Quý này
-          </button>
-          <button
-            type="button"
-            onClick={() => onTimeframeChange('year')}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
-              timeframe === 'year'
-                ? 'bg-white/20 text-white font-bold'
-                : 'text-emerald-200/70 hover:text-white'
-            }`}
-          >
-            Năm nay
-          </button>
-          <button
-            type="button"
-            onClick={() => onTimeframeChange('all')}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
-              timeframe === 'all'
-                ? 'bg-white/20 text-white font-bold'
-                : 'text-emerald-200/70 hover:text-white'
-            }`}
-          >
-            Toàn thời gian
-          </button>
+        {/* Timeframe Filter + Period Dropdown */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* 1. Timeframe Mode Buttons */}
+          <div className="flex items-center gap-1.5 bg-[#0B2E22]/70 p-1.5 rounded-2xl border border-emerald-800/60 text-xs backdrop-blur-md">
+            <button
+              type="button"
+              onClick={() => onTimeframeChange('month')}
+              className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+                timeframe === 'month'
+                  ? 'bg-white/20 text-white font-bold'
+                  : 'text-emerald-200/70 hover:text-white'
+              }`}
+            >
+              Theo Tháng
+            </button>
+            <button
+              type="button"
+              onClick={() => onTimeframeChange('quarter')}
+              className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+                timeframe === 'quarter'
+                  ? 'bg-white/20 text-white font-bold'
+                  : 'text-emerald-200/70 hover:text-white'
+              }`}
+            >
+              Theo Quý
+            </button>
+            <button
+              type="button"
+              onClick={() => onTimeframeChange('year')}
+              className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+                timeframe === 'year'
+                  ? 'bg-white/20 text-white font-bold'
+                  : 'text-emerald-200/70 hover:text-white'
+              }`}
+            >
+              Theo Năm
+            </button>
+            <button
+              type="button"
+              onClick={() => onTimeframeChange('all')}
+              className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+                timeframe === 'all'
+                  ? 'bg-white/20 text-white font-bold'
+                  : 'text-emerald-200/70 hover:text-white'
+              }`}
+            >
+              Toàn thời gian
+            </button>
+          </div>
+
+          {/* 2. Specific Period Selector Dropdown & Stepper (When not 'all') */}
+          {timeframe !== 'all' && currentOptions.length > 0 && (
+            <div className="flex items-center gap-1 bg-[#0B2E22]/85 p-1 rounded-2xl border border-emerald-700/60 text-xs backdrop-blur-md shadow-inner">
+              {/* Prev Button (Lùi về quá khứ) */}
+              <button
+                type="button"
+                onClick={handlePrev}
+                disabled={!canGoPrev}
+                title="Kỳ trước đó"
+                className={`p-1.5 rounded-xl transition-all ${
+                  canGoPrev
+                    ? 'text-emerald-200 hover:text-white hover:bg-white/10 cursor-pointer active:scale-90'
+                    : 'text-emerald-500/30 cursor-not-allowed'
+                }`}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {/* Dropdown Select */}
+              <div className="flex items-center gap-1.5 px-2">
+                <Calendar className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                <select
+                  value={period}
+                  onChange={(e) => onPeriodChange(e.target.value)}
+                  aria-label="Chọn kỳ xếp hạng"
+                  className="bg-transparent text-white font-semibold text-xs py-1 focus:outline-none cursor-pointer border-none [&>option]:bg-[#0B2E22] [&>option]:text-white"
+                >
+                  {currentOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Next Button (Tiến về hiện tại) */}
+              <button
+                type="button"
+                onClick={handleNext}
+                disabled={!canGoNext}
+                title="Kỳ sau đó"
+                className={`p-1.5 rounded-xl transition-all ${
+                  canGoNext
+                    ? 'text-emerald-200 hover:text-white hover:bg-white/10 cursor-pointer active:scale-90'
+                    : 'text-emerald-500/30 cursor-not-allowed'
+                }`}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

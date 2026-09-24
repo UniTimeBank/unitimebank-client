@@ -111,7 +111,8 @@ export interface LearnerLeaderboardItem {
 }
 
 export interface LeaderboardResponse<T> {
-  timeframe: 'weekly' | 'monthly' | 'all';
+  timeframe: 'all' | 'month' | 'quarter' | 'year' | string;
+  period?: string;
   items: T[];
   total: number;
 }

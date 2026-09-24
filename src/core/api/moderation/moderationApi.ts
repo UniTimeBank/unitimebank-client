@@ -88,12 +88,13 @@ export const moderationApi = baseApi.injectEndpoints({
       import('@/features/moderation/types').LeaderboardResponse<
         import('@/features/moderation/types').MentorLeaderboardItem
       >,
-      { timeframe?: string; limit?: number } | void
+      { timeframe?: string; period?: string; limit?: number } | void
     >({
       query: (params) => {
         const tf = params && params.timeframe ? params.timeframe : 'all';
         const lim = params && params.limit ? params.limit : 20;
-        return `/moderation/leaderboard/mentors?timeframe=${tf}&limit=${lim}`;
+        const periodParam = params && params.period ? `&period=${encodeURIComponent(params.period)}` : '';
+        return `/moderation/leaderboard/mentors?timeframe=${tf}&limit=${lim}${periodParam}`;
       },
       providesTags: ['Moderation'],
     }),
@@ -103,12 +104,13 @@ export const moderationApi = baseApi.injectEndpoints({
       import('@/features/moderation/types').LeaderboardResponse<
         import('@/features/moderation/types').LearnerLeaderboardItem
       >,
-      { timeframe?: string; limit?: number } | void
+      { timeframe?: string; period?: string; limit?: number } | void
     >({
       query: (params) => {
         const tf = params && params.timeframe ? params.timeframe : 'all';
         const lim = params && params.limit ? params.limit : 20;
-        return `/moderation/leaderboard/learners?timeframe=${tf}&limit=${lim}`;
+        const periodParam = params && params.period ? `&period=${encodeURIComponent(params.period)}` : '';
+        return `/moderation/leaderboard/learners?timeframe=${tf}&limit=${lim}${periodParam}`;
       },
       providesTags: ['Moderation'],
     }),
