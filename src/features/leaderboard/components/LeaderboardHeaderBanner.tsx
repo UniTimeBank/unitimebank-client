@@ -197,16 +197,16 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
             </button>
           </div>
 
-          {/* 2. Specific Period Selector Dropdown & Stepper */}
+          {/* 2. Specific Period Selector Dropdown & Stepper with FIXED WIDTH */}
           {currentOptions.length > 0 && (
-            <div className="flex items-center gap-1 bg-[#0B2E22]/85 p-1 rounded-2xl border border-emerald-700/60 text-xs backdrop-blur-md shadow-inner">
+            <div className="w-[240px] sm:w-[255px] flex items-center justify-between bg-[#0B2E22]/85 p-1 rounded-2xl border border-emerald-700/60 text-xs backdrop-blur-md shadow-inner shrink-0">
               {/* Prev Button (Lùi về quá khứ) */}
               <button
                 type="button"
                 onClick={handlePrev}
                 disabled={!canGoPrev}
                 title="Kỳ trước đó"
-                className={`p-1.5 rounded-xl transition-all ${
+                className={`p-1.5 rounded-xl transition-all shrink-0 ${
                   canGoPrev
                     ? 'text-emerald-200 hover:text-white hover:bg-white/10 cursor-pointer active:scale-90'
                     : 'text-emerald-500/30 cursor-not-allowed'
@@ -215,8 +215,8 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
                 <ChevronLeft className="w-4 h-4" />
               </button>
 
-              {/* Dropdown Select from shared */}
-              <div className="flex items-center">
+              {/* Dropdown Select from shared filling remaining width */}
+              <div className="flex-1 min-w-0 px-0.5">
                 <Select
                   variant="glass"
                   value={period}
@@ -224,8 +224,8 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
                   options={currentOptions}
                   icon={<Calendar className="w-3.5 h-3.5 text-amber-300 shrink-0" />}
                   align="right"
-                  className="w-auto"
-                  triggerClassName="border-none py-1 px-2.5 hover:bg-white/10"
+                  className="w-full"
+                  triggerClassName="w-full justify-between border-none py-1 px-1.5 hover:bg-white/10"
                 />
               </div>
 
@@ -235,7 +235,7 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
                 onClick={handleNext}
                 disabled={!canGoNext}
                 title="Kỳ sau đó"
-                className={`p-1.5 rounded-xl transition-all ${
+                className={`p-1.5 rounded-xl transition-all shrink-0 ${
                   canGoNext
                     ? 'text-emerald-200 hover:text-white hover:bg-white/10 cursor-pointer active:scale-90'
                     : 'text-emerald-500/30 cursor-not-allowed'
