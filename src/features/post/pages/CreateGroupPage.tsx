@@ -52,7 +52,7 @@ export const CreateGroupPage: React.FC = () => {
       <CreateGroupHeaderBanner />
 
       {/* Main Grid: Form + Sidebar Preview */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* LEFT / MAIN COLUMN: Form */}
         <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
           {/* Section 1: Thông tin cơ bản */}

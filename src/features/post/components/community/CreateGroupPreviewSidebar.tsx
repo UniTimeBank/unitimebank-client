@@ -15,7 +15,7 @@ export const CreateGroupPreviewSidebar: React.FC<CreateGroupPreviewSidebarProps>
   coverUrl,
 }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 lg:sticky lg:top-24">
       {/* Live Preview Card */}
       <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-2xs space-y-4">
         <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
