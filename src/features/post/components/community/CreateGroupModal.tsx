@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
-import { Modal, Button } from '@/shared/components/ui';
+import { Modal, Button, Select } from '@/shared/components/ui';
 import { useCreateGroupMutation } from '@/core/api/community/communityApi';
 import { CREATE_GROUP_CATEGORIES, PRESET_GROUP_COVERS, DEFAULT_GROUP_RULES } from '@/features/post/constants';
 import { toast } from 'react-hot-toast';
@@ -69,6 +69,11 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
     }
   };
 
+  const categoryOptions = CREATE_GROUP_CATEGORIES.map((cat) => ({
+    value: cat,
+    label: cat,
+  }));
+
   return (
     <Modal
       isOpen={isOpen}
@@ -93,23 +98,14 @@ export const CreateGroupModal: React.FC<CreateGroupModalProps> = ({
           />
         </div>
 
-        {/* Chuyên ngành / Danh mục */}
-        <div className="space-y-1.5">
-          <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
-            Lĩnh vực / Chuyên ngành <span className="text-red-500">*</span>
-          </label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 bg-white outline-none transition-all font-medium cursor-pointer"
-          >
-            {CREATE_GROUP_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Chuyên ngành / Danh mục Select từ shared */}
+        <Select
+          label="Lĩnh vực / Chuyên ngành *"
+          value={category}
+          onChange={setCategory}
+          options={categoryOptions}
+          placeholder="Chọn lĩnh vực hoặc chuyên ngành..."
+        />
 
         {/* Mô tả nhóm */}
         <div className="space-y-1.5">
