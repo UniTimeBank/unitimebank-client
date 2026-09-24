@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Trophy, HelpCircle, Award, Flame, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Select } from '@/shared/components/ui';
 
 export interface LeaderboardHeaderBannerProps {
   activeTab: 'mentors' | 'learners';
@@ -223,21 +224,18 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
                 <ChevronLeft className="w-4 h-4" />
               </button>
 
-              {/* Dropdown Select */}
-              <div className="flex items-center gap-1.5 px-2">
-                <Calendar className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                <select
+              {/* Dropdown Select from shared */}
+              <div className="flex items-center">
+                <Select
+                  variant="glass"
                   value={period}
-                  onChange={(e) => onPeriodChange(e.target.value)}
-                  aria-label="Chọn kỳ xếp hạng"
-                  className="bg-transparent text-white font-semibold text-xs py-1 focus:outline-none cursor-pointer border-none [&>option]:bg-[#0B2E22] [&>option]:text-white"
-                >
-                  {currentOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={onPeriodChange}
+                  options={currentOptions}
+                  icon={<Calendar className="w-3.5 h-3.5 text-amber-300 shrink-0" />}
+                  align="right"
+                  className="w-auto"
+                  triggerClassName="border-none py-1 px-2.5 hover:bg-white/10"
+                />
               </div>
 
               {/* Next Button (Tiến về hiện tại) */}
