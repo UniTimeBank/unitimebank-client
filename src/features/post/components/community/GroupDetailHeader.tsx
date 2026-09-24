@@ -58,8 +58,6 @@ export const GroupDetailHeader: React.FC<GroupDetailHeaderProps> = ({
               <MessageSquare className="w-4 h-4 text-sky-500" />
               <span className="text-gray-700 font-bold">{postCount}</span> bài viết
             </span>
-            <span className="text-gray-300">•</span>
-            <span>Tạo bởi <strong className="text-gray-700 font-bold">{group.creatorName}</strong></span>
           </div>
         </div>
 

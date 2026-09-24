@@ -21,18 +21,11 @@ export const useGroupPosts = (groupId: string, isMember?: boolean) => {
     return [];
   }, [rawPosts]);
 
-  const [createPost, { isLoading: isPosting }] = useCreateGroupPostMutation();
   const [toggleLike, { isLoading: isLiking }] = useToggleLikeGroupPostMutation();
   const [deletePost, { isLoading: isDeleting }] = useDeleteGroupPostMutation();
 
   // Filter state
   const [filterTag, setFilterTag] = useState<string>('ALL');
-
-  // Form state for creating post
-  const [postContent, setPostContent] = useState('');
-  const [selectedTag, setSelectedTag] = useState<GroupPostTag>('GENERAL');
-  const [imageUrl, setImageUrl] = useState('');
-  const [showImageInput, setShowImageInput] = useState(false);
 
   // Filtered posts calculation
   const filteredPosts = useMemo(() => {
@@ -40,37 +33,6 @@ export const useGroupPosts = (groupId: string, isMember?: boolean) => {
     if (filterTag === 'ALL') return list;
     return list.filter((p) => p.tag === filterTag);
   }, [posts, filterTag]);
-
-  const handleCreatePost = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!postContent.trim()) {
-      toast.error('Vui lòng nhập nội dung bài viết!');
-      return;
-    }
-    if (!isMember) {
-      toast.error('Vui lòng tham gia nhóm trước khi đăng bài!');
-      return;
-    }
-
-    try {
-      const images = imageUrl.trim() ? [imageUrl.trim()] : [];
-      await createPost({
-        groupId,
-        data: {
-          content: postContent.trim(),
-          tag: selectedTag,
-          images,
-        },
-      }).unwrap();
-
-      toast.success('Đăng bài thành công!');
-      setPostContent('');
-      setImageUrl('');
-      setShowImageInput(false);
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Không thể đăng bài viết. Vui lòng thử lại!');
-    }
-  };
 
   const handleToggleLike = async (postId: string) => {
     if (!isMember) {
@@ -101,19 +63,8 @@ export const useGroupPosts = (groupId: string, isMember?: boolean) => {
     isFetching,
     filterTag,
     setFilterTag,
-    // Form state
-    postContent,
-    setPostContent,
-    selectedTag,
-    setSelectedTag,
-    imageUrl,
-    setImageUrl,
-    showImageInput,
-    setShowImageInput,
-    isPosting,
     isLiking,
     isDeleting,
-    handleCreatePost,
     handleToggleLike,
     handleDeletePost,
     refetch,

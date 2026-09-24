@@ -125,7 +125,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
               onClick={handleCardClick}
               className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-primary-600 text-white transition-all flex items-center gap-1 group-hover:gap-1.5 shadow-xs cursor-pointer"
             >
-              <span>Vào nhóm</span>
+              <span>Xem nhóm</span>
               <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
             </button>
           </>

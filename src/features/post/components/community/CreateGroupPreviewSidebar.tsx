@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, HelpCircle, Users, MessageSquare, ArrowRight, UserPlus } from 'lucide-react';
+import { Eye, HelpCircle, Users, MessageSquare, ArrowRight, UserPlus, Check } from 'lucide-react';
 
 interface CreateGroupPreviewSidebarProps {
   name: string;
@@ -79,7 +79,7 @@ export const CreateGroupPreviewSidebar: React.FC<CreateGroupPreviewSidebarProps>
             </span>
 
             <span className="px-3 py-1 rounded-lg bg-slate-900 text-white text-[11px] font-bold flex items-center gap-1">
-              <span>Vào nhóm</span>
+              <span>Xem nhóm</span>
               <ArrowRight className="w-3 h-3" />
             </span>
           </div>

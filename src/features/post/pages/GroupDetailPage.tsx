@@ -1,10 +1,11 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, HelpCircle, MessageSquare } from 'lucide-react';
-import { useGroupDetail, useGroupPosts } from '@/features/post/hooks';
+import { useGroupDetail, useGroupPosts, useCreateGroupPostForm } from '@/features/post/hooks';
 import {
   GroupDetailHeader,
   GroupPostCreator,
+  CreateGroupPostModal,
   GroupPostFilterTabs,
   GroupPostItem,
   GroupSidebarInfo,
@@ -30,20 +31,13 @@ export const GroupDetailPage: React.FC = () => {
     isLoading: isPostsLoading,
     filterTag,
     setFilterTag,
-    postContent,
-    setPostContent,
-    selectedTag,
-    setSelectedTag,
-    imageUrl,
-    setImageUrl,
-    showImageInput,
-    setShowImageInput,
-    isPosting,
     isLiking,
-    handleCreatePost,
     handleToggleLike,
     handleDeletePost,
   } = useGroupPosts(groupId, group?.isJoined);
+
+  // 3. Create Post Modal Form Hook
+  const postForm = useCreateGroupPostForm(groupId, group?.isJoined);
 
   if (isGroupLoading) {
     return (
@@ -99,21 +93,19 @@ export const GroupDetailPage: React.FC = () => {
 
       {/* Main 2-Column Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* LEFT COLUMN: Post Creator + Feed */}
+        {/* LEFT COLUMN: Post Creator Trigger + Feed */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Post Creator Box */}
+          {/* Post Creator Trigger Bar */}
           <GroupPostCreator
             isMember={group.isJoined}
-            postContent={postContent}
-            onPostContentChange={setPostContent}
-            selectedTag={selectedTag}
-            onTagSelect={setSelectedTag}
-            imageUrl={imageUrl}
-            onImageUrlChange={setImageUrl}
-            showImageInput={showImageInput}
-            onToggleImageInput={() => setShowImageInput(!showImageInput)}
-            isPosting={isPosting}
-            onSubmit={handleCreatePost}
+            onOpenCreateModal={postForm.openModal}
+          />
+
+          {/* Create Post Modal */}
+          <CreateGroupPostModal
+            form={postForm}
+            groupName={group.name}
+            isMember={group.isJoined}
           />
 
           {/* Filter Chips by Tag */}

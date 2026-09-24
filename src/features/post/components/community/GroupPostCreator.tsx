@@ -1,135 +1,111 @@
 import React from 'react';
 import {
   PenSquare,
-  Send,
   Image as ImageIcon,
   HelpCircle,
   FolderDown,
   Users,
-  BookOpen,
 } from 'lucide-react';
 import type { GroupPostTag } from '@/features/post/types';
-import { GROUP_POST_TAG_CONFIG } from '@/features/post/constants';
+import { useAppSelector } from '@/core/store';
+import { selectCurrentUser } from '@/core/store';
+import { toast } from 'react-hot-toast';
 
 interface GroupPostCreatorProps {
   isMember?: boolean;
-  postContent: string;
-  onPostContentChange: (val: string) => void;
-  selectedTag: GroupPostTag;
-  onTagSelect: (tag: GroupPostTag) => void;
-  imageUrl: string;
-  onImageUrlChange: (val: string) => void;
-  showImageInput: boolean;
-  onToggleImageInput: () => void;
-  isPosting: boolean;
-  onSubmit: (e: React.FormEvent) => void;
+  onOpenCreateModal: (initialTag?: GroupPostTag) => void;
 }
-
-const TAG_ICONS: Record<GroupPostTag, React.ReactNode> = {
-  QA: <HelpCircle className="w-3.5 h-3.5" />,
-  DOCUMENT: <FolderDown className="w-3.5 h-3.5" />,
-  STUDY_BUDDY: <Users className="w-3.5 h-3.5" />,
-  GENERAL: <BookOpen className="w-3.5 h-3.5" />,
-};
 
 export const GroupPostCreator: React.FC<GroupPostCreatorProps> = ({
   isMember,
-  postContent,
-  onPostContentChange,
-  selectedTag,
-  onTagSelect,
-  imageUrl,
-  onImageUrlChange,
-  showImageInput,
-  onToggleImageInput,
-  isPosting,
-  onSubmit,
+  onOpenCreateModal,
 }) => {
+  const currentUser = useAppSelector(selectCurrentUser);
+
+  const handleTrigger = (tag?: GroupPostTag) => {
+    if (!isMember) {
+      toast.error('Vui lòng tham gia nhóm trước khi tạo bài viết!');
+      return;
+    }
+    onOpenCreateModal(tag);
+  };
+
   return (
-    <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-100 shadow-2xs space-y-4">
-      <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
-        <PenSquare className="w-4 h-4 text-primary-600" />
-        <span>Tạo bài viết / Đặt câu hỏi trong nhóm</span>
-      </div>
-
-      <form onSubmit={onSubmit} className="space-y-3">
-        <textarea
-          value={postContent}
-          onChange={(e) => onPostContentChange(e.target.value)}
-          placeholder={
-            isMember
-              ? 'Bạn đang gặp khó khăn ở bài tập nào, hay muốn chia sẻ tài liệu gì?'
-              : 'Hãy tham gia nhóm để đăng bài và thảo luận cùng mọi người...'
-          }
-          disabled={!isMember || isPosting}
-          rows={3}
-          className="w-full px-4 py-3 text-xs sm:text-sm bg-gray-50 border border-gray-200 rounded-2xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all resize-none font-medium"
-        />
-
-        {showImageInput && (
-          <div className="flex items-center gap-2 animate-fadeIn">
-            <ImageIcon className="w-4 h-4 text-gray-400" />
-            <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => onImageUrlChange(e.target.value)}
-              placeholder="Dán đường dẫn ảnh minh họa (https://...)"
-              className="flex-1 px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-primary-500 font-medium"
-            />
+    <div className="bg-white rounded-3xl p-4 sm:p-5 border border-gray-100 shadow-2xs space-y-3.5">
+      {/* Top Input Simulation Bar */}
+      <div className="flex items-center gap-3">
+        {currentUser?.avatarUrl ? (
+          <img
+            src={currentUser.avatarUrl}
+            alt={currentUser.fullName || 'User'}
+            className="w-10 h-10 rounded-full object-cover border border-gray-200 shrink-0"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm shrink-0">
+            {currentUser?.fullName?.charAt(0) || 'U'}
           </div>
         )}
 
-        {/* Tag Selector & Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-          <div className="flex flex-wrap items-center gap-1.5">
-            {(Object.keys(GROUP_POST_TAG_CONFIG) as GroupPostTag[]).map((tagKey) => {
-              const cfg = GROUP_POST_TAG_CONFIG[tagKey];
-              const isSelected = selectedTag === tagKey;
-              return (
-                <button
-                  type="button"
-                  key={tagKey}
-                  onClick={() => onTagSelect(tagKey)}
-                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 border ${
-                    isSelected
-                      ? `${cfg.bg} ${cfg.text} ${cfg.border} ring-2 ring-primary-400`
-                      : 'bg-gray-50 text-gray-500 border-gray-100 hover:bg-gray-100'
-                  }`}
-                >
-                  {TAG_ICONS[tagKey]}
-                  <span>{cfg.label}</span>
-                </button>
-              );
-            })}
-          </div>
+        <button
+          type="button"
+          onClick={() => handleTrigger()}
+          className="flex-1 bg-gray-50 hover:bg-gray-100/90 text-gray-500 hover:text-gray-800 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-medium text-left transition-all cursor-pointer border border-gray-200/60 hover:border-gray-300"
+        >
+          {isMember
+            ? 'Bạn muốn đặt câu hỏi, chia sẻ tài liệu hay tìm bạn cùng học?...'
+            : 'Hãy tham gia nhóm để đăng bài viết và thảo luận...'}
+        </button>
 
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onToggleImageInput}
-              className="p-2 text-gray-500 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
-              title="Đính kèm ảnh"
-            >
-              <ImageIcon className="w-4 h-4" />
-            </button>
+        <button
+          type="button"
+          onClick={() => handleTrigger()}
+          className="px-4 py-2.5 rounded-2xl bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold transition-all shadow-2xs hover:shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+        >
+          <PenSquare className="w-4 h-4" />
+          <span className="hidden sm:inline">Tạo bài viết</span>
+        </button>
+      </div>
 
-            <button
-              type="submit"
-              disabled={!isMember || !postContent.trim() || isPosting}
-              className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
-            >
-              {isPosting ? (
-                <span>Đang đăng...</span>
-              ) : (
-                <>
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Đăng bài</span>
-                </>
-              )}
-            </button>
-          </div>
+      {/* Quick Action Shortcuts */}
+      <div className="pt-2 border-t border-gray-100/80 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => handleTrigger('QA')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100/80 border border-amber-200/70 transition-colors flex items-center gap-1.5 cursor-pointer"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-amber-600" />
+            <span>Hỏi đáp bài tập</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleTrigger('DOCUMENT')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-800 bg-blue-50 hover:bg-blue-100/80 border border-blue-200/70 transition-colors flex items-center gap-1.5 cursor-pointer"
+          >
+            <FolderDown className="w-3.5 h-3.5 text-blue-600" />
+            <span>Chia sẻ tài liệu</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleTrigger('STUDY_BUDDY')}
+            className="px-3 py-1.5 rounded-xl text-xs font-bold text-purple-800 bg-purple-50 hover:bg-purple-100/80 border border-purple-200/70 transition-colors flex items-center gap-1.5 cursor-pointer"
+          >
+            <Users className="w-3.5 h-3.5 text-purple-600" />
+            <span>Tìm bạn học</span>
+          </button>
         </div>
-      </form>
+
+        <button
+          type="button"
+          onClick={() => handleTrigger()}
+          className="px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+        >
+          <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Ảnh đính kèm</span>
+        </button>
+      </div>
     </div>
   );
 };

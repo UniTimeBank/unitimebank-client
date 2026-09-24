@@ -10,6 +10,7 @@ export * from './CreateGroupRulesCard';
 export * from './CreateGroupPreviewSidebar';
 export * from './GroupDetailHeader';
 export * from './GroupPostCreator';
+export * from './CreateGroupPostModal';
 export * from './GroupPostFilterTabs';
 export * from './GroupPostItem';
 export * from './GroupPostComments';
