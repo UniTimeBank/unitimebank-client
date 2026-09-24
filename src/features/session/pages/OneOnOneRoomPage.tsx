@@ -22,6 +22,7 @@ import {
   AudioTrackRenderer,
   SessionRecordingsModal,
   SessionEndedModal,
+  PreJoinLobby,
 } from '../components';
 import { ReportViolationModal } from '@/features/moderation';
 import { Modal, Button } from '@/shared/components/ui';
@@ -43,6 +44,18 @@ export const OneOnOneRoomPage: React.FC = () => {
       skip: !bookingId,
     },
   );
+
+  // Pre-join Lobby State
+  const [hasJoinedRoom, setHasJoinedRoom] = useState(false);
+  const [preJoinSettings, setPreJoinSettings] = useState<{
+    isMicEnabled: boolean;
+    isCameraEnabled: boolean;
+    audioDeviceId?: string;
+    videoDeviceId?: string;
+  }>({
+    isMicEnabled: true,
+    isCameraEnabled: true,
+  });
 
   // Modals & UI States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -116,11 +129,17 @@ export const OneOnOneRoomPage: React.FC = () => {
     toggleMicrophone,
     toggleCamera,
     toggleScreenShare,
+    switchAudioDevice,
+    switchVideoDevice,
     disconnect,
   } = useLiveKitRoom({
     wsUrl: tokenData?.livekitWsUrl,
     token: tokenData?.livekitToken,
-    autoConnect: !!tokenData?.livekitToken,
+    autoConnect: hasJoinedRoom && !!tokenData?.livekitToken,
+    initialMicEnabled: preJoinSettings.isMicEnabled,
+    initialCameraEnabled: preJoinSettings.isCameraEnabled,
+    preferredAudioDeviceId: preJoinSettings.audioDeviceId,
+    preferredVideoDeviceId: preJoinSettings.videoDeviceId,
     onDataReceived: handleNewMessage,
     onDisconnected: () => {
       toast.info('Bạn đã rời khỏi phòng học.');
@@ -129,7 +148,7 @@ export const OneOnOneRoomPage: React.FC = () => {
   });
 
   const { sendMessage } = useSessionSocket({
-    roomId: tokenData?.roomId,
+    roomId: hasJoinedRoom ? tokenData?.roomId : undefined,
     userId: authUser?.id,
     role: tokenData?.role,
     displayName,
@@ -304,6 +323,43 @@ export const OneOnOneRoomPage: React.FC = () => {
   }
 
   // ════════════════════════════════════════════════════════════
+  // PRE-JOIN WAITING LOBBY (Google Meet / Zoom style)
+  // ════════════════════════════════════════════════════════════
+  if (!hasJoinedRoom) {
+    return (
+      <PreJoinLobby
+        title={bookingDetail?.title || 'Phòng học trực tuyến 1-1'}
+        roomType="ONE_ON_ONE"
+        currentUser={{
+          name: displayName,
+          avatar: avatarUrl,
+          role: isMentor ? 'MENTOR' : 'LEARNER',
+        }}
+        partnerInfo={{
+          name: partnerName,
+          avatar: partnerAvatar,
+          role: isMentor ? 'LEARNER' : 'MENTOR',
+          trustScore: isMentor ? (bookingDetail as any)?.learnerTrustScore : (bookingDetail as any)?.mentorTrustScore,
+        }}
+        sessionMeta={{
+          scheduledTime: bookingDetail?.scheduledStart,
+          durationMinutes: totalDurationMinutes,
+          totalCredits: bookingDetail?.totalCreditEscrowed || tokenData?.escrowedCredit || 0,
+        }}
+        isLoading={isJoining || isBookingLoading}
+        isJoining={false}
+        onJoin={(settings) => {
+          setPreJoinSettings(settings);
+          setHasJoinedRoom(true);
+        }}
+        onBack={() => {
+          navigate('/manage/bookings');
+        }}
+      />
+    );
+  }
+
+  // ════════════════════════════════════════════════════════════
   // MAIN FULL-SCREEN UI
   // ════════════════════════════════════════════════════════════
   return (
@@ -387,6 +443,10 @@ export const OneOnOneRoomPage: React.FC = () => {
       <DeviceSettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+        currentAudioDeviceId={preJoinSettings.audioDeviceId}
+        currentVideoDeviceId={preJoinSettings.videoDeviceId}
+        onSelectAudioDevice={switchAudioDevice}
+        onSelectVideoDevice={switchVideoDevice}
       />
 
       {/* 5. Violation Report Modal */}

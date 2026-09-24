@@ -146,7 +146,12 @@ export const CreateGroupRoomModal: React.FC<CreateGroupRoomModalProps> = ({
 
       toast.success('Tạo phòng học nhóm thành công!');
       onClose();
-      navigate(`/rooms/group/${res.roomId}`);
+      try {
+        sessionStorage.setItem(`just_created_room_${res.roomId}`, 'true');
+      } catch {}
+      navigate(`/rooms/group/${res.roomId}`, {
+        state: { autoJoin: true, isCreator: true },
+      });
     } catch (err: any) {
       console.error('Failed to create group room:', err);
       toast.error(err?.data?.message || 'Lỗi khi tạo phòng học nhóm.');

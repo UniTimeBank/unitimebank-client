@@ -16,6 +16,10 @@ export interface UseLiveKitRoomProps {
   wsUrl?: string;
   token?: string;
   autoConnect?: boolean;
+  initialMicEnabled?: boolean;
+  initialCameraEnabled?: boolean;
+  preferredAudioDeviceId?: string;
+  preferredVideoDeviceId?: string;
   onDisconnected?: () => void;
   onDataReceived?: (msg: InRoomChatMessage) => void;
 }
@@ -24,6 +28,10 @@ export const useLiveKitRoom = ({
   wsUrl,
   token,
   autoConnect = true,
+  initialMicEnabled = true,
+  initialCameraEnabled = true,
+  preferredAudioDeviceId,
+  preferredVideoDeviceId,
   onDisconnected,
   onDataReceived,
 }: UseLiveKitRoomProps) => {
@@ -41,8 +49,8 @@ export const useLiveKitRoom = ({
   }, [onDataReceived]);
 
   // Local Media States
-  const [isMicEnabled, setIsMicEnabled] = useState(true);
-  const [isCameraEnabled, setIsCameraEnabled] = useState(true);
+  const [isMicEnabled, setIsMicEnabled] = useState(initialMicEnabled);
+  const [isCameraEnabled, setIsCameraEnabled] = useState(initialCameraEnabled);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
 
   // Participants & Tracks
@@ -92,21 +100,56 @@ export const useLiveKitRoom = ({
         setLocalParticipant(currentRoom.localParticipant);
         updateParticipants();
 
-        // Enable default Camera & Microphone independently so one failure does not block the other
-        try {
-          await currentRoom.localParticipant.setCameraEnabled(true);
-          setIsCameraEnabled(true);
-        } catch (err: any) {
-          console.warn('Could not enable default camera:', err);
-          setIsCameraEnabled(false);
+        // Switch preferred devices if provided
+        if (preferredAudioDeviceId) {
+          try {
+            await currentRoom.switchActiveDevice('audioinput', preferredAudioDeviceId);
+          } catch (err) {
+            console.warn('Could not switch to preferred audio device:', err);
+          }
+        }
+        if (preferredVideoDeviceId) {
+          try {
+            await currentRoom.switchActiveDevice('videoinput', preferredVideoDeviceId);
+          } catch (err) {
+            console.warn('Could not switch to preferred video device:', err);
+          }
         }
 
-        try {
-          await currentRoom.localParticipant.setMicrophoneEnabled(true);
-          setIsMicEnabled(true);
-        } catch (err: any) {
-          console.warn('Could not enable default microphone:', err);
-          setIsMicEnabled(false);
+        // Enable / disable camera according to initial user choice
+        if (initialCameraEnabled) {
+          try {
+            await currentRoom.localParticipant.setCameraEnabled(true);
+            setIsCameraEnabled(true);
+          } catch (err: any) {
+            console.warn('Could not enable initial camera:', err);
+            setIsCameraEnabled(false);
+          }
+        } else {
+          try {
+            await currentRoom.localParticipant.setCameraEnabled(false);
+            setIsCameraEnabled(false);
+          } catch (err: any) {
+            console.warn('Could not disable camera:', err);
+          }
+        }
+
+        // Enable / disable microphone according to initial user choice
+        if (initialMicEnabled) {
+          try {
+            await currentRoom.localParticipant.setMicrophoneEnabled(true);
+            setIsMicEnabled(true);
+          } catch (err: any) {
+            console.warn('Could not enable initial microphone:', err);
+            setIsMicEnabled(false);
+          }
+        } else {
+          try {
+            await currentRoom.localParticipant.setMicrophoneEnabled(false);
+            setIsMicEnabled(false);
+          } catch (err: any) {
+            console.warn('Could not disable microphone:', err);
+          }
         }
 
         updateParticipants();
@@ -324,6 +367,28 @@ export const useLiveKitRoom = ({
     }
   }, []);
 
+  // Switch Audio Input Device
+  const switchAudioDevice = useCallback(async (deviceId: string) => {
+    if (roomRef.current) {
+      try {
+        await roomRef.current.switchActiveDevice('audioinput', deviceId);
+      } catch (err) {
+        console.warn('LiveKit switchActiveDevice audioinput failed:', err);
+      }
+    }
+  }, []);
+
+  // Switch Video Input Device
+  const switchVideoDevice = useCallback(async (deviceId: string) => {
+    if (roomRef.current) {
+      try {
+        await roomRef.current.switchActiveDevice('videoinput', deviceId);
+      } catch (err) {
+        console.warn('LiveKit switchActiveDevice videoinput failed:', err);
+      }
+    }
+  }, []);
+
   return {
     room,
     connectionState,
@@ -341,7 +406,10 @@ export const useLiveKitRoom = ({
     toggleMicrophone,
     toggleCamera,
     toggleScreenShare,
+    switchAudioDevice,
+    switchVideoDevice,
     publishChatMessage,
     disconnect,
   };
 };
+

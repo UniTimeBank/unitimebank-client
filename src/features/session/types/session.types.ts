@@ -28,6 +28,8 @@ export interface LiveKitTokenResponse {
   mentorName?: string;
   mentorAvatar?: string;
   learnerId?: string;
+  title?: string;
+  category?: string;
   escrowedCredit?: number;
   availableBalance?: number;
   canJoin: boolean;
