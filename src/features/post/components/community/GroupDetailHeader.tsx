@@ -35,33 +35,30 @@ export const GroupDetailHeader: React.FC<GroupDetailHeaderProps> = ({
       </div>
 
       {/* Group Header Info */}
-      <div className="p-6 sm:p-8 relative -mt-12 sm:-mt-16 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
-        <div className="space-y-2">
+      <div className="p-6 sm:p-8 relative -mt-8 sm:-mt-10 flex flex-col md:flex-row items-start md:items-end justify-between gap-6 bg-white/95 backdrop-blur-md rounded-t-3xl sm:rounded-t-none">
+        <div className="space-y-3 sm:space-y-3.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="px-3 py-1 bg-white shadow-xs text-primary-700 text-xs font-black rounded-full border border-primary-100">
+            <span className="px-3.5 py-1.5 bg-white shadow-xs text-primary-700 text-xs font-black rounded-full border border-primary-200/80">
               {group.category}
-            </span>
-            <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-full">
-              Nhóm công khai
             </span>
           </div>
 
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight leading-tight">
             {group.name}
           </h1>
 
-          <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-gray-500 pt-1">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-xs sm:text-[13px] font-semibold text-gray-500 pt-1">
             <span className="flex items-center gap-1.5">
               <Users className="w-4 h-4 text-primary-600" />
-              <span>{group.membersCount.toLocaleString()} thành viên</span>
+              <span className="text-gray-700 font-bold">{group.membersCount.toLocaleString()}</span> thành viên
             </span>
-            <span>•</span>
+            <span className="text-gray-300">•</span>
             <span className="flex items-center gap-1.5">
               <MessageSquare className="w-4 h-4 text-sky-500" />
-              <span>{postCount} bài viết</span>
+              <span className="text-gray-700 font-bold">{postCount}</span> bài viết
             </span>
-            <span>•</span>
-            <span>Tạo bởi {group.creatorName}</span>
+            <span className="text-gray-300">•</span>
+            <span>Tạo bởi <strong className="text-gray-700 font-bold">{group.creatorName}</strong></span>
           </div>
         </div>
 

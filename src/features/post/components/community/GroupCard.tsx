@@ -74,28 +74,22 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
         </div>
 
         {/* 2. Body Info */}
-        <div className="px-1.5 pt-3.5 space-y-2.5">
-          {/* Creator & Privacy Row */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              {group.creatorAvatar ? (
-                <img
-                  src={group.creatorAvatar}
-                  alt={group.creatorName}
-                  className="w-6 h-6 rounded-full object-cover border border-slate-200"
-                />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px]">
-                  {group.creatorName?.charAt(0) || 'U'}
-                </div>
-              )}
-              <span className="text-xs font-bold text-slate-700 truncate leading-tight">
-                {group.creatorName || 'Quản trị viên'}
-              </span>
-            </div>
-
-            <span className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/70 text-[10px] font-bold">
-              Công khai
+        <div className="px-2 pt-4 pb-1 space-y-3">
+          {/* Creator Row */}
+          <div className="flex items-center gap-2 min-w-0">
+            {group.creatorAvatar ? (
+              <img
+                src={group.creatorAvatar}
+                alt={group.creatorName}
+                className="w-6 h-6 rounded-full object-cover border border-slate-200 shrink-0"
+              />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[10px] shrink-0">
+                {group.creatorName?.charAt(0) || 'U'}
+              </div>
+            )}
+            <span className="text-xs font-semibold text-slate-600 truncate">
+              {group.creatorName || 'Quản trị viên'}
             </span>
           </div>
 
@@ -105,14 +99,14 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
           </h3>
 
           {/* Description */}
-          <p className="text-xs text-slate-500 font-normal line-clamp-2 leading-relaxed">
+          <p className="text-xs text-slate-500 font-normal line-clamp-2 leading-relaxed min-h-[36px]">
             {group.description}
           </p>
         </div>
       </div>
 
       {/* 3. Footer Actions */}
-      <div className="px-1.5 pt-3 mt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+      <div className="px-2 pt-3.5 mt-3.5 border-t border-slate-100 flex items-center justify-between gap-2.5">
         {group.isJoined ? (
           <>
             <button

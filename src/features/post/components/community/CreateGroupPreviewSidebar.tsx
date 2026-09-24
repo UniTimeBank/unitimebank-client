@@ -54,23 +54,18 @@ export const CreateGroupPreviewSidebar: React.FC<CreateGroupPreviewSidebarProps>
             </div>
 
             {/* Body */}
-            <div className="px-1 pt-3 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[9px]">
-                    U
-                  </div>
-                  <span className="text-[11px] font-bold text-slate-700">Bạn (Admin)</span>
+            <div className="px-1.5 pt-3.5 space-y-2.5">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[9px] shrink-0">
+                  U
                 </div>
-                <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/70 text-[9px] font-bold">
-                  Công khai
-                </span>
+                <span className="text-[11px] font-semibold text-slate-600 truncate">Bạn (Quản trị viên)</span>
               </div>
 
               <h3 className="text-sm font-bold text-slate-900 line-clamp-1 leading-snug">
                 {name.trim() || 'Tên nhóm học tập của bạn'}
               </h3>
-              <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed font-normal">
+              <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed font-normal min-h-[32px]">
                 {description.trim() || 'Mô tả mục tiêu và nội dung chính của nhóm học tập...'}
               </p>
             </div>
