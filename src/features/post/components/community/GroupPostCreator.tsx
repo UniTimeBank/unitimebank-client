@@ -9,6 +9,7 @@ import {
 import type { GroupPostTag } from '@/features/post/types';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentUser } from '@/core/store';
+import { useGetMeQuery } from '@/core/api/user';
 import { toast } from 'react-hot-toast';
 
 interface GroupPostCreatorProps {
@@ -20,7 +21,10 @@ export const GroupPostCreator: React.FC<GroupPostCreatorProps> = ({
   isMember,
   onOpenCreateModal,
 }) => {
-  const currentUser = useAppSelector(selectCurrentUser);
+  const authUser = useAppSelector(selectCurrentUser);
+  const { data: userProfile } = useGetMeQuery(undefined, { skip: !authUser });
+  const displayName = userProfile?.displayName || authUser?.email?.split('@')[0] || 'Bạn';
+  const avatarUrl = userProfile?.avatarUrl;
 
   const handleTrigger = (tag?: GroupPostTag) => {
     if (!isMember) {
@@ -34,15 +38,15 @@ export const GroupPostCreator: React.FC<GroupPostCreatorProps> = ({
     <div className="bg-white rounded-3xl p-4 sm:p-5 border border-gray-100 shadow-2xs space-y-3.5">
       {/* Top Input Simulation Bar */}
       <div className="flex items-center gap-3">
-        {currentUser?.avatarUrl ? (
+        {avatarUrl ? (
           <img
-            src={currentUser.avatarUrl}
-            alt={currentUser.fullName || 'User'}
+            src={avatarUrl}
+            alt={displayName}
             className="w-10 h-10 rounded-full object-cover border border-gray-200 shrink-0"
           />
         ) : (
           <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm shrink-0">
-            {currentUser?.fullName?.charAt(0) || 'U'}
+            {displayName.charAt(0) || 'U'}
           </div>
         )}
 

@@ -17,6 +17,7 @@ import type { GroupPostTag } from '@/features/post/types';
 import type { useCreateGroupPostForm } from '@/features/post/hooks';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentUser } from '@/core/store';
+import { useGetMeQuery } from '@/core/api/user';
 
 interface CreateGroupPostModalProps {
   form: ReturnType<typeof useCreateGroupPostForm>;
@@ -34,9 +35,11 @@ const TAG_ICONS: Record<GroupPostTag, React.ReactNode> = {
 export const CreateGroupPostModal: React.FC<CreateGroupPostModalProps> = ({
   form,
   groupName,
-  isMember,
 }) => {
-  const currentUser = useAppSelector(selectCurrentUser);
+  const authUser = useAppSelector(selectCurrentUser);
+  const { data: userProfile } = useGetMeQuery(undefined, { skip: !authUser });
+  const displayName = userProfile?.displayName || authUser?.email?.split('@')[0] || 'Bạn';
+  const avatarUrl = userProfile?.avatarUrl;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -85,20 +88,20 @@ export const CreateGroupPostModal: React.FC<CreateGroupPostModalProps> = ({
         {/* User Info & Post Tag Selector */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
           <div className="flex items-center gap-2.5">
-            {currentUser?.avatarUrl ? (
+            {avatarUrl ? (
               <img
-                src={currentUser.avatarUrl}
-                alt={currentUser.fullName || 'User'}
+                src={avatarUrl}
+                alt={displayName}
                 className="w-10 h-10 rounded-full object-cover border border-gray-200"
               />
             ) : (
               <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm">
-                {currentUser?.fullName?.charAt(0) || 'U'}
+                {displayName.charAt(0) || 'U'}
               </div>
             )}
             <div>
               <p className="text-xs font-bold text-gray-900 leading-tight">
-                {currentUser?.fullName || 'Bạn'}
+                {displayName}
               </p>
               <p className="text-[11px] text-gray-400 font-medium">Thành viên nhóm</p>
             </div>
