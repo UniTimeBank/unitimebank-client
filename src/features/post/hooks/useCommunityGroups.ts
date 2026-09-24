@@ -16,12 +16,6 @@ export const useCommunityGroups = () => {
 
   const allFetchedGroups: CommunityGroup[] = useMemo(() => {
     if (Array.isArray(rawData)) return rawData;
-    const obj = rawData as { groups?: CommunityGroup[]; data?: { groups?: CommunityGroup[] } | CommunityGroup[] };
-    if (Array.isArray(obj?.groups)) return obj.groups;
-    if (Array.isArray(obj?.data)) return obj.data;
-    if (obj?.data && typeof obj.data === 'object' && 'groups' in obj.data && Array.isArray(obj.data.groups)) {
-      return obj.data.groups;
-    }
     return [];
   }, [rawData]);
 

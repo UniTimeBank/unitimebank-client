@@ -14,12 +14,6 @@ export const useGroupPosts = (groupId: string, isMember?: boolean) => {
 
   const posts: GroupPost[] = useMemo(() => {
     if (Array.isArray(rawPosts)) return rawPosts;
-    const obj = rawPosts as { posts?: GroupPost[]; data?: { posts?: GroupPost[] } | GroupPost[] };
-    if (Array.isArray(obj?.posts)) return obj.posts;
-    if (Array.isArray(obj?.data)) return obj.data;
-    if (obj?.data && typeof obj.data === 'object' && 'posts' in obj.data && Array.isArray(obj.data.posts)) {
-      return obj.data.posts;
-    }
     return [];
   }, [rawPosts]);
 
