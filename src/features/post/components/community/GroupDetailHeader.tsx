@@ -29,20 +29,21 @@ export const GroupDetailHeader: React.FC<GroupDetailHeaderProps> = ({
             'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop'
           }
           alt={group.name}
-          className="w-full h-full object-cover opacity-80"
+          className="w-full h-full object-cover opacity-85"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+
+        {/* Floating Category Badge on Cover */}
+        <div className="absolute bottom-4 left-6 sm:bottom-6 sm:left-8 z-10">
+          <span className="px-3.5 py-1.5 rounded-xl bg-white/95 backdrop-blur-md text-slate-900 font-bold text-xs uppercase tracking-wider shadow-md border border-white/50">
+            {group.category}
+          </span>
+        </div>
       </div>
 
       {/* Group Header Info */}
-      <div className="p-6 sm:p-8 relative -mt-8 sm:-mt-10 flex flex-col md:flex-row items-start md:items-end justify-between gap-6 bg-white/95 backdrop-blur-md rounded-t-3xl sm:rounded-t-none">
-        <div className="space-y-3 sm:space-y-3.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-3.5 py-1.5 bg-white shadow-xs text-primary-700 text-xs font-black rounded-full border border-primary-200/80">
-              {group.category}
-            </span>
-          </div>
-
+      <div className="p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+        <div className="space-y-3">
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 tracking-tight leading-tight">
             {group.name}
           </h1>

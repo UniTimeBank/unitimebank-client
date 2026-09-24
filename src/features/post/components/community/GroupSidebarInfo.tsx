@@ -30,10 +30,6 @@ export const GroupSidebarInfo: React.FC<GroupSidebarInfoProps> = ({ group }) => 
             <span className="font-bold text-gray-800">{group.category}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span>Quyền riêng tư:</span>
-            <span className="font-bold text-emerald-600">Công khai (Tất cả sinh viên)</span>
-          </div>
-          <div className="flex items-center justify-between">
             <span>Quản trị viên:</span>
             <span className="font-bold text-gray-800">{group.creatorName}</span>
           </div>
