@@ -23,3 +23,4 @@ export type AppDispatch = typeof store.dispatch;
 
 export * from './slices/authSlice';
 export * from './slices/roleSlice';
+export { useAppDispatch, useAppSelector } from '@/shared/hooks/useStore';

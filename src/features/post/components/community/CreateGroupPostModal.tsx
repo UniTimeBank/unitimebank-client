@@ -15,7 +15,8 @@ import { Modal, Button } from '@/shared/components/ui';
 import { GROUP_POST_TAG_CONFIG } from '@/features/post/constants';
 import type { GroupPostTag } from '@/features/post/types';
 import type { useCreateGroupPostForm } from '@/features/post/hooks';
-import { useAppSelector, selectCurrentUser } from '@/core/store';
+import { useAppSelector } from '@/shared/hooks';
+import { selectCurrentUser } from '@/core/store';
 
 interface CreateGroupPostModalProps {
   form: ReturnType<typeof useCreateGroupPostForm>;
