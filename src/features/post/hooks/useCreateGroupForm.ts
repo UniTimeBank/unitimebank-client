@@ -88,6 +88,26 @@ export const useCreateGroupForm = () => {
     if (Object.keys(newErrors).length > 0) {
       const firstError = Object.values(newErrors)[0];
       toast.error(firstError);
+
+      // Tự động cuộn mượt mà lên vị trí trường có lỗi đầu tiên và focus
+      const firstErrorKey = ['name', 'category', 'description'].find((key) => newErrors[key]);
+      if (firstErrorKey) {
+        const el = document.getElementById(`field-group-${firstErrorKey}`);
+        if (el) {
+          const yOffset = -120;
+          const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+          setTimeout(() => {
+            const inputEl = el.querySelector('input, textarea, button') || el;
+            (inputEl as HTMLElement).focus?.({ preventScroll: true });
+          }, 350);
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
       return false;
     }
 

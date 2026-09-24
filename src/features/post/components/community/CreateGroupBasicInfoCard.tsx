@@ -32,27 +32,31 @@ export const CreateGroupBasicInfoCard: React.FC<CreateGroupBasicInfoCardProps> =
       </div>
 
       {/* Tên nhóm */}
-      <Input
-        label="Tên nhóm học tập *"
-        value={name}
-        onChange={(e) => onNameChange(e.target.value)}
-        placeholder="VD: Hội Ôn Thi Giải Tích 1 - ĐHBK, Lập Trình Frontend ReactJS..."
-        error={errors.name}
-        maxLength={80}
-      />
+      <div id="field-group-name">
+        <Input
+          label="Tên nhóm học tập *"
+          value={name}
+          onChange={(e) => onNameChange(e.target.value)}
+          placeholder="VD: Hội Ôn Thi Giải Tích 1 - ĐHBK, Lập Trình Frontend ReactJS..."
+          error={errors.name}
+          maxLength={80}
+        />
+      </div>
 
       {/* Chuyên ngành / Danh mục */}
-      <Select
-        label="Lĩnh vực / Chuyên ngành *"
-        value={category}
-        onChange={onCategoryChange}
-        options={categoryOptions}
-        placeholder="Chọn lĩnh vực hoặc chuyên ngành..."
-        error={errors.category}
-      />
+      <div id="field-group-category">
+        <Select
+          label="Lĩnh vực / Chuyên ngành *"
+          value={category}
+          onChange={onCategoryChange}
+          options={categoryOptions}
+          placeholder="Chọn lĩnh vực hoặc chuyên ngành..."
+          error={errors.category}
+        />
+      </div>
 
       {/* Mô tả nhóm */}
-      <div className="space-y-1">
+      <div id="field-group-description" className="space-y-1">
         <div className="flex justify-between items-center mb-1">
           <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
             Mô tả mục tiêu nhóm <span className="text-red-500">*</span>
