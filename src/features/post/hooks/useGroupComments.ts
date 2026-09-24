@@ -1,16 +1,25 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   useGetGroupCommentsQuery,
   useCreateGroupCommentMutation,
   useDeleteGroupCommentMutation,
 } from '@/core/api/community/communityApi';
+import type { GroupComment } from '../types';
 import { toast } from 'react-hot-toast';
 
 export const useGroupComments = (groupId: string, postId: string, isMember?: boolean) => {
-  const { data: comments = [], isLoading, isFetching } = useGetGroupCommentsQuery(
+  const { data: rawComments, isLoading, isFetching } = useGetGroupCommentsQuery(
     { groupId, postId },
     { skip: !groupId || !postId },
   );
+
+  const comments: GroupComment[] = useMemo(() => {
+    if (Array.isArray(rawComments)) return rawComments;
+    if (Array.isArray((rawComments as any)?.comments)) return (rawComments as any).comments;
+    if (Array.isArray((rawComments as any)?.data?.comments)) return (rawComments as any).data.comments;
+    if (Array.isArray((rawComments as any)?.data)) return (rawComments as any).data;
+    return [];
+  }, [rawComments]);
 
   const [createComment, { isLoading: isSubmitting }] = useCreateGroupCommentMutation();
   const [deleteComment, { isLoading: isDeleting }] = useDeleteGroupCommentMutation();

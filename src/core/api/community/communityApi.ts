@@ -23,12 +23,22 @@ export const communityApi = baseApi.injectEndpoints({
         const str = q.toString();
         return `/groups${str ? `?${str}` : ''}`;
       },
+      transformResponse: (response: any) => {
+        if (Array.isArray(response)) return response;
+        if (Array.isArray(response?.groups)) return response.groups;
+        if (Array.isArray(response?.data?.groups)) return response.data.groups;
+        if (Array.isArray(response?.data)) return response.data;
+        return [];
+      },
       providesTags: ['CommunityGroup'],
     }),
 
     // 2. Lấy chi tiết một nhóm
     getGroupById: builder.query<CommunityGroup, string>({
       query: (groupId) => `/groups/${groupId}`,
+      transformResponse: (response: any) => {
+        return response?.data || response;
+      },
       providesTags: (_res, _err, id) => [{ type: 'CommunityGroup', id }],
     }),
 
@@ -39,6 +49,9 @@ export const communityApi = baseApi.injectEndpoints({
         method: 'POST',
         body,
       }),
+      transformResponse: (response: any) => {
+        return response?.data || response;
+      },
       invalidatesTags: ['CommunityGroup'],
     }),
 
@@ -63,6 +76,13 @@ export const communityApi = baseApi.injectEndpoints({
     // 6. Lấy danh sách bài viết trong nhóm
     getGroupPosts: builder.query<GroupPost[], string>({
       query: (groupId) => `/groups/${groupId}/posts`,
+      transformResponse: (response: any) => {
+        if (Array.isArray(response)) return response;
+        if (Array.isArray(response?.posts)) return response.posts;
+        if (Array.isArray(response?.data?.posts)) return response.data.posts;
+        if (Array.isArray(response?.data)) return response.data;
+        return [];
+      },
       providesTags: ['GroupPost'],
     }),
 
@@ -73,6 +93,9 @@ export const communityApi = baseApi.injectEndpoints({
         method: 'POST',
         body: data,
       }),
+      transformResponse: (response: any) => {
+        return response?.data || response;
+      },
       invalidatesTags: ['GroupPost', 'CommunityGroup'],
     }),
 
@@ -100,6 +123,13 @@ export const communityApi = baseApi.injectEndpoints({
     // 10. Lấy danh sách bình luận
     getGroupComments: builder.query<GroupComment[], { groupId: string; postId: string }>({
       query: ({ groupId, postId }) => `/groups/${groupId}/posts/${postId}/comments`,
+      transformResponse: (response: any) => {
+        if (Array.isArray(response)) return response;
+        if (Array.isArray(response?.comments)) return response.comments;
+        if (Array.isArray(response?.data?.comments)) return response.data.comments;
+        if (Array.isArray(response?.data)) return response.data;
+        return [];
+      },
       providesTags: ['GroupComment'],
     }),
 
@@ -113,6 +143,9 @@ export const communityApi = baseApi.injectEndpoints({
         method: 'POST',
         body: data,
       }),
+      transformResponse: (response: any) => {
+        return response?.data || response;
+      },
       invalidatesTags: ['GroupComment', 'GroupPost'],
     }),
 

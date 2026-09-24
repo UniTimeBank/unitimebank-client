@@ -9,9 +9,17 @@ import type { GroupPostTag } from '../types';
 import { toast } from 'react-hot-toast';
 
 export const useGroupPosts = (groupId: string, isMember?: boolean) => {
-  const { data: posts = [], isLoading, isFetching, refetch } = useGetGroupPostsQuery(groupId, {
+  const { data: rawPosts, isLoading, isFetching, refetch } = useGetGroupPostsQuery(groupId, {
     skip: !groupId,
   });
+
+  const posts: GroupPost[] = useMemo(() => {
+    if (Array.isArray(rawPosts)) return rawPosts;
+    if (Array.isArray((rawPosts as any)?.posts)) return (rawPosts as any).posts;
+    if (Array.isArray((rawPosts as any)?.data?.posts)) return (rawPosts as any).data.posts;
+    if (Array.isArray((rawPosts as any)?.data)) return (rawPosts as any).data;
+    return [];
+  }, [rawPosts]);
 
   const [createPost, { isLoading: isPosting }] = useCreateGroupPostMutation();
   const [toggleLike, { isLoading: isLiking }] = useToggleLikeGroupPostMutation();
@@ -28,8 +36,9 @@ export const useGroupPosts = (groupId: string, isMember?: boolean) => {
 
   // Filtered posts calculation
   const filteredPosts = useMemo(() => {
-    if (filterTag === 'ALL') return posts;
-    return posts.filter((p) => p.tag === filterTag);
+    const list = Array.isArray(posts) ? posts : [];
+    if (filterTag === 'ALL') return list;
+    return list.filter((p) => p.tag === filterTag);
   }, [posts, filterTag]);
 
   const handleCreatePost = async (e?: React.FormEvent) => {

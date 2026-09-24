@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGetGroupsQuery } from '@/core/api/community/communityApi';
+import type { CommunityGroup } from '../types';
 
 export const useCommunityGroups = () => {
   const navigate = useNavigate();
@@ -11,11 +12,19 @@ export const useCommunityGroups = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Fetch groups based on filters
-  const { data: groups = [], isLoading, isFetching, refetch } = useGetGroupsQuery({
+  const { data: rawData, isLoading, isFetching, refetch } = useGetGroupsQuery({
     search: searchQuery.trim() || undefined,
     category: selectedCategory === 'Tất cả' ? undefined : selectedCategory,
     myGroupsOnly: activeTab === 'MY_GROUPS',
   });
+
+  const groups: CommunityGroup[] = useMemo(() => {
+    if (Array.isArray(rawData)) return rawData;
+    if (Array.isArray((rawData as any)?.groups)) return (rawData as any).groups;
+    if (Array.isArray((rawData as any)?.data?.groups)) return (rawData as any).data.groups;
+    if (Array.isArray((rawData as any)?.data)) return (rawData as any).data;
+    return [];
+  }, [rawData]);
 
   const handleGroupCreated = (groupId: string) => {
     setIsCreateModalOpen(false);
