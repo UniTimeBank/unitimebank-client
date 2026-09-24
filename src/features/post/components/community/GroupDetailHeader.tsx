@@ -1,5 +1,6 @@
 import React from 'react';
 import { Users, MessageSquare, Share2, Plus, Check } from 'lucide-react';
+import { Button } from '@/shared/components/ui';
 import type { CommunityGroup } from '@/features/post/types';
 
 interface GroupDetailHeaderProps {
@@ -66,34 +67,34 @@ export const GroupDetailHeader: React.FC<GroupDetailHeaderProps> = ({
         {/* Action buttons */}
         <div className="flex items-center gap-3 w-full md:w-auto">
           <button
+            type="button"
             onClick={onShareGroup}
-            className="p-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl transition-colors cursor-pointer"
+            className="p-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors cursor-pointer"
             title="Chia sẻ nhóm"
           >
             <Share2 className="w-4 h-4" />
           </button>
 
-          <button
-            onClick={onToggleMembership}
-            disabled={isMembershipProcessing}
-            className={`flex-1 md:flex-initial px-6 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm ${
-              group.isJoined
-                ? 'bg-emerald-50 text-emerald-700 hover:bg-rose-50 hover:text-rose-600 border border-emerald-200'
-                : 'bg-gradient-to-r from-primary-600 to-teal-600 hover:from-primary-700 hover:to-teal-700 text-white shadow-primary-500/20'
-            }`}
-          >
-            {group.isJoined ? (
-              <>
-                <Check className="w-4 h-4" />
-                <span>Đã tham gia nhóm</span>
-              </>
-            ) : (
-              <>
-                <Plus className="w-4 h-4" />
-                <span>Tham gia nhóm ngay</span>
-              </>
-            )}
-          </button>
+          {group.isJoined ? (
+            <Button
+              variant="outline"
+              onClick={onToggleMembership}
+              isLoading={isMembershipProcessing}
+              leftIcon={<Check className="w-4 h-4 text-emerald-600" />}
+              className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+            >
+              Đã tham gia nhóm
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              onClick={onToggleMembership}
+              isLoading={isMembershipProcessing}
+              leftIcon={<Plus className="w-4 h-4" />}
+            >
+              Tham gia nhóm ngay
+            </Button>
+          )}
         </div>
       </div>
     </div>

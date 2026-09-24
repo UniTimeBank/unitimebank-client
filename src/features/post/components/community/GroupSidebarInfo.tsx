@@ -60,12 +60,12 @@ export const GroupSidebarInfo: React.FC<GroupSidebarInfoProps> = ({ group }) => 
       </div>
 
       {/* UniTime Group Tip */}
-      <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-5 text-white shadow-sm space-y-2">
-        <div className="flex items-center gap-2 font-bold text-xs">
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#0B2E22] via-[#134434] to-[#1A5743] border border-emerald-900/40 rounded-3xl p-5 text-white shadow-xs space-y-2">
+        <div className="flex items-center gap-2 font-bold text-xs text-emerald-300">
           <Sparkles className="w-4 h-4 text-amber-300" />
           <span>Mẹo học tập UniTime</span>
         </div>
-        <p className="text-[11px] text-emerald-50 leading-relaxed font-medium">
+        <p className="text-[11px] text-emerald-100/80 leading-relaxed font-normal">
           Hãy tận dụng chức năng tìm bạn cùng học hoặc mở phòng học nhóm trực tuyến để cùng nhau giải quyết bài tập lớn hiệu quả nhé!
         </p>
       </div>
