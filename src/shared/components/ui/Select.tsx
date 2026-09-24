@@ -129,10 +129,10 @@ export const Select: React.FC<SelectProps> = ({
         <div
           className={
             isGlass
-              ? `absolute z-50 top-full ${
+              ? `absolute z-[100] top-full ${
                   align === 'right' ? 'right-0' : 'left-0'
-                } min-w-[210px] mt-1.5 bg-[#0B2E22]/95 backdrop-blur-xl rounded-2xl border border-emerald-700/70 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 text-white ${menuClassName}`
-              : `absolute z-50 top-full ${
+                } min-w-[220px] mt-1.5 bg-[#0B2E22]/95 backdrop-blur-xl rounded-2xl border border-emerald-700/70 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 text-white ${menuClassName}`
+              : `absolute z-[100] top-full ${
                   align === 'right' ? 'right-0' : 'left-0'
                 } min-w-full mt-1.5 bg-white rounded-2xl border border-gray-100 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150 ${menuClassName}`
           }

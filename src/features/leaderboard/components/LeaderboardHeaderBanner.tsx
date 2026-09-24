@@ -5,8 +5,8 @@ import { Select } from '@/shared/components/ui';
 export interface LeaderboardHeaderBannerProps {
   activeTab: 'mentors' | 'learners';
   onTabChange: (tab: 'mentors' | 'learners') => void;
-  timeframe: 'all' | 'month' | 'quarter' | 'year';
-  onTimeframeChange: (tf: 'all' | 'month' | 'quarter' | 'year') => void;
+  timeframe: 'month' | 'quarter' | 'year';
+  onTimeframeChange: (tf: 'month' | 'quarter' | 'year') => void;
   period: string;
   onPeriodChange: (period: string) => void;
   onOpenFormula: () => void;
@@ -75,7 +75,7 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
     if (timeframe === 'month') return monthOptions;
     if (timeframe === 'quarter') return quarterOptions;
     if (timeframe === 'year') return yearOptions;
-    return [];
+    return monthOptions;
   }, [timeframe, monthOptions, quarterOptions, yearOptions]);
 
   const currentIndex = currentOptions.findIndex((opt) => opt.value === period);
@@ -95,10 +95,12 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
   };
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-[#0B2E22] via-[#134434] to-[#1A5743] border border-emerald-900/40 p-6 sm:p-8 lg:p-10 rounded-3xl shadow-xs text-white">
-      {/* Decorative Background Glows */}
-      <div className="absolute -right-10 -bottom-10 w-72 h-72 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none" />
-      <div className="absolute -left-10 -top-10 w-72 h-72 rounded-full bg-teal-400/10 blur-3xl pointer-events-none" />
+    <div className="relative z-30 bg-gradient-to-br from-[#0B2E22] via-[#134434] to-[#1A5743] border border-emerald-900/40 p-6 sm:p-8 lg:p-10 rounded-3xl shadow-xs text-white">
+      {/* Decorative Background Glows isolated with overflow-hidden */}
+      <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+        <div className="absolute -right-10 -bottom-10 w-72 h-72 rounded-full bg-emerald-400/10 blur-3xl" />
+        <div className="absolute -left-10 -top-10 w-72 h-72 rounded-full bg-teal-400/10 blur-3xl" />
+      </div>
 
       {/* Top row: Title + Formula CTA */}
       <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -158,12 +160,12 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
 
         {/* Timeframe Filter + Period Dropdown */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          {/* 1. Timeframe Mode Buttons */}
+          {/* 1. Timeframe Mode Buttons (3 modes: Tháng, Quý, Năm) */}
           <div className="flex items-center gap-1.5 bg-[#0B2E22]/70 p-1.5 rounded-2xl border border-emerald-800/60 text-xs backdrop-blur-md">
             <button
               type="button"
               onClick={() => onTimeframeChange('month')}
-              className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
                 timeframe === 'month'
                   ? 'bg-white/20 text-white font-bold'
                   : 'text-emerald-200/70 hover:text-white'
@@ -174,7 +176,7 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
             <button
               type="button"
               onClick={() => onTimeframeChange('quarter')}
-              className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
                 timeframe === 'quarter'
                   ? 'bg-white/20 text-white font-bold'
                   : 'text-emerald-200/70 hover:text-white'
@@ -185,7 +187,7 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
             <button
               type="button"
               onClick={() => onTimeframeChange('year')}
-              className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
                 timeframe === 'year'
                   ? 'bg-white/20 text-white font-bold'
                   : 'text-emerald-200/70 hover:text-white'
@@ -193,21 +195,10 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
             >
               Theo Năm
             </button>
-            <button
-              type="button"
-              onClick={() => onTimeframeChange('all')}
-              className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
-                timeframe === 'all'
-                  ? 'bg-white/20 text-white font-bold'
-                  : 'text-emerald-200/70 hover:text-white'
-              }`}
-            >
-              Toàn thời gian
-            </button>
           </div>
 
-          {/* 2. Specific Period Selector Dropdown & Stepper (When not 'all') */}
-          {timeframe !== 'all' && currentOptions.length > 0 && (
+          {/* 2. Specific Period Selector Dropdown & Stepper */}
+          {currentOptions.length > 0 && (
             <div className="flex items-center gap-1 bg-[#0B2E22]/85 p-1 rounded-2xl border border-emerald-700/60 text-xs backdrop-blur-md shadow-inner">
               {/* Prev Button (Lùi về quá khứ) */}
               <button

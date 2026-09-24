@@ -16,9 +16,9 @@ import {
 
 export const LeaderboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'mentors' | 'learners'>('mentors');
-  const [timeframe, setTimeframe] = useState<'all' | 'month' | 'quarter' | 'year'>('month');
+  const [timeframe, setTimeframe] = useState<'month' | 'quarter' | 'year'>('month');
 
-  const getDefaultPeriod = (tf: 'all' | 'month' | 'quarter' | 'year') => {
+  const getDefaultPeriod = (tf: 'month' | 'quarter' | 'year') => {
     const now = new Date();
     if (tf === 'month') {
       return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -36,7 +36,7 @@ export const LeaderboardPage: React.FC = () => {
   const [period, setPeriod] = useState<string>(() => getDefaultPeriod('month'));
   const [showFormulaModal, setShowFormulaModal] = useState(false);
 
-  const handleTimeframeChange = (newTf: 'all' | 'month' | 'quarter' | 'year') => {
+  const handleTimeframeChange = (newTf: 'month' | 'quarter' | 'year') => {
     setTimeframe(newTf);
     setPeriod(getDefaultPeriod(newTf));
   };
@@ -45,7 +45,7 @@ export const LeaderboardPage: React.FC = () => {
     data: mentorData,
     isLoading: isLoadingMentors,
   } = useGetMentorLeaderboardQuery(
-    { timeframe, period: timeframe === 'all' ? undefined : period, limit: 30 },
+    { timeframe, period, limit: 30 },
     { skip: activeTab !== 'mentors' },
   );
 
@@ -53,7 +53,7 @@ export const LeaderboardPage: React.FC = () => {
     data: learnerData,
     isLoading: isLoadingLearners,
   } = useGetLearnerLeaderboardQuery(
-    { timeframe, period: timeframe === 'all' ? undefined : period, limit: 30 },
+    { timeframe, period, limit: 30 },
     { skip: activeTab !== 'learners' },
   );
 
