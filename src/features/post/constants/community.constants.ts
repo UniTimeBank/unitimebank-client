@@ -1,76 +1,86 @@
-import type { StudyGroup, TopContributor, CommunityTabType } from '../types';
+import type { GroupPostTag } from '../types';
 
-export const COMMUNITY_TABS: CommunityTabType[] = [
-  'Nhóm học tập',
-  'Bảng xếp hạng',
-  'Sự kiện & Workshop',
+export const COMMUNITY_CATEGORIES = [
+  'Tất cả',
+  'Công nghệ thông tin',
+  'Toán học & Giải tích',
+  'Ngoại ngữ & IELTS',
+  'Kinh tế & Marketing',
+  'Thiết kế & Đồ họa',
+  'Khoa học cơ bản',
+  'Đời sống sinh viên',
+] as const;
+
+export const CREATE_GROUP_CATEGORIES = [
+  'Công nghệ thông tin',
+  'Toán học & Giải tích',
+  'Ngoại ngữ & IELTS',
+  'Kinh tế & Marketing',
+  'Thiết kế & Đồ họa',
+  'Khoa học cơ bản',
+  'Đời sống sinh viên',
+  'Khác',
+] as const;
+
+export const PRESET_GROUP_COVERS = [
+  {
+    label: 'Công nghệ / Lập trình',
+    url: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1000&auto=format&fit=crop',
+  },
+  {
+    label: 'Toán học / Học thuật',
+    url: 'https://images.unsplash.com/photo-1509228468518-180dd4864904?q=80&w=1000&auto=format&fit=crop',
+  },
+  {
+    label: 'Ngoại ngữ / Giao tiếp',
+    url: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1000&auto=format&fit=crop',
+  },
+  {
+    label: 'Kinh tế / Khởi nghiệp',
+    url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1000&auto=format&fit=crop',
+  },
+  {
+    label: 'Đời sống / Thảo luận chung',
+    url: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=1000&auto=format&fit=crop',
+  },
 ];
 
-export const STUDY_GROUPS: StudyGroup[] = [
-  {
-    id: 'g1',
-    name: 'Hội Lập Trình Backend & Cloud DevOps',
-    category: 'LẬP TRÌNH',
-    membersCount: 1420,
-    activeDiscussions: 38,
-    description: 'Nơi trao đổi kinh nghiệm Spring Boot, NestJS, Docker, AWS và giải đáp đồ án chuyên ngành.',
-    image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=400',
-  },
-  {
-    id: 'g2',
-    name: 'Cộng Đồng Thiết Kế UI/UX & Figma Master',
-    category: 'THIẾT KẾ',
-    membersCount: 890,
-    activeDiscussions: 24,
-    description: 'Chia sẻ template Figma, review portfolio và tổ chức các buổi critique đồ án thiết kế.',
-    image: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&q=80&w=400',
-  },
-  {
-    id: 'g3',
-    name: 'CLB Luyện Nói Tiếng Anh IELTS & Giao Tiếp',
-    category: 'NGOẠI NGỮ',
-    membersCount: 2150,
-    activeDiscussions: 62,
-    description: 'Phòng luyện nói hàng tuần, trao đổi phương pháp học từ vựng và tự tin thuyết trình.',
-    image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=400',
-  },
-  {
-    id: 'g4',
-    name: 'Nhóm Giải Đề Toán Cao Cấp & Xác Suất Thống Kê',
-    category: 'KHOA HỌC',
-    membersCount: 1040,
-    activeDiscussions: 45,
-    description: 'Giải đáp các bài tập hóc búa, ôn luyện đề thi giữa kỳ và cuối kỳ cho sinh viên năm nhất.',
-    image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&q=80&w=400',
-  },
+export const DEFAULT_GROUP_RULES = [
+  'Tôn trọng và lịch sự với tất cả thành viên trong nhóm.',
+  'Chia sẻ kiến thức, tài liệu chính xác và có nguồn gốc rõ ràng.',
+  'Không spam hoặc đăng nội dung không liên quan đến chủ đề nhóm.',
 ];
 
-export const TOP_CONTRIBUTORS: TopContributor[] = [
-  {
-    id: 'u1',
-    name: 'Nguyễn Hoàng Sang',
-    major: 'Kỹ thuật phần mềm',
-    hoursShared: 48.5,
-    trustScore: 98,
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
-    rank: 1,
+export const GROUP_POST_TAG_CONFIG: Record<
+  GroupPostTag,
+  { label: string; bg: string; text: string; border: string; iconName: string }
+> = {
+  QA: {
+    label: 'Hỏi đáp bài tập',
+    bg: 'bg-amber-50',
+    text: 'text-amber-700',
+    border: 'border-amber-200',
+    iconName: 'HelpCircle',
   },
-  {
-    id: 'u2',
-    name: 'Trần Minh Trí',
-    major: 'Khoa học máy tính',
-    hoursShared: 42.0,
-    trustScore: 96,
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150',
-    rank: 2,
+  DOCUMENT: {
+    label: 'Chia sẻ tài liệu',
+    bg: 'bg-blue-50',
+    text: 'text-blue-700',
+    border: 'border-blue-200',
+    iconName: 'FolderDown',
   },
-  {
-    id: 'u3',
-    name: 'Lê Thu Hà',
-    major: 'Kinh tế đối ngoại',
-    hoursShared: 37.5,
-    trustScore: 95,
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150',
-    rank: 3,
+  STUDY_BUDDY: {
+    label: 'Tìm bạn cùng học',
+    bg: 'bg-purple-50',
+    text: 'text-purple-700',
+    border: 'border-purple-200',
+    iconName: 'Users',
   },
-];
+  GENERAL: {
+    label: 'Thảo luận chung',
+    bg: 'bg-emerald-50',
+    text: 'text-emerald-700',
+    border: 'border-emerald-200',
+    iconName: 'BookOpen',
+  },
+};

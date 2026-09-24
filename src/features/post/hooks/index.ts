@@ -6,4 +6,8 @@ export * from './useLearnerRequestDetail';
 export * from './useLearnerRequestForm';
 export * from './usePostSearch';
 export * from './usePostRecommendations';
+export * from './useCommunityGroups';
+export * from './useGroupDetail';
+export * from './useGroupPosts';
+export * from './useGroupComments';
 
