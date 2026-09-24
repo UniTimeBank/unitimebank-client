@@ -54,7 +54,7 @@ export const CreateGroupCoverCard: React.FC<CreateGroupCoverCardProps> = ({
       <div className="border-b border-gray-100 pb-3">
         <h2 className="text-base font-bold text-gray-900">2. Ảnh bìa nhóm</h2>
         <p className="text-xs text-gray-500 mt-0.5">
-          Tải ảnh từ thiết bị của bạn, chọn ảnh mẫu hoặc dán đường dẫn ảnh tùy chỉnh
+          Tải ảnh từ thiết bị của bạn hoặc chọn nhanh ảnh mẫu theo chuyên ngành
         </p>
       </div>
 
@@ -166,20 +166,6 @@ export const CreateGroupCoverCard: React.FC<CreateGroupCoverCardProps> = ({
               );
             })}
           </div>
-        </div>
-
-        {/* Custom Image URL Input */}
-        <div className="pt-1">
-          <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-            HOẶC ĐƯỜNG DẪN ẢNH TÙY CHỈNH
-          </label>
-          <input
-            type="url"
-            value={customCover}
-            onChange={(e) => onCustomCoverChange(e.target.value)}
-            placeholder="https://images.unsplash.com/..."
-            className="w-full px-4 py-2.5 text-xs sm:text-sm rounded-xl border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 placeholder:text-gray-400 outline-none transition-all font-medium"
-          />
         </div>
       </div>
     </div>
