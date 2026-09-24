@@ -3,10 +3,12 @@ export interface CommunityGroup {
   name: string;
   description: string;
   category: string;
+  coverImage?: string;
   coverUrl?: string;
   avatarUrl?: string;
   creatorId: string;
   creatorName: string;
+  creatorAvatar?: string;
   membersCount: number;
   postsCount: number;
   isPublic: boolean;
@@ -20,6 +22,7 @@ export interface CreateCommunityGroupDto {
   name: string;
   description: string;
   category: string;
+  coverImage?: string;
   coverUrl?: string;
   avatarUrl?: string;
   isPublic?: boolean;

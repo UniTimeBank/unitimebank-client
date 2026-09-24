@@ -31,6 +31,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
   };
 
   const coverImage =
+    group.coverImage ||
     group.coverUrl ||
     'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop';
 

@@ -24,6 +24,7 @@ export const GroupDetailHeader: React.FC<GroupDetailHeaderProps> = ({
       <div className="relative h-48 sm:h-64 w-full bg-slate-900 overflow-hidden">
         <img
           src={
+            group.coverImage ||
             group.coverUrl ||
             'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop'
           }

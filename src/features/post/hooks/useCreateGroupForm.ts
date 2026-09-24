@@ -157,6 +157,7 @@ export const useCreateGroupForm = () => {
         name: name.trim(),
         description: description.trim(),
         category,
+        coverImage: activeCover,
         coverUrl: activeCover,
         rules: rules.filter((r) => r.trim().length > 0),
         isPublic: true,
