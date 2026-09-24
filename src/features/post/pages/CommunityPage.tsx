@@ -6,7 +6,6 @@ import {
   GroupCard,
   GroupCardSkeleton,
   GroupEmptyState,
-  CreateGroupModal,
 } from '@/features/post/components/community';
 
 export const CommunityPage: React.FC = () => {
@@ -17,10 +16,6 @@ export const CommunityPage: React.FC = () => {
     setSelectedCategory,
     searchQuery,
     setSearchQuery,
-    isCreateModalOpen,
-    openCreateModal,
-    closeCreateModal,
-    handleGroupCreated,
     groups,
     isLoading,
   } = useCommunityGroups();
@@ -30,7 +25,7 @@ export const CommunityPage: React.FC = () => {
   return (
     <div className="space-y-6 pb-12">
       {/* Top Banner */}
-      <CommunityHeaderBanner onOpenCreateModal={openCreateModal} />
+      <CommunityHeaderBanner />
 
       {/* Filter and Search Bar */}
       <CommunityFilterBar
@@ -47,10 +42,7 @@ export const CommunityPage: React.FC = () => {
         {isLoading ? (
           <GroupCardSkeleton />
         ) : groupList.length === 0 ? (
-          <GroupEmptyState
-            isMyGroupsTab={activeTab === 'MY_GROUPS'}
-            onOpenCreateModal={openCreateModal}
-          />
+          <GroupEmptyState isMyGroupsTab={activeTab === 'MY_GROUPS'} />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {groupList.map((group) => (
@@ -59,13 +51,6 @@ export const CommunityPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Create Group Modal */}
-      <CreateGroupModal
-        isOpen={isCreateModalOpen}
-        onClose={closeCreateModal}
-        onSuccess={handleGroupCreated}
-      />
     </div>
   );
 };

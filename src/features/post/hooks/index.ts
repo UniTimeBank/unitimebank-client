@@ -10,4 +10,5 @@ export * from './useCommunityGroups';
 export * from './useGroupDetail';
 export * from './useGroupPosts';
 export * from './useGroupComments';
+export * from './useCreateGroupForm';
 

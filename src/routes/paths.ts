@@ -9,6 +9,7 @@ export const ROUTES = {
   POSTS_ALL: '/posts/all',
   REQUESTS: '/requests',
   COMMUNITY: '/community',
+  COMMUNITY_CREATE: '/community/create',
   COMMUNITY_DETAIL: '/community/:groupId',
   LEADERBOARD: '/leaderboard',
   POST_CREATE: '/posts/create',

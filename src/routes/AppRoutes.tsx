@@ -10,6 +10,7 @@ import {
   OpenRequestsPage,
   CommunityPage,
   GroupDetailPage,
+  CreateGroupPage,
   MentorPostDetailPage,
   LearnerRequestDetailPage,
 } from '@/features/post';
@@ -79,6 +80,14 @@ export const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <CommunityPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path={ROUTES.COMMUNITY_CREATE}
+        element={
+          <ProtectedRoute>
+            <CreateGroupPage />
           </ProtectedRoute>
         }
       />

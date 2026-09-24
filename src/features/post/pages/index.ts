@@ -5,4 +5,5 @@ export * from './CommunityPage';
 export * from './MentorPostDetailPage';
 export * from './LearnerRequestDetailPage';
 export * from './GroupDetailPage';
+export * from './CreateGroupPage';
 
