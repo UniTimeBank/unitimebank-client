@@ -9,10 +9,19 @@ import {
   GroupPostFilterTabs,
   GroupPostItem,
   GroupSidebarInfo,
+  TransferOwnershipModal,
+  DisbandGroupModal,
 } from '@/features/post/components/community';
+import { useAppSelector } from '@/shared/hooks';
+import { selectCurrentUser } from '@/core/store';
 
 export const GroupDetailPage: React.FC = () => {
   const { groupId = '' } = useParams<{ groupId: string }>();
+  const authUser = useAppSelector(selectCurrentUser);
+  const currentUserId = authUser?.id || authUser?._id;
+
+  const [isTransferModalOpen, setIsTransferModalOpen] = React.useState(false);
+  const [isDisbandModalOpen, setIsDisbandModalOpen] = React.useState(false);
 
   // 1. Group Info & Membership Hook
   const {
@@ -23,6 +32,8 @@ export const GroupDetailPage: React.FC = () => {
     handleToggleMembership,
     handleShareGroup,
   } = useGroupDetail(groupId);
+
+  const isGroupOwner = Boolean(currentUserId && group?.creatorId === currentUserId);
 
   // 2. Group Posts & Feed Actions Hook
   const {
@@ -86,9 +97,12 @@ export const GroupDetailPage: React.FC = () => {
       <GroupDetailHeader
         group={group}
         postCount={posts.length}
+        isGroupOwner={isGroupOwner}
         isMembershipProcessing={isMembershipProcessing}
         onToggleMembership={handleToggleMembership}
         onShareGroup={handleShareGroup}
+        onOpenTransferModal={() => setIsTransferModalOpen(true)}
+        onOpenDisbandModal={() => setIsDisbandModalOpen(true)}
       />
 
       {/* Main 2-Column Grid */}
@@ -138,6 +152,7 @@ export const GroupDetailPage: React.FC = () => {
                   post={post}
                   groupId={groupId}
                   isMember={group.isJoined}
+                  isGroupOwner={isGroupOwner}
                   onToggleLike={handleToggleLike}
                   onDeletePost={handleDeletePost}
                   isLiking={isLiking}
@@ -152,6 +167,27 @@ export const GroupDetailPage: React.FC = () => {
           <GroupSidebarInfo group={group} />
         </div>
       </div>
+
+      {/* Transfer Ownership Modal */}
+      {isGroupOwner && (
+        <TransferOwnershipModal
+          isOpen={isTransferModalOpen}
+          onClose={() => setIsTransferModalOpen(false)}
+          groupId={group._id}
+          groupName={group.name}
+          currentOwnerId={currentUserId || ''}
+        />
+      )}
+
+      {/* Disband Group Modal */}
+      {isGroupOwner && (
+        <DisbandGroupModal
+          isOpen={isDisbandModalOpen}
+          onClose={() => setIsDisbandModalOpen(false)}
+          groupId={group._id}
+          groupName={group.name}
+        />
+      )}
     </div>
   );
 };

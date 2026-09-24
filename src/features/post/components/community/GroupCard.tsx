@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, MessageSquare, ArrowRight, Check, UserPlus } from 'lucide-react';
+import { Users, MessageSquare, ArrowRight, Check, UserPlus, Crown } from 'lucide-react';
 import type { CommunityGroup } from '@/features/post/types';
 import { useJoinGroupMutation, useLeaveGroupMutation } from '@/core/api/community/communityApi';
+import { useAppSelector } from '@/shared/hooks';
+import { selectCurrentUser } from '@/core/store';
 import { toast } from 'react-hot-toast';
 
 interface GroupCardProps {
@@ -11,6 +13,10 @@ interface GroupCardProps {
 
 export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
   const navigate = useNavigate();
+  const authUser = useAppSelector(selectCurrentUser);
+  const currentUserId = authUser?.id || authUser?._id;
+  const isOwner = Boolean(currentUserId && group.creatorId === currentUserId);
+
   const [joinGroup, { isLoading: isJoining }] = useJoinGroupMutation();
   const [leaveGroup, { isLoading: isLeaving }] = useLeaveGroupMutation();
 
@@ -21,6 +27,11 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
   const handleToggleJoin = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (isOwner) {
+      toast.error('Trưởng nhóm không thể rời nhóm. Vui lòng chuyển quyền hoặc giải tán nhóm trong trang quản lý nhóm.');
+      return;
+    }
 
     try {
       if (group.isJoined) {
@@ -108,7 +119,26 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group }) => {
 
       {/* 3. Footer Actions */}
       <div className="px-2 pt-3.5 mt-3.5 border-t border-slate-100 flex items-center justify-between gap-2.5">
-        {group.isJoined ? (
+        {isOwner ? (
+          <>
+            <div
+              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200/80 flex items-center gap-1.5 shadow-2xs select-none"
+              title="Bạn là Trưởng nhóm"
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <span>Trưởng nhóm</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleCardClick}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-900 hover:bg-primary-600 text-white transition-all flex items-center gap-1 group-hover:gap-1.5 shadow-xs cursor-pointer"
+            >
+              <span>Vào nhóm</span>
+              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </>
+        ) : group.isJoined ? (
           <>
             <button
               type="button"

@@ -169,8 +169,11 @@ export const useCreateGroupForm = () => {
       } else {
         navigate(ROUTES.COMMUNITY);
       }
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Có lỗi xảy ra khi tạo nhóm. Vui lòng thử lại!');
+    } catch (err: unknown) {
+      const msg =
+        (err as { data?: { message?: string } })?.data?.message ||
+        'Có lỗi xảy ra khi tạo nhóm. Vui lòng thử lại!';
+      toast.error(msg);
     }
   };
 

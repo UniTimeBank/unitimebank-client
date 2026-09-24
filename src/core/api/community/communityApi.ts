@@ -2,6 +2,7 @@ import { baseApi } from '@/core/api/baseApi';
 import type {
   CommunityGroup,
   CreateCommunityGroupDto,
+  GroupMember,
   GroupPost,
   CreateGroupPostDto,
   GroupComment,
@@ -160,6 +161,42 @@ export const communityApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['GroupComment', 'GroupPost'],
     }),
+
+    // 13. Giải tán nhóm (Chỉ Trưởng nhóm)
+    deleteGroup: builder.mutation<{ message: string }, string>({
+      query: (groupId) => ({
+        url: `/groups/${groupId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['CommunityGroup'],
+    }),
+
+    // 14. Chuyển quyền trưởng nhóm (Chỉ Trưởng nhóm)
+    transferGroupOwnership: builder.mutation<
+      CommunityGroup,
+      { groupId: string; newOwnerId: string }
+    >({
+      query: ({ groupId, newOwnerId }) => ({
+        url: `/groups/${groupId}/transfer-ownership`,
+        method: 'POST',
+        body: { newOwnerId },
+      }),
+      transformResponse: (response: any) => {
+        return response?.data || response;
+      },
+      invalidatesTags: (_res, _err, { groupId }) => [{ type: 'CommunityGroup', id: groupId }, 'CommunityGroup'],
+    }),
+
+    // 15. Lấy danh sách thành viên nhóm
+    getGroupMembers: builder.query<GroupMember[], string>({
+      query: (groupId) => `/groups/${groupId}/members`,
+      transformResponse: (response: any) => {
+        if (Array.isArray(response)) return response;
+        if (Array.isArray(response?.data)) return response.data;
+        return [];
+      },
+      providesTags: (_res, _err, id) => [{ type: 'CommunityGroup', id }],
+    }),
   }),
 });
 
@@ -169,6 +206,9 @@ export const {
   useCreateGroupMutation,
   useJoinGroupMutation,
   useLeaveGroupMutation,
+  useDeleteGroupMutation,
+  useTransferGroupOwnershipMutation,
+  useGetGroupMembersQuery,
   useGetGroupPostsQuery,
   useCreateGroupPostMutation,
   useToggleLikeGroupPostMutation,

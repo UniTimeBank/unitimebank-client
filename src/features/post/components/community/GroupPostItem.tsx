@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import type { GroupPost, GroupPostTag } from '@/features/post/types';
 import { GROUP_POST_TAG_CONFIG } from '@/features/post/constants';
+import { formatGroupPostDate } from '@/shared/utils';
 import { GroupPostComments } from './GroupPostComments';
 import { toast } from 'react-hot-toast';
 
@@ -18,6 +19,7 @@ interface GroupPostItemProps {
   post: GroupPost;
   groupId: string;
   isMember?: boolean;
+  isGroupOwner?: boolean;
   onToggleLike: (postId: string) => void;
   onDeletePost: (postId: string) => void;
   isLiking?: boolean;
@@ -34,6 +36,7 @@ export const GroupPostItem: React.FC<GroupPostItemProps> = ({
   post,
   groupId,
   isMember,
+  isGroupOwner,
   onToggleLike,
   onDeletePost,
   isLiking,
@@ -49,7 +52,8 @@ export const GroupPostItem: React.FC<GroupPostItemProps> = ({
     }
   })();
 
-  const isAuthor = currentUserId && post.authorId === currentUserId;
+  const isAuthor = Boolean(currentUserId && post.authorId === currentUserId);
+  const canDelete = Boolean(isAuthor || isGroupOwner);
   const tagKey = (post.tag in GROUP_POST_TAG_CONFIG ? post.tag : 'GENERAL') as GroupPostTag;
   const tagInfo = GROUP_POST_TAG_CONFIG[tagKey];
 
@@ -76,23 +80,17 @@ export const GroupPostItem: React.FC<GroupPostItemProps> = ({
                 <span>{tagInfo.label}</span>
               </span>
             </div>
-            <p className="text-[11px] text-gray-400 font-medium">
-              {post.authorHeadline || 'Sinh viên UniTime'} •{' '}
-              {new Date(post.createdAt).toLocaleDateString('vi-VN', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
+            <p className="text-[11px] text-gray-400 font-medium mt-0.5">
+              {formatGroupPostDate(post.createdAt)}
             </p>
           </div>
         </div>
 
-        {isAuthor && (
+        {canDelete && (
           <button
             onClick={() => onDeletePost(post._id)}
             className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-            title="Xóa bài viết"
+            title={isGroupOwner && !isAuthor ? 'Xóa bài viết (Quyền Trưởng nhóm)' : 'Xóa bài viết'}
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -104,21 +102,36 @@ export const GroupPostItem: React.FC<GroupPostItemProps> = ({
         {post.content}
       </div>
 
-      {/* Post Images if any */}
+      {/* Post Images with Blurred Background Side-Fill & Object Contain */}
       {post.images && post.images.length > 0 && (
         <div
           className={`grid gap-2 rounded-2xl overflow-hidden ${
-            post.images.length === 1 ? 'grid-cols-1 max-h-96' : 'grid-cols-2 max-h-80'
+            post.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'
           }`}
         >
           {post.images.map((img, idx) => (
-            <img
+            <div
               key={idx}
-              src={img}
-              alt="Post attachment"
-              className="w-full h-full object-cover rounded-xl cursor-pointer hover:opacity-95 transition-opacity"
+              className="relative rounded-2xl overflow-hidden bg-slate-950 flex items-center justify-center min-h-[160px] max-h-[500px] sm:max-h-[560px] group cursor-pointer shadow-2xs border border-gray-100"
               onClick={() => window.open(img, '_blank')}
-            />
+            >
+              {/* Blurred Ambient Background */}
+              <div
+                className="absolute inset-0 bg-cover bg-center filter blur-2xl opacity-40 scale-125 transition-transform duration-500 group-hover:scale-130 pointer-events-none"
+                style={{ backgroundImage: `url(${img})` }}
+              />
+
+              {/* Crisp Center Image (Contain) */}
+              <img
+                src={img}
+                alt="Post attachment"
+                className="relative z-10 max-h-[500px] sm:max-h-[560px] w-auto max-w-full object-contain hover:opacity-95 transition-opacity"
+                onError={(e) => {
+                  // Gracefully hide container if image URL is an invalid / expired local blob
+                  (e.target as HTMLElement).parentElement?.classList.add('hidden');
+                }}
+              />
+            </div>
           ))}
         </div>
       )}
@@ -166,7 +179,12 @@ export const GroupPostItem: React.FC<GroupPostItemProps> = ({
 
       {/* Comments Section */}
       {showComments && (
-        <GroupPostComments groupId={groupId} postId={post._id} isMember={isMember} />
+        <GroupPostComments
+          groupId={groupId}
+          postId={post._id}
+          isMember={isMember}
+          isGroupOwner={isGroupOwner}
+        />
       )}
     </div>
   );

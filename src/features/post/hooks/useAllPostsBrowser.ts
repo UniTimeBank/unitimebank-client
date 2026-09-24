@@ -26,18 +26,14 @@ export const useAllPostsBrowser = (options: UseAllPostsBrowserOptions = {}) => {
   const searchKeywordParam = searchParams.get('q') || '';
   const pageParam = parseInt(searchParams.get('page') || '1', 10);
 
-  // Local state for instant input feedback
+  // Local state for instant search input feedback
   const [searchKeyword, setSearchKeyword] = useState(searchKeywordParam);
-  const [currentPage, setCurrentPage] = useState(pageParam > 0 ? pageParam : 1);
+  const currentPage = pageParam > 0 ? pageParam : 1;
 
   // Sync internal state when URL query changes
   useEffect(() => {
     setSearchKeyword(searchKeywordParam);
   }, [searchKeywordParam]);
-
-  useEffect(() => {
-    setCurrentPage(pageParam > 0 ? pageParam : 1);
-  }, [pageParam]);
 
   // Update URL helper
   const updateQueryParams = (updates: Record<string, string | null>) => {
@@ -58,12 +54,10 @@ export const useAllPostsBrowser = (options: UseAllPostsBrowserOptions = {}) => {
 
   const handleTabChange = (newTab: PostTabType) => {
     updateQueryParams({ tab: newTab === 'ALL' ? null : newTab, page: '1' });
-    setCurrentPage(1);
   };
 
   const handleCategoryChange = (category: string) => {
     updateQueryParams({ category: category === 'ALL' ? null : category, page: '1' });
-    setCurrentPage(1);
   };
 
   const handleSortChange = (sortBy: string) => {
@@ -73,13 +67,11 @@ export const useAllPostsBrowser = (options: UseAllPostsBrowserOptions = {}) => {
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     updateQueryParams({ q: searchKeyword.trim() || null, page: '1' });
-    setCurrentPage(1);
   };
 
   const handleResetFilters = () => {
     setSearchKeyword('');
     setSearchParams(new URLSearchParams(), { replace: true });
-    setCurrentPage(1);
   };
 
   // 2. Fetch Data from API hooks
@@ -147,7 +139,6 @@ export const useAllPostsBrowser = (options: UseAllPostsBrowserOptions = {}) => {
   }, [filteredAndSortedItems, currentPage, pageSize]);
 
   const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
     updateQueryParams({ page: newPage.toString() });
     window.scrollTo({ top: 280, behavior: 'smooth' });
   };

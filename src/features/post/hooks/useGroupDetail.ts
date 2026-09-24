@@ -1,7 +1,12 @@
 import { useGetGroupByIdQuery, useJoinGroupMutation, useLeaveGroupMutation } from '@/core/api/community/communityApi';
+import { useAppSelector } from '@/shared/hooks';
+import { selectCurrentUser } from '@/core/store';
 import { toast } from 'react-hot-toast';
 
 export const useGroupDetail = (groupId: string) => {
+  const authUser = useAppSelector(selectCurrentUser);
+  const currentUserId = authUser?.id || authUser?._id;
+
   const { data: group, isLoading, isFetching, error, refetch } = useGetGroupByIdQuery(groupId, {
     skip: !groupId,
   });
@@ -11,6 +16,10 @@ export const useGroupDetail = (groupId: string) => {
 
   const handleToggleMembership = async () => {
     if (!group) return;
+    if (group.isJoined && currentUserId && group.creatorId === currentUserId) {
+      toast.error('Trưởng nhóm không thể rời nhóm. Vui lòng chuyển quyền hoặc giải tán nhóm.');
+      return;
+    }
     try {
       if (group.isJoined) {
         await leaveGroup(group._id).unwrap();
@@ -19,8 +28,11 @@ export const useGroupDetail = (groupId: string) => {
         await joinGroup(group._id).unwrap();
         toast.success(`Chào mừng bạn tham gia ${group.name}! 🎉`);
       }
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại sau!');
+    } catch (err: unknown) {
+      const msg =
+        (err as { data?: { message?: string } })?.data?.message ||
+        'Có lỗi xảy ra, vui lòng thử lại sau!';
+      toast.error(msg);
     }
   };
 

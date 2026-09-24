@@ -26,10 +26,10 @@ interface CreateGroupPostModalProps {
 }
 
 const TAG_ICONS: Record<GroupPostTag, React.ReactNode> = {
-  QA: <HelpCircle className="w-3.5 h-3.5" />,
-  DOCUMENT: <FolderDown className="w-3.5 h-3.5" />,
-  STUDY_BUDDY: <Users className="w-3.5 h-3.5" />,
-  GENERAL: <BookOpen className="w-3.5 h-3.5" />,
+  QA: <HelpCircle className="w-3.5 h-3.5 shrink-0" />,
+  DOCUMENT: <FolderDown className="w-3.5 h-3.5 shrink-0" />,
+  STUDY_BUDDY: <Users className="w-3.5 h-3.5 shrink-0" />,
+  GENERAL: <BookOpen className="w-3.5 h-3.5 shrink-0" />,
 };
 
 export const CreateGroupPostModal: React.FC<CreateGroupPostModalProps> = ({
@@ -82,34 +82,40 @@ export const CreateGroupPostModal: React.FC<CreateGroupPostModalProps> = ({
       isOpen={isOpen}
       onClose={closeModal}
       title="Tạo bài viết trong nhóm"
-      description={`Chia sẻ kiến thức, bài tập hoặc thảo luận cùng nhóm "${groupName}"`}
+      description={`Đăng vào nhóm "${groupName}"`}
       size="2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4 pt-1">
-        {/* User Info & Post Tag Selector */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
-          <div className="flex items-center gap-2.5">
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={displayName}
-                className="w-10 h-10 rounded-full object-cover border border-gray-200"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm">
-                {displayName.charAt(0) || 'U'}
-              </div>
-            )}
-            <div>
-              <p className="text-xs font-bold text-gray-900 leading-tight">
-                {displayName}
-              </p>
-              <p className="text-[11px] text-gray-400 font-medium">Thành viên nhóm</p>
+        {/* User Profile Header */}
+        <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
+          {avatarUrl ? (
+            <img
+              src={avatarUrl}
+              alt={displayName}
+              className="w-10 h-10 rounded-full object-cover border border-gray-200 shrink-0"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm shrink-0">
+              {displayName.charAt(0) || 'U'}
             </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-gray-900 leading-tight truncate">
+              {displayName}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5 truncate">
+              Thành viên nhóm
+            </p>
           </div>
+        </div>
 
-          {/* Topic / Tag Pills */}
-          <div className="flex flex-wrap items-center gap-1.5">
+        {/* Tag / Topic Selector Section - Full Width 4-Column Row */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-gray-700 block">
+            Chủ đề bài viết <span className="text-red-500">*</span>
+          </label>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
             {(Object.keys(GROUP_POST_TAG_CONFIG) as GroupPostTag[]).map((tagKey) => {
               const cfg = GROUP_POST_TAG_CONFIG[tagKey];
               const isSelected = selectedTag === tagKey;
@@ -118,10 +124,10 @@ export const CreateGroupPostModal: React.FC<CreateGroupPostModalProps> = ({
                   type="button"
                   key={tagKey}
                   onClick={() => setSelectedTag(tagKey)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                  className={`w-full py-2.5 px-3 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center justify-center gap-2 border text-center whitespace-nowrap ${
                     isSelected
-                      ? `${cfg.bg} ${cfg.text} ${cfg.border} ring-2 ring-primary-400 shadow-2xs`
-                      : 'bg-gray-50 text-gray-500 border-gray-100 hover:bg-gray-100 hover:text-gray-800'
+                      ? 'bg-primary-600 text-white border-primary-600 font-bold shadow-2xs'
+                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:text-gray-900 hover:border-gray-300'
                   }`}
                 >
                   {TAG_ICONS[tagKey]}
@@ -139,50 +145,45 @@ export const CreateGroupPostModal: React.FC<CreateGroupPostModalProps> = ({
             onChange={(e) => setPostContent(e.target.value)}
             rows={4}
             maxLength={3000}
-            placeholder="Bạn đang gặp khó khăn ở bài tập nào, cần tìm bạn cùng học hay muốn chia sẻ tài liệu học tập? Viết chi tiết tại đây..."
-            className="w-full px-4 py-3 text-sm bg-gray-50/70 hover:bg-gray-50 focus:bg-white border border-gray-200 rounded-2xl focus:outline-hidden focus:ring-2 focus:ring-primary-500 transition-all resize-none font-medium leading-relaxed"
+            placeholder={`Chia sẻ kiến thức, tài liệu hoặc đặt câu hỏi cùng nhóm "${groupName}"...`}
+            className="w-full px-3.5 py-2.5 text-sm bg-gray-50 focus:bg-white border border-gray-200 focus:border-primary-500 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-primary-500/20 transition-all resize-none font-normal leading-relaxed placeholder:text-gray-400 text-gray-900"
           />
-          <div className="flex justify-end">
-            <span className="text-[11px] text-gray-400 font-medium">
-              {postContent.length}/3000
-            </span>
-          </div>
         </div>
 
-        {/* Professional Image Upload Zone */}
+        {/* Image Attachment Zone */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-[11px] font-bold uppercase tracking-wider text-gray-600 flex items-center gap-1.5">
-              <ImageIcon className="w-3.5 h-3.5 text-primary-600" />
-              <span>Ảnh đính kèm minh họa (Không bắt buộc)</span>
-            </label>
+            <span className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
+              <ImageIcon className="w-3.5 h-3.5 text-gray-500" />
+              <span>Ảnh đính kèm</span>
+            </span>
             {!imageUrl && (
               <button
                 type="button"
                 onClick={() => setIsUrlInputOpen(!isUrlInputOpen)}
-                className="text-[11px] font-bold text-primary-600 hover:text-primary-700 hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-xs text-primary-600 hover:text-primary-700 hover:underline flex items-center gap-1 cursor-pointer font-medium"
               >
                 <LinkIcon className="w-3 h-3" />
-                <span>{isUrlInputOpen ? 'Đóng nhập link' : 'Dán link ảnh online'}</span>
+                <span>{isUrlInputOpen ? 'Đóng nhập link' : 'Dán link ảnh'}</span>
               </button>
             )}
           </div>
 
           {/* URL Input Bar if toggled */}
           {isUrlInputOpen && !imageUrl && (
-            <div className="flex items-center gap-2 animate-in fade-in duration-150">
+            <div className="flex items-center gap-2">
               <input
                 type="url"
                 value={urlDraft}
                 onChange={(e) => setUrlDraft(e.target.value)}
-                placeholder="https://images.unsplash.com/photo-..."
-                className="flex-1 px-3.5 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500 font-medium"
+                placeholder="https://..."
+                className="flex-1 px-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-primary-500"
               />
               <button
                 type="button"
                 onClick={handleApplyUrl}
                 disabled={!urlDraft.trim()}
-                className="px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-primary-600 disabled:opacity-50 transition-colors cursor-pointer"
+                className="px-3 py-1.5 bg-gray-900 text-white text-xs font-semibold rounded-lg hover:bg-primary-600 disabled:opacity-50 transition-colors cursor-pointer"
               >
                 Áp dụng
               </button>
@@ -191,26 +192,34 @@ export const CreateGroupPostModal: React.FC<CreateGroupPostModalProps> = ({
 
           {/* Upload Dropzone or Image Preview */}
           {imageUrl ? (
-            <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-900 group aspect-[16/9] max-h-64 flex items-center justify-center shadow-xs">
+            <div className="relative rounded-2xl overflow-hidden bg-slate-950 group aspect-[16/9] max-h-60 flex items-center justify-center shadow-2xs border border-gray-200">
+              {/* Blurred Ambient Background */}
+              <div
+                className="absolute inset-0 bg-cover bg-center filter blur-2xl opacity-40 scale-125 pointer-events-none"
+                style={{ backgroundImage: `url(${imageUrl})` }}
+              />
+
+              {/* Crisp Foreground Image (Contain) */}
               <img
                 src={imageUrl}
                 alt="Đính kèm"
-                className="w-full h-full object-contain bg-black/5"
+                className="relative z-10 w-full h-full object-contain"
               />
+
               {/* Overlay controls */}
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+              <div className="absolute inset-0 z-20 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-3.5 py-2 bg-white text-gray-900 text-xs font-bold rounded-xl shadow-md hover:bg-gray-100 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="px-3 py-1.5 bg-white text-gray-900 text-xs font-semibold rounded-lg shadow-sm hover:bg-gray-100 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
-                  <Upload className="w-3.5 h-3.5 text-primary-600" />
-                  <span>Thay đổi ảnh</span>
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Đổi ảnh</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setImageUrl('')}
-                  className="px-3.5 py-2 bg-red-600 text-white text-xs font-bold rounded-xl shadow-md hover:bg-red-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  className="px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-lg shadow-sm hover:bg-red-700 transition-colors flex items-center gap-1.5 cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Xóa ảnh</span>
@@ -226,31 +235,24 @@ export const CreateGroupPostModal: React.FC<CreateGroupPostModalProps> = ({
               onDragLeave={() => setIsDragOver(false)}
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
-              className={`border-2 border-dashed rounded-2xl p-6 sm:p-7 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group ${
+              className={`border border-dashed rounded-xl p-4 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-1.5 ${
                 isDragOver
                   ? 'border-primary-500 bg-primary-50/50'
-                  : 'border-gray-200 hover:border-primary-400 bg-gray-50/60 hover:bg-gray-50'
+                  : 'border-gray-300 hover:border-gray-400 bg-gray-50/50 hover:bg-gray-50'
               }`}
             >
               {isUploading ? (
-                <div className="flex flex-col items-center gap-2 py-2">
-                  <Loader2 className="w-7 h-7 text-primary-600 animate-spin" />
-                  <span className="text-xs font-bold text-gray-700">Đang tải ảnh lên Cloudinary...</span>
+                <div className="flex items-center gap-2 py-2">
+                  <Loader2 className="w-5 h-5 text-primary-600 animate-spin" />
+                  <span className="text-xs font-medium text-gray-600">Đang tải ảnh lên...</span>
                 </div>
               ) : (
                 <>
-                  <div className="w-11 h-11 rounded-2xl bg-white border border-gray-100 text-primary-600 flex items-center justify-center shadow-2xs group-hover:scale-105 group-hover:text-primary-700 transition-all">
-                    <Upload className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-gray-800">
-                      Kéo thả ảnh vào đây hoặc{' '}
-                      <span className="text-primary-600 group-hover:underline">chọn từ thiết bị</span>
-                    </p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">
-                      Hỗ trợ PNG, JPG, WEBP tối đa 5MB
-                    </p>
-                  </div>
+                  <Upload className="w-5 h-5 text-gray-400" />
+                  <p className="text-xs text-gray-600">
+                    Kéo thả ảnh vào đây hoặc{' '}
+                    <span className="text-primary-600 font-semibold hover:underline">chọn ảnh</span>
+                  </p>
                 </>
               )}
             </div>
@@ -267,7 +269,7 @@ export const CreateGroupPostModal: React.FC<CreateGroupPostModalProps> = ({
         </div>
 
         {/* Modal Footer Actions */}
-        <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+        <div className="pt-3 border-t border-gray-100 flex items-center justify-end gap-2.5">
           <Button
             type="button"
             variant="outline"

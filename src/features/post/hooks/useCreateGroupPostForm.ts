@@ -48,13 +48,19 @@ export const useCreateGroupPostForm = (groupId: string, isMember?: boolean) => {
     }
 
     try {
-      const res = await uploadDirect({ file, purpose: 'CHAT_ATTACHMENT' }).unwrap();
+      const res = await uploadDirect({ file, purpose: 'POST_ATTACHMENT' }).unwrap();
       setImageUrl(res.secureUrl);
       toast.success('Đã tải ảnh lên thành công!');
-    } catch {
-      const localUrl = URL.createObjectURL(file);
-      setImageUrl(localUrl);
-      toast.success('Đã chọn ảnh từ thiết bị.');
+    } catch (err: unknown) {
+      console.error('Upload with POST_ATTACHMENT failed, trying REPORT_EVIDENCE fallback:', err);
+      try {
+        const res = await uploadDirect({ file, purpose: 'REPORT_EVIDENCE' }).unwrap();
+        setImageUrl(res.secureUrl);
+        toast.success('Đã tải ảnh lên thành công!');
+      } catch (fallbackErr) {
+        console.error('Upload failed:', fallbackErr);
+        toast.error('Không thể tải ảnh lên hệ thống. Vui lòng thử lại!');
+      }
     }
   };
 

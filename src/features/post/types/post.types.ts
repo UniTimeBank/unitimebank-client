@@ -43,6 +43,7 @@ export interface ExploreCardItem {
   coverImage?: string;
   tagSkill?: string;
   secondaryTag?: string;
+  allSkills?: string[];
   authorName: string;
   authorId?: string;
   authorAvatar?: string;
@@ -50,6 +51,7 @@ export interface ExploreCardItem {
   rateCreditText?: string;
   trustScore?: number;
   sessionType?: string;
+  scheduleType?: string;
   detailUrl: string;
   createdAt?: string | Date;
 }
@@ -72,6 +74,7 @@ export interface MentorPost {
   mentorAvatar?: string;
   coverImage?: string;
   title: string;
+  category?: string;
   description?: string;
   shortDescription?: string;
   sessionType: SessionType;
