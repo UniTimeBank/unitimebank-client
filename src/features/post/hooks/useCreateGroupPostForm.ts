@@ -48,7 +48,7 @@ export const useCreateGroupPostForm = (groupId: string, isMember?: boolean) => {
     }
 
     try {
-      const res = await uploadDirect({ file, purpose: 'POST' }).unwrap();
+      const res = await uploadDirect({ file, purpose: 'CHAT_ATTACHMENT' }).unwrap();
       setImageUrl(res.secureUrl);
       toast.success('Đã tải ảnh lên thành công!');
     } catch {

@@ -35,6 +35,7 @@ const TAG_ICONS: Record<GroupPostTag, React.ReactNode> = {
 export const CreateGroupPostModal: React.FC<CreateGroupPostModalProps> = ({
   form,
   groupName,
+  isMember,
 }) => {
   const authUser = useAppSelector(selectCurrentUser);
   const { data: userProfile } = useGetMeQuery(undefined, { skip: !authUser });
