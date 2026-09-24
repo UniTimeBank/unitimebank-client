@@ -4,8 +4,8 @@ import { Trophy, HelpCircle, Award, Flame } from 'lucide-react';
 export interface LeaderboardHeaderBannerProps {
   activeTab: 'mentors' | 'learners';
   onTabChange: (tab: 'mentors' | 'learners') => void;
-  timeframe: 'all' | 'month' | 'week';
-  onTimeframeChange: (tf: 'all' | 'month' | 'week') => void;
+  timeframe: 'all' | 'month' | 'quarter' | 'year';
+  onTimeframeChange: (tf: 'all' | 'month' | 'quarter' | 'year') => void;
   onOpenFormula: () => void;
 }
 
@@ -81,17 +81,6 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
         <div className="flex items-center gap-1.5 bg-[#0B2E22]/70 p-1.5 rounded-2xl border border-emerald-800/60 text-xs backdrop-blur-md">
           <button
             type="button"
-            onClick={() => onTimeframeChange('all')}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
-              timeframe === 'all'
-                ? 'bg-white/20 text-white font-bold'
-                : 'text-emerald-200/70 hover:text-white'
-            }`}
-          >
-            Toàn thời gian
-          </button>
-          <button
-            type="button"
             onClick={() => onTimeframeChange('month')}
             className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
               timeframe === 'month'
@@ -103,14 +92,36 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
           </button>
           <button
             type="button"
-            onClick={() => onTimeframeChange('week')}
+            onClick={() => onTimeframeChange('quarter')}
             className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
-              timeframe === 'week'
+              timeframe === 'quarter'
                 ? 'bg-white/20 text-white font-bold'
                 : 'text-emerald-200/70 hover:text-white'
             }`}
           >
-            Tuần này
+            Quý này
+          </button>
+          <button
+            type="button"
+            onClick={() => onTimeframeChange('year')}
+            className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+              timeframe === 'year'
+                ? 'bg-white/20 text-white font-bold'
+                : 'text-emerald-200/70 hover:text-white'
+            }`}
+          >
+            Năm nay
+          </button>
+          <button
+            type="button"
+            onClick={() => onTimeframeChange('all')}
+            className={`px-3 py-1.5 rounded-xl font-semibold transition-all cursor-pointer ${
+              timeframe === 'all'
+                ? 'bg-white/20 text-white font-bold'
+                : 'text-emerald-200/70 hover:text-white'
+            }`}
+          >
+            Toàn thời gian
           </button>
         </div>
       </div>

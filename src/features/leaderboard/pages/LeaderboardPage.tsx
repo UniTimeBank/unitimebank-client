@@ -16,7 +16,7 @@ import {
 
 export const LeaderboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'mentors' | 'learners'>('mentors');
-  const [timeframe, setTimeframe] = useState<'all' | 'month' | 'week'>('all');
+  const [timeframe, setTimeframe] = useState<'all' | 'month' | 'quarter' | 'year'>('month');
   const [showFormulaModal, setShowFormulaModal] = useState(false);
 
   const {

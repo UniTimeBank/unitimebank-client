@@ -88,7 +88,7 @@ export const LeaderboardFormulaModal: React.FC<LeaderboardFormulaModalProps> = (
                 <p className="font-semibold text-slate-800">Thời gian học tập</p>
                 <p className="text-[11px] text-slate-400">Thời lượng tham gia học hỏi</p>
               </div>
-              <span className="font-bold text-slate-700">+0.8 điểm / phút</span>
+              <span className="font-bold text-slate-700">+1.0 điểm / phút</span>
             </div>
 
             <div className="py-2.5 flex items-center justify-between">
@@ -96,15 +96,7 @@ export const LeaderboardFormulaModal: React.FC<LeaderboardFormulaModalProps> = (
                 <p className="font-semibold text-slate-800">Buổi học hoàn thành</p>
                 <p className="text-[11px] text-slate-400">Kết thúc trọn vẹn 1 buổi học</p>
               </div>
-              <span className="font-bold text-slate-700">+20 điểm / buổi</span>
-            </div>
-
-            <div className="py-2.5 flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-slate-800">Kỹ năng mới</p>
-                <p className="text-[11px] text-slate-400">Mỗi chủ đề kỹ năng tiếp thu</p>
-              </div>
-              <span className="font-bold text-slate-700">+30 điểm / kỹ năng</span>
+              <span className="font-bold text-slate-700">+25 điểm / buổi</span>
             </div>
 
             <div className="py-2.5 flex items-center justify-between">
@@ -112,7 +104,7 @@ export const LeaderboardFormulaModal: React.FC<LeaderboardFormulaModalProps> = (
                 <p className="font-semibold text-slate-800">Gửi đánh giá</p>
                 <p className="text-[11px] text-slate-400">Nhận xét đóng góp sau buổi học</p>
               </div>
-              <span className="font-bold text-slate-700">+10 điểm / lượt</span>
+              <span className="font-bold text-slate-700">+15 điểm / lượt</span>
             </div>
           </div>
         )}
