@@ -1,5 +1,5 @@
 import React from 'react';
-import { Select } from '@/shared/components/ui';
+import { Input, Select } from '@/shared/components/ui';
 
 interface CreateGroupBasicInfoCardProps {
   name: string;
@@ -9,6 +9,7 @@ interface CreateGroupBasicInfoCardProps {
   categoryOptions: { value: string; label: string }[];
   description: string;
   onDescriptionChange: (description: string) => void;
+  errors?: Record<string, string>;
 }
 
 export const CreateGroupBasicInfoCard: React.FC<CreateGroupBasicInfoCardProps> = ({
@@ -19,6 +20,7 @@ export const CreateGroupBasicInfoCard: React.FC<CreateGroupBasicInfoCardProps> =
   categoryOptions,
   description,
   onDescriptionChange,
+  errors = {},
 }) => {
   return (
     <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-2xs space-y-5">
@@ -30,19 +32,14 @@ export const CreateGroupBasicInfoCard: React.FC<CreateGroupBasicInfoCardProps> =
       </div>
 
       {/* Tên nhóm */}
-      <div className="space-y-1.5">
-        <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
-          Tên nhóm học tập <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => onNameChange(e.target.value)}
-          placeholder="VD: Hội Ôn Thi Giải Tích 1 - ĐHBK, Lập Trình Frontend ReactJS..."
-          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 placeholder:text-gray-400 outline-none transition-all font-medium"
-          required
-        />
-      </div>
+      <Input
+        label="Tên nhóm học tập *"
+        value={name}
+        onChange={(e) => onNameChange(e.target.value)}
+        placeholder="VD: Hội Ôn Thi Giải Tích 1 - ĐHBK, Lập Trình Frontend ReactJS..."
+        error={errors.name}
+        maxLength={80}
+      />
 
       {/* Chuyên ngành / Danh mục */}
       <Select
@@ -51,21 +48,34 @@ export const CreateGroupBasicInfoCard: React.FC<CreateGroupBasicInfoCardProps> =
         onChange={onCategoryChange}
         options={categoryOptions}
         placeholder="Chọn lĩnh vực hoặc chuyên ngành..."
+        error={errors.category}
       />
 
       {/* Mô tả nhóm */}
-      <div className="space-y-1.5">
-        <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
-          Mô tả mục tiêu nhóm <span className="text-red-500">*</span>
-        </label>
+      <div className="space-y-1">
+        <div className="flex justify-between items-center mb-1">
+          <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wider">
+            Mô tả mục tiêu nhóm <span className="text-red-500">*</span>
+          </label>
+          <span className="text-[11px] text-gray-400 font-medium">
+            {description.length}/1000
+          </span>
+        </div>
         <textarea
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
           rows={4}
+          maxLength={1000}
           placeholder="Nhóm dành cho sinh viên muốn cùng nhau giải đề, chia sẻ tài liệu và thảo luận các bài toán khó..."
-          className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-100 placeholder:text-gray-400 outline-none transition-all font-medium resize-none"
-          required
+          className={`w-full px-4 py-2.5 rounded-xl border text-sm placeholder:text-gray-400 outline-none transition-all font-medium resize-none ${
+            errors.description
+              ? 'border-red-500 ring-2 ring-red-100 focus:ring-red-200'
+              : 'border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-100'
+          }`}
         />
+        {errors.description && (
+          <p className="mt-1 text-xs text-red-500 font-medium">{errors.description}</p>
+        )}
       </div>
     </div>
   );
