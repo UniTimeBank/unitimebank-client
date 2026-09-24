@@ -2,7 +2,6 @@ import React from 'react';
 import { useAllPostsBrowser } from '../hooks';
 import {
   AllPostsHeader,
-  AllPostsTabs,
   AllPostsFilterBar,
   AllPostsSkeletonGrid,
   AllPostsEmptyState,
@@ -24,9 +23,6 @@ export const AllPostsPage: React.FC = () => {
     paginatedItems,
     isLoading,
     hasActiveFilters,
-    mentorCount,
-    learnerCount,
-    allCount,
     handleTabChange,
     handleCategoryChange,
     handleSortChange,

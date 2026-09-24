@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useCreateLearnerRequestMutation } from '@/core/api/post/postApi';
@@ -25,7 +25,11 @@ export const useLearnerRequestForm = (
   const navigate = useNavigate();
   const [createLearnerRequest, { isLoading }] = useCreateLearnerRequestMutation();
   const { data: walletData, isLoading: isWalletLoading } = useGetMyWalletQuery();
-  const userBalance = Number(walletData?.availableBalance ?? (walletData as any)?.balance ?? 0);
+  const userBalance = Number(
+    walletData?.availableBalance ??
+      (walletData as { balance?: number } | undefined)?.balance ??
+      0,
+  );
   const isInsufficientBalance = !isWalletLoading && userBalance < 30;
 
   const [subject, setSubject] = useState('');
@@ -40,21 +44,14 @@ export const useLearnerRequestForm = (
   const [timeline, setTimeline] = useState('Trong 3 ngày');
   const [desiredSlots, setDesiredSlots] = useState<TimeSlot[]>([]);
 
-  // Tự động chọn mốc thời lượng phù hợp khi ví tải xong:
-  // - Nếu ví >= 60: chọn 60 phút
-  // - Nếu 30 <= ví < 60: chọn 30 phút
-  // - Nếu ví < 30: chọn 30 phút (và đánh dấu isInsufficientBalance để block)
-  const hasAutoSelectedRef = useRef(false);
-  useEffect(() => {
-    if (walletData !== undefined && !hasAutoSelectedRef.current) {
-      if (userBalance >= 60) {
-        setDurationMinutes(60);
-      } else {
-        setDurationMinutes(30);
-      }
-      hasAutoSelectedRef.current = true;
+  // Tự động điều chỉnh mốc thời lượng 30 phút nếu số dư khả dụng < 60
+  const [hasAutoAdjusted, setHasAutoAdjusted] = useState(false);
+  if (walletData !== undefined && !hasAutoAdjusted) {
+    setHasAutoAdjusted(true);
+    if (userBalance < 60) {
+      setDurationMinutes(30);
     }
-  }, [walletData, userBalance]);
+  }
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -215,10 +212,12 @@ export const useLearnerRequestForm = (
       setTimeout(() => {
         navigate('/explore');
       }, 1200);
-    } catch (err: any) {
-      const msg = err?.data?.message || err?.message || 'Không thể tạo yêu cầu học';
-      setErrorMessage(Array.isArray(msg) ? msg.join('. ') : msg);
-      toast.error('Lỗi phát sóng bài đăng', Array.isArray(msg) ? msg.join('. ') : msg);
+    } catch (err: unknown) {
+      const errObj = err as { data?: { message?: string | string[] }; message?: string };
+      const msg = errObj?.data?.message || errObj?.message || 'Không thể tạo yêu cầu học';
+      const formattedMsg = Array.isArray(msg) ? msg.join('. ') : msg;
+      setErrorMessage(formattedMsg);
+      toast.error('Lỗi phát sóng bài đăng', formattedMsg);
     }
   };
 

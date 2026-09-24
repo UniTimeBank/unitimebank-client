@@ -17,7 +17,7 @@ export const mapMentorPostToCardItem = (post: MentorPost): ExploreCardItem => {
     title: post.title,
     description: post.shortDescription || post.description || '',
     category: cat,
-    coverImage: (post as any).coverImage || (post as any).thumbnail,
+    coverImage: post.coverImage,
     tagSkill: categoryLabel,
     secondaryTag: allSkills.join(', '),
     authorId: post.mentorId,
@@ -27,11 +27,11 @@ export const mapMentorPostToCardItem = (post: MentorPost): ExploreCardItem => {
     rateCreditText: rateText,
     trustScore: post.trustScoreSnapshot || 100,
     sessionType: post.sessionType || 'BOTH',
-    scheduleType: (post.scheduleType as 'ALWAYS_OPEN' | 'LIMITED_TIME') || 'ALWAYS_OPEN',
+    scheduleType: post.scheduleType || 'ALWAYS_OPEN',
     detailUrl: `/posts/mentor/${post._id}`,
-    createdAt: (post as any).createdAt || (post as any).created_at,
+    createdAt: post.createdAt,
     allSkills,
-  } as any;
+  };
 };
 
 /**
@@ -41,7 +41,7 @@ export const mapLearnerRequestToCardItem = (req: LearnerRequest): ExploreCardIte
   const cat = req.category || 'PROGRAMMING';
   const categoryLabel = (SKILL_CATEGORY_LABELS[cat.toUpperCase()] || cat).toUpperCase();
   const rawSkills = req.skillNeeded
-    ? req.skillNeeded.split(/[,;\/]+/).map((s) => s.trim()).filter(Boolean)
+    ? req.skillNeeded.split(/[,;/]+/).map((s) => s.trim()).filter(Boolean)
     : [];
 
   return {
@@ -50,7 +50,7 @@ export const mapLearnerRequestToCardItem = (req: LearnerRequest): ExploreCardIte
     title: req.skillNeeded,
     description: req.shortDescription || req.description || '',
     category: cat,
-    coverImage: (req as any).coverImage,
+    coverImage: req.coverImage,
     tagSkill: categoryLabel,
     secondaryTag: rawSkills.join(', '),
     allSkills: rawSkills.length > 0 ? rawSkills : [req.skillNeeded || 'Học tập'],
@@ -62,6 +62,6 @@ export const mapLearnerRequestToCardItem = (req: LearnerRequest): ExploreCardIte
     trustScore: 100,
     sessionType: req.sessionType || 'ONE_ON_ONE',
     detailUrl: `/posts/learner/${req._id}`,
-    createdAt: (req as any).createdAt || (req as any).created_at,
-  } as any;
+    createdAt: req.createdAt,
+  };
 };

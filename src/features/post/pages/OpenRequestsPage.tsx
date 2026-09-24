@@ -7,6 +7,7 @@ import {
   LearnerRequestForm,
   LearnerRequestSidebar,
 } from '../components';
+import { SkillCategoryName, SessionType } from '@/features/post/types';
 import type { MentorOfferFormState } from '../components/create-post/MentorOfferForm';
 import type { LearnerRequestFormState } from '../components/create-post/LearnerRequestForm';
 
@@ -15,7 +16,7 @@ export const OpenRequestsPage: React.FC = () => {
 
   const [mentorPreview, setMentorPreview] = useState<MentorOfferFormState>({
     title: '',
-    category: 'PROGRAMMING' as any,
+    category: SkillCategoryName.PROGRAMMING,
     coverImage: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=600',
     skillsText: '',
     shortDescription: '',
@@ -28,8 +29,8 @@ export const OpenRequestsPage: React.FC = () => {
 
   const [learnerPreview, setLearnerPreview] = useState<LearnerRequestFormState>({
     subject: '',
-    category: 'PROGRAMMING' as any,
-    sessionType: 'ONE_ON_ONE' as any,
+    category: SkillCategoryName.PROGRAMMING,
+    sessionType: SessionType.ONE_ON_ONE,
     coverImage: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=600',
     shortDescription: '',
     goals: '',

@@ -1,7 +1,10 @@
 import { baseApi } from "../baseApi";
 
 export type DirectUploadPurpose =
-  "AVATAR" | "CHAT_ATTACHMENT" | "REPORT_EVIDENCE";
+  | "AVATAR"
+  | "CHAT_ATTACHMENT"
+  | "REPORT_EVIDENCE"
+  | "POST_ATTACHMENT";
 
 export interface DirectUploadRequest {
   file: File;

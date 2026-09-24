@@ -12,7 +12,6 @@ import {
   PostScheduleSidebar,
   RelatedPostsSection,
 } from '../components/details';
-import { SKILL_CATEGORY_LABELS } from '../constants';
 import { Button, Modal } from '@/shared/components/ui';
 import { toast } from '@/shared/utils';
 
@@ -87,11 +86,10 @@ export const MentorPostDetailPage: React.FC = () => {
   }
 
   const mentorName = mentorProfile?.displayName || post.mentorName || 'Mentor';
-  const categoryCode = post.tags?.[0]?.category || 'PROGRAMMING';
-  const categoryLabel = SKILL_CATEGORY_LABELS[categoryCode] || post.tags?.[0]?.skillName || 'CÔNG NGHỆ THÔNG TIN';
   const trustScore = mentorProfile?.trustScore || post.trustScoreSnapshot || 98;
   const ratingValue = (trustScore / 20).toFixed(1);
   const skillTags = post.tags?.map((t) => t.skillName) || ['ReactJS', 'TypeScript'];
+  const categoryCode = post.category || post.tags?.[0]?.category || 'PROGRAMMING';
 
   // Handle Submit Booking
   const handleConfirmBooking = async () => {
@@ -124,8 +122,11 @@ export const MentorPostDetailPage: React.FC = () => {
 
       setBookingModal(null);
       navigate('/manage/bookings');
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Không thể đặt lịch học. Vui lòng thử lại sau.');
+    } catch (err: unknown) {
+      const msg =
+        (err as { data?: { message?: string } })?.data?.message ||
+        'Không thể đặt lịch học. Vui lòng thử lại sau.';
+      toast.error(msg);
     }
   };
 

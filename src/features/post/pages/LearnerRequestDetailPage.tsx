@@ -73,7 +73,12 @@ export const LearnerRequestDetailPage: React.FC = () => {
 
   const learnerName = request.learnerName || learnerProfile?.displayName || 'Học viên UniTimeBank';
   const categoryCode = request.category || 'OTHER';
-  const trustScore = (learnerProfile as any)?.trustScoreSnapshot || (learnerProfile as any)?.trustScore || 85;
+  const trustScore =
+    (learnerProfile as { trustScoreSnapshot?: number; trustScore?: number } | undefined)
+      ?.trustScoreSnapshot ||
+    (learnerProfile as { trustScoreSnapshot?: number; trustScore?: number } | undefined)
+      ?.trustScore ||
+    85;
   const ratingValue = 5.0;
   const durationMinutes = request.expectedDurationMinutes || 60;
 
@@ -140,8 +145,11 @@ export const LearnerRequestDetailPage: React.FC = () => {
 
       setApplyModal(null);
       navigate('/manage/bookings');
-    } catch (err: any) {
-      toast.error(err?.data?.message || 'Không thể gửi đề nghị dạy. Vui lòng thử lại sau.');
+    } catch (err: unknown) {
+      const msg =
+        (err as { data?: { message?: string } })?.data?.message ||
+        'Không thể gửi đề nghị dạy. Vui lòng thử lại sau.';
+      toast.error(msg);
     }
   };
 

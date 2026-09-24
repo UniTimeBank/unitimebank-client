@@ -8,13 +8,11 @@ import {
   TrendingUp,
   X,
   BookOpen,
-  GraduationCap,
   RotateCcw,
 } from 'lucide-react';
 import { useMentorPosts, useLearnerRequests } from '../hooks';
 import { UnifiedPostCard } from '../components/cards';
-import { type ExploreCardItem } from '../types';
-import { SKILL_CATEGORY_LABELS } from '../constants';
+import { SessionType, type ExploreCardItem } from '../types';
 import { mapMentorPostToCardItem, mapLearnerRequestToCardItem } from '../utils';
 import { LiveGroupRoomsBanner } from '@/features/session/components';
 
@@ -46,7 +44,7 @@ export const PostExplorePage: React.FC = () => {
 
   // Bộ lọc nâng cao
   const [advancedFilter, setAdvancedFilter] = useState({
-    sessionType: 'ALL' as 'ALL' | 'ONE_ON_ONE' | 'GROUP',
+    sessionType: 'ALL' as 'ALL' | SessionType,
     minTrustScore: 0,
     sortBy: 'relevance' as 'relevance' | 'newest' | 'trustScore',
   });
@@ -311,8 +309,8 @@ export const PostExplorePage: React.FC = () => {
                   coverImage: item.coverImage,
                   primaryTag: item.tagSkill,
                   secondaryTags:
-                    (item as any).allSkills && (item as any).allSkills.length > 0
-                      ? (item as any).allSkills
+                    item.allSkills && item.allSkills.length > 0
+                      ? item.allSkills
                       : item.secondaryTag
                       ? [item.secondaryTag]
                       : [],
@@ -329,7 +327,7 @@ export const PostExplorePage: React.FC = () => {
                       : item.sessionType === 'BOTH'
                       ? '1:1 & Nhóm'
                       : 'Lớp 1:1',
-                  scheduleType: (item as any).scheduleType,
+                  scheduleType: item.scheduleType as 'ALWAYS_OPEN' | 'LIMITED_TIME' | undefined,
                   timelineText: 'Trong 3 ngày',
                   createdAt: item.createdAt,
                 }}
@@ -462,7 +460,7 @@ export const PostExplorePage: React.FC = () => {
                     onClick={() =>
                       setAdvancedFilter((prev) => ({
                         ...prev,
-                        sessionType: opt.value as any,
+                        sessionType: opt.value as SessionType | 'ALL',
                       }))
                     }
                     className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${

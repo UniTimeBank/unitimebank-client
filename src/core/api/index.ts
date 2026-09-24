@@ -8,3 +8,4 @@ export * from './notification/notificationApi';
 export * from './session';
 export * from './moderation';
 export * from './upload';
+export * from './community/communityApi';

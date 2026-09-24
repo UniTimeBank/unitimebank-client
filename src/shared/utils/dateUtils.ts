@@ -26,6 +26,56 @@ export const formatTimeAgo = (
 };
 
 /**
+ * Định dạng thời gian cho bài viết cộng đồng (tối giản, thông minh):
+ * - Dưới 1 phút: "Vừa xong"
+ * - Dưới 1 giờ: "x phút trước"
+ * - Trong ngày hôm nay: "x giờ trước"
+ * - Ngày hôm qua: "Hôm qua"
+ * - Hơn 1 ngày (cùng năm): "DD thg MM" (ví dụ: "24 thg 9")
+ * - Khác năm: "DD/MM/YYYY"
+ */
+export const formatGroupPostDate = (dateInput?: string | Date): string => {
+  if (!dateInput) return 'Vừa xong';
+  const date = parseUtcDate(dateInput);
+  if (isNaN(date.getTime())) return 'Vừa xong';
+
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return 'Vừa xong';
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
+  const diffInHours = Math.floor(diffInMinutes / 60);
+
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear();
+
+  if (isToday) {
+    return `${diffInHours} giờ trước`;
+  }
+
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday =
+    date.getDate() === yesterday.getDate() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getFullYear() === yesterday.getFullYear();
+
+  if (isYesterday) {
+    return 'Hôm qua';
+  }
+
+  const isSameYear = date.getFullYear() === now.getFullYear();
+  if (isSameYear) {
+    return `${date.getDate()} thg ${date.getMonth() + 1}`;
+  }
+
+  return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+};
+
+/**
  * Định dạng Date thành chuỗi YYYY-MM-DD theo giờ địa phương (tránh lệch timezone UTC)
  */
 export const formatLocalDate = (d: Date): string => {
@@ -62,4 +112,3 @@ export const parseUtcDate = (dateInput?: string | Date | number): Date => {
   const parsed = new Date(str);
   return isNaN(parsed.getTime()) ? new Date(dateInput) : parsed;
 };
-

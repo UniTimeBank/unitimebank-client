@@ -12,7 +12,6 @@ import {
   Repeat,
   CalendarRange,
   AlertCircle,
-  CheckCircle2,
 } from 'lucide-react';
 import { Button, Input, DateInput, Select } from '@/shared/components/ui';
 import { useMentorSchedule, QuickAddScheduleModal, ALL_DAYS, formatLocalDate } from '@/features/schedule';
@@ -22,7 +21,7 @@ import { SessionType, PostScheduleType, SkillCategoryName } from '../../types';
 import { SkillMultiSelectCombobox } from './SkillMultiSelectCombobox';
 import { RichTextEditor } from './RichTextEditor';
 import type { SkillCategoryEnum } from '@/features/user/types';
-import { CATEGORY_PRESET_IMAGES, FALLBACK_CATEGORY_IMAGES } from '../../constants';
+import { CATEGORY_PRESET_IMAGES } from '../../constants';
 
 const CATEGORY_OPTIONS = [
   { label: 'Lập trình', value: SkillCategoryName.PROGRAMMING },
@@ -513,11 +512,12 @@ export const MentorOfferForm: React.FC<MentorOfferFormProps> = ({ onPreviewChang
       setTimeout(() => {
         navigate('/explore');
       }, 1500);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to create mentor post:', err);
-      const rawMessages: string[] = Array.isArray(err?.data?.message)
-        ? err.data.message
-        : [err?.data?.message || err?.message || ''];
+      const errObj = err as { data?: { message?: string | string[] }; message?: string };
+      const rawMessages: string[] = Array.isArray(errObj?.data?.message)
+        ? errObj.data.message
+        : [errObj?.data?.message || errObj?.message || ''];
 
       const fieldErrors: Record<string, string> = {};
       const unhandledMessages: string[] = [];
