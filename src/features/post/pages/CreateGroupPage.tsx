@@ -72,6 +72,7 @@ export const CreateGroupPage: React.FC = () => {
             onCoverUrlChange={setCoverUrl}
             customCover={customCover}
             onCustomCoverChange={setCustomCover}
+            activeCover={activeCover}
           />
 
           {/* Section 3: Quy tắc cộng đồng */}
