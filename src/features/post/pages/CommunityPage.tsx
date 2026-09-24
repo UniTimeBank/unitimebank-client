@@ -18,6 +18,7 @@ export const CommunityPage: React.FC = () => {
     setSearchQuery,
     groups,
     isLoading,
+    isFetching,
   } = useCommunityGroups();
 
   const groupList = Array.isArray(groups) ? groups : [];
@@ -38,13 +39,19 @@ export const CommunityPage: React.FC = () => {
       />
 
       {/* Groups Grid / Skeleton / Empty State */}
-      <div>
-        {isLoading ? (
+      <div className="min-h-[380px] transition-opacity duration-200">
+        {isLoading && groupList.length === 0 ? (
           <GroupCardSkeleton />
         ) : groupList.length === 0 ? (
-          <GroupEmptyState isMyGroupsTab={activeTab === 'MY_GROUPS'} />
+          <div className="animate-in fade-in duration-200">
+            <GroupEmptyState isMyGroupsTab={activeTab === 'MY_GROUPS'} />
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div
+            className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-200 ${
+              isFetching ? 'opacity-80 transition-opacity' : 'opacity-100'
+            }`}
+          >
             {groupList.map((group) => (
               <GroupCard key={group._id} group={group} />
             ))}
