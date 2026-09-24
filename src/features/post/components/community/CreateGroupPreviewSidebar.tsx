@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, HelpCircle } from 'lucide-react';
+import { Eye, HelpCircle, Users, MessageSquare, ArrowRight, UserPlus } from 'lucide-react';
 
 interface CreateGroupPreviewSidebarProps {
   name: string;
@@ -17,44 +17,82 @@ export const CreateGroupPreviewSidebar: React.FC<CreateGroupPreviewSidebarProps>
   return (
     <div className="space-y-6 lg:sticky lg:top-24">
       {/* Live Preview Card */}
-      <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-2xs space-y-4">
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-100 shadow-2xs space-y-4">
         <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
           <Eye className="w-4 h-4 text-primary-600" />
           <span>Xem trước thẻ nhóm</span>
         </div>
 
-        {/* Simulated Group Card */}
-        <div className="rounded-2xl border border-gray-100 overflow-hidden shadow-2xs">
-          <div className="relative h-32 w-full bg-slate-800 overflow-hidden">
-            <img
-              src={coverUrl}
-              alt="Preview cover"
-              className="w-full h-full object-cover opacity-90"
-            />
-            <div className="absolute top-2 left-2">
-              <span className="px-2.5 py-0.5 bg-white/90 backdrop-blur-md text-slate-800 text-[10px] font-black rounded-full shadow-xs">
+        {/* Simulated Group Card Matching UnifiedPostCard Structure */}
+        <div className="bg-white rounded-3xl p-3 border border-slate-200/90 shadow-2xs flex flex-col justify-between overflow-hidden">
+          <div>
+            {/* Header Media Thumbnail */}
+            <div className="relative h-36 w-full rounded-2xl overflow-hidden bg-slate-100">
+              <img
+                src={coverUrl}
+                alt="Preview cover"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25" />
+
+              {/* Category Badge */}
+              <span className="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-lg bg-white/95 backdrop-blur-md text-slate-800 font-bold text-[10px] uppercase tracking-wider shadow-xs">
                 {category}
               </span>
+
+              {/* Members overlay count */}
+              <div className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-lg bg-slate-950/85 backdrop-blur-md text-white text-[11px] font-semibold flex items-center gap-1 shadow-sm">
+                <Users className="w-3 h-3 text-emerald-400 shrink-0" />
+                <span>1 thành viên</span>
+              </div>
+
+              {/* Posts overlay count */}
+              <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-lg bg-slate-950/85 backdrop-blur-md text-white text-[11px] font-semibold flex items-center gap-1 shadow-sm">
+                <MessageSquare className="w-3 h-3 text-sky-400 shrink-0" />
+                <span>0 bài viết</span>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="px-1 pt-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-[9px]">
+                    U
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-700">Bạn (Admin)</span>
+                </div>
+                <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/70 text-[9px] font-bold">
+                  Công khai
+                </span>
+              </div>
+
+              <h3 className="text-sm font-bold text-slate-900 line-clamp-1 leading-snug">
+                {name.trim() || 'Tên nhóm học tập của bạn'}
+              </h3>
+              <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed font-normal">
+                {description.trim() || 'Mô tả mục tiêu và nội dung chính của nhóm học tập...'}
+              </p>
             </div>
           </div>
 
-          <div className="p-4 space-y-2 bg-white">
-            <h3 className="text-sm font-bold text-gray-900 line-clamp-1">
-              {name.trim() || 'Tên nhóm học tập của bạn'}
-            </h3>
-            <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
-              {description.trim() || 'Mô tả mục tiêu và nội dung chính của nhóm học tập...'}
-            </p>
-            <div className="pt-2 border-t border-gray-50 flex items-center justify-between text-[11px] text-gray-400 font-medium">
-              <span>1 thành viên</span>
-              <span className="text-primary-600 font-bold">Xem nhóm →</span>
-            </div>
+          {/* Footer Preview Actions */}
+          <div className="px-1 pt-2.5 mt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+            <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-bold flex items-center gap-1">
+              <UserPlus className="w-3 h-3" />
+              <span>Tham gia</span>
+            </span>
+
+            <span className="px-3 py-1 rounded-lg bg-slate-900 text-white text-[11px] font-bold flex items-center gap-1">
+              <span>Vào nhóm</span>
+              <ArrowRight className="w-3 h-3" />
+            </span>
           </div>
         </div>
       </div>
 
       {/* Tips Sidebar */}
-      <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-2xs space-y-4">
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-100 shadow-2xs space-y-4">
         <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
           <HelpCircle className="w-4 h-4 text-emerald-600" />
           <span>Gợi ý xây dựng nhóm hiệu quả</span>
