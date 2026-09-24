@@ -1,4 +1,4 @@
-import { useState, useRef, type ChangeEvent, type DragEvent, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import type { GroupPostTag } from '../types';
 import { useCreateGroupPostMutation } from '@/core/api/community/communityApi';
 import { useUploadFileDirectMutation } from '@/core/api/upload';
@@ -12,7 +12,6 @@ export const useCreateGroupPostForm = (groupId: string, isMember?: boolean) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUrlInputOpen, setIsUrlInputOpen] = useState(false);
   const [urlDraft, setUrlDraft] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [createPost, { isLoading: isPosting }] = useCreateGroupPostMutation();
   const [uploadDirect, { isLoading: isUploading }] = useUploadFileDirectMutation();
@@ -59,18 +58,6 @@ export const useCreateGroupPostForm = (groupId: string, isMember?: boolean) => {
     }
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleProcessFile(file);
-  };
-
-  const handleDrop = (e: DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) handleProcessFile(file);
-  };
-
   const handleApplyUrl = () => {
     if (!urlDraft.trim()) return;
     setImageUrl(urlDraft.trim());
@@ -103,7 +90,9 @@ export const useCreateGroupPostForm = (groupId: string, isMember?: boolean) => {
       toast.success('Đăng bài thành công!');
       resetForm();
     } catch (err: unknown) {
-      const errorMsg = (err as { data?: { message?: string } })?.data?.message || 'Không thể đăng bài viết. Vui lòng thử lại!';
+      const errorMsg =
+        (err as { data?: { message?: string } })?.data?.message ||
+        'Không thể đăng bài viết. Vui lòng thử lại!';
       toast.error(errorMsg);
     }
   };
@@ -124,12 +113,9 @@ export const useCreateGroupPostForm = (groupId: string, isMember?: boolean) => {
     setIsUrlInputOpen,
     urlDraft,
     setUrlDraft,
-    fileInputRef,
     isUploading,
     isPosting,
     handleProcessFile,
-    handleFileChange,
-    handleDrop,
     handleApplyUrl,
     handleSubmit,
   };

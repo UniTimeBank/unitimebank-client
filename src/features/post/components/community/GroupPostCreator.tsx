@@ -7,8 +7,7 @@ import {
   Users,
 } from 'lucide-react';
 import type { GroupPostTag } from '@/features/post/types';
-import { useAppSelector } from '@/core/store';
-import { selectCurrentUser } from '@/core/store';
+import { useAppSelector, selectCurrentUser } from '@/core/store';
 import { toast } from 'react-hot-toast';
 
 interface GroupPostCreatorProps {

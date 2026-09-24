@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   Upload,
   Image as ImageIcon,
@@ -15,8 +15,7 @@ import { Modal, Button } from '@/shared/components/ui';
 import { GROUP_POST_TAG_CONFIG } from '@/features/post/constants';
 import type { GroupPostTag } from '@/features/post/types';
 import type { useCreateGroupPostForm } from '@/features/post/hooks';
-import { useAppSelector } from '@/core/store';
-import { selectCurrentUser } from '@/core/store';
+import { useAppSelector, selectCurrentUser } from '@/core/store';
 
 interface CreateGroupPostModalProps {
   form: ReturnType<typeof useCreateGroupPostForm>;
@@ -37,6 +36,7 @@ export const CreateGroupPostModal: React.FC<CreateGroupPostModalProps> = ({
   isMember,
 }) => {
   const currentUser = useAppSelector(selectCurrentUser);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     isOpen,
@@ -53,14 +53,24 @@ export const CreateGroupPostModal: React.FC<CreateGroupPostModalProps> = ({
     setIsUrlInputOpen,
     urlDraft,
     setUrlDraft,
-    fileInputRef,
     isUploading,
     isPosting,
-    handleFileChange,
-    handleDrop,
+    handleProcessFile,
     handleApplyUrl,
     handleSubmit,
   } = form;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleProcessFile(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleProcessFile(file);
+  };
 
   return (
     <Modal
