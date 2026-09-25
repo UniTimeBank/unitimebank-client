@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Plus, Radio, Search, X, CalendarCheck, Users, Clock, GraduationCap, BookOpen, Shield, Check } from 'lucide-react';
-import { CreateGroupRoomModal } from '@/features/session';
-import { PostSessionRatingModal } from '@/features/moderation';
+import { Plus, Radio, Search, X, CalendarCheck, Users, Clock, GraduationCap, BookOpen, Shield, Check, Star } from 'lucide-react';
+import { CreateGroupRoomModal, SessionEndedModal, type SessionEndedData } from '@/features/session';
+import { PostSessionRatingModal, ViewRatingModal } from '@/features/moderation';
+import type { RatingItem } from '@/features/moderation/types';
 import { useGetMyRatedSessionsQuery } from '@/core/api/moderation';
 import { ManageGroupRoomCard } from '../components';
 import {
@@ -18,6 +19,7 @@ import type { RootState } from '@/core/store';
 
 export const GroupSessionsManagementPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const authUser = useSelector((state: RootState) => state.auth.user);
   const currentUserId = authUser?.id;
 
@@ -26,6 +28,38 @@ export const GroupSessionsManagementPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
   const [selectedRatingRoom, setSelectedRatingRoom] = useState<any | null>(null);
+  const [viewingRatingData, setViewingRatingData] = useState<{
+    rating: RatingItem;
+    mode: 'GIVEN' | 'RECEIVED';
+  } | null>(null);
+  const [sessionEndedData, setSessionEndedData] = useState<SessionEndedData | null>(
+    (location.state as any)?.sessionEnded || null,
+  );
+
+  // Sync tab & role with URL search params if present
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab')?.toUpperCase();
+    const roleParam = params.get('role')?.toUpperCase();
+
+    if (tabParam === 'HISTORY' || tabParam === 'ACTIVE') {
+      setGroupTab(tabParam as 'ACTIVE' | 'HISTORY');
+    }
+    if (roleParam === 'HOST' || roleParam === 'PARTICIPANT') {
+      setRoleTab(roleParam as 'HOST' | 'PARTICIPANT');
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    if ((location.state as any)?.sessionEnded) {
+      setSessionEndedData((location.state as any).sessionEnded);
+    }
+  }, [location.state]);
+
+  const handleCloseSessionEnded = () => {
+    setSessionEndedData(null);
+    navigate(location.pathname, { replace: true, state: {} });
+  };
 
   // Active Group Rooms Query
   const {
@@ -682,10 +716,41 @@ export const GroupSessionsManagementPage: React.FC = () => {
                   {/* Actions - subtle primary touch matching brand */}
                   <div className="shrink-0 flex items-center justify-end">
                     {isRoomRated ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 font-medium text-xs select-none">
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Đã đánh giá</span>
-                      </span>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const found = myRatedSessions.find((r) => r.roomId === room.roomId);
+                          const mentorName = (found?.mentorName && found.mentorName !== 'Người hướng dẫn' && found.mentorName !== 'Thành viên')
+                            ? found.mentorName
+                            : room.mentorName || 'Người hướng dẫn';
+                          const mentorAvatar = found?.mentorAvatar || room.mentorAvatar || '';
+
+                          setViewingRatingData({
+                            rating: found ? {
+                              ...found,
+                              mentorName,
+                              mentorAvatar,
+                            } : {
+                              id: room.roomId,
+                              roomId: room.roomId,
+                              sessionType: 'GROUP',
+                              stars: 5,
+                              mentorId: room.mentorId,
+                              mentorName,
+                              mentorAvatar,
+                              comment: 'Buổi học nhóm hoàn thành tốt.',
+                              submittedAt: room.openedAt || new Date().toISOString(),
+                            },
+                            mode: 'GIVEN',
+                          });
+                        }}
+                        className="rounded-lg bg-amber-50/70 hover:bg-amber-100/80 border border-amber-200 text-amber-800 font-semibold text-xs py-1.5 px-3 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                      >
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        <span>Xem lại đánh giá</span>
+                      </Button>
                     ) : (
                       <Button
                         type="button"
@@ -727,6 +792,23 @@ export const GroupSessionsManagementPage: React.FC = () => {
           onSuccess={() => {
             refetchHistoryRooms();
           }}
+        />
+      )}
+
+      {/* View Rating Detail Modal */}
+      <ViewRatingModal
+        isOpen={Boolean(viewingRatingData)}
+        onClose={() => setViewingRatingData(null)}
+        rating={viewingRatingData?.rating || null}
+        mode={viewingRatingData?.mode || 'GIVEN'}
+      />
+
+      {/* Modal Buổi học kết thúc & Đánh giá tự động khi vừa rời/kết thúc phòng */}
+      {sessionEndedData && (
+        <SessionEndedModal
+          isOpen={Boolean(sessionEndedData)}
+          onClose={handleCloseSessionEnded}
+          {...sessionEndedData}
         />
       )}
     </div>

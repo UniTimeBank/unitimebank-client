@@ -1,5 +1,4 @@
-import React from 'react';
-import { Users, MessageSquare, Share2, Plus, Check, Crown, UserCheck, Trash2 } from 'lucide-react';
+import { Users, MessageSquare, Share2, Plus, Check, Crown, Trash2 } from 'lucide-react';
 import { Button } from '@/shared/components/ui';
 import type { CommunityGroup } from '@/features/post/types';
 
@@ -10,7 +9,7 @@ interface GroupDetailHeaderProps {
   isMembershipProcessing: boolean;
   onToggleMembership: () => void;
   onShareGroup: () => void;
-  onOpenTransferModal?: () => void;
+  onOpenManageMembersModal?: () => void;
   onOpenDisbandModal?: () => void;
 }
 
@@ -21,7 +20,7 @@ export const GroupDetailHeader: React.FC<GroupDetailHeaderProps> = ({
   isMembershipProcessing,
   onToggleMembership,
   onShareGroup,
-  onOpenTransferModal,
+  onOpenManageMembersModal,
   onOpenDisbandModal,
 }) => {
   return (
@@ -88,11 +87,11 @@ export const GroupDetailHeader: React.FC<GroupDetailHeaderProps> = ({
             <>
               <Button
                 variant="outline"
-                onClick={onOpenTransferModal}
-                leftIcon={<UserCheck className="w-4 h-4 text-primary-600" />}
+                onClick={onOpenManageMembersModal}
+                leftIcon={<Users className="w-4 h-4 text-primary-600" />}
                 className="text-xs font-bold border-gray-200 hover:bg-primary-50 hover:text-primary-700 hover:border-primary-200 cursor-pointer"
               >
-                Phân quyền Trưởng nhóm
+                Quản lý thành viên
               </Button>
 
               <Button

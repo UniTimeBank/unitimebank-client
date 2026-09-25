@@ -16,6 +16,15 @@ export interface GroupMember {
   avatar: string;
   email?: string;
   role: 'CREATOR' | 'MEMBER';
+  joinedAt?: string;
+}
+
+export interface BannedMember {
+  id: string;
+  name: string;
+  avatar: string;
+  email?: string;
+  bannedAt?: string;
 }
 
 export interface CommunityGroup {
@@ -30,6 +39,7 @@ export interface CommunityGroup {
   creatorName: string;
   creatorAvatar?: string;
   memberIds?: string[];
+  bannedUserIds?: string[];
   membersCount: number;
   postsCount: number;
   rules?: string[];

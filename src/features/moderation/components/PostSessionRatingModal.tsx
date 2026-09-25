@@ -16,6 +16,7 @@ export interface PostSessionRatingModalProps {
   mentorId: string;
   mentorName?: string;
   mentorAvatar?: string;
+  partnerRole?: string;
   sessionId?: string;
   initialStars?: number;
   onSuccess?: () => void;
@@ -46,6 +47,7 @@ export const PostSessionRatingModal: React.FC<PostSessionRatingModalProps> = ({
   mentorId,
   mentorName = 'Người hướng dẫn',
   mentorAvatar,
+  partnerRole = 'Người hướng dẫn',
   sessionId,
   initialStars,
   onSuccess,
@@ -96,6 +98,8 @@ export const PostSessionRatingModal: React.FC<PostSessionRatingModalProps> = ({
         sessionType: sessionType || (roomId ? 'GROUP' : 'ONE_ON_ONE'),
         sessionId: sessionId || bookingId || roomId,
         mentorId,
+        mentorName,
+        mentorAvatar,
         stars,
         comment: fullComment || undefined,
         reviewerName,
@@ -134,7 +138,7 @@ export const PostSessionRatingModal: React.FC<PostSessionRatingModalProps> = ({
           </div>
           <div className="min-w-0">
             <h4 className="text-sm font-semibold text-gray-900 truncate">{mentorName}</h4>
-            <p className="text-xs text-gray-500 truncate">Người hướng dẫn</p>
+            <p className="text-xs text-gray-500 truncate">{partnerRole}</p>
           </div>
         </div>
 

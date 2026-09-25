@@ -144,7 +144,7 @@ export const LearnerRequestDetailPage: React.FC = () => {
       );
 
       setApplyModal(null);
-      navigate('/manage/bookings');
+      navigate('/manage/bookings?role=TEACHING&tab=PENDING');
     } catch (err: unknown) {
       const msg =
         (err as { data?: { message?: string } })?.data?.message ||

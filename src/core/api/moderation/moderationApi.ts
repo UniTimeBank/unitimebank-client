@@ -29,7 +29,7 @@ export const moderationApi = baseApi.injectEndpoints({
     }),
 
     // 1b. Lấy danh sách các session/booking đã được đánh giá bởi chính tôi
-    getMyRatedSessions: builder.query<{ id: string; bookingId?: string; roomId?: string; stars?: number }[], void>({
+    getMyRatedSessions: builder.query<RatingItem[], void>({
       query: () => '/moderation/ratings/my-rated-sessions',
       providesTags: [{ type: 'Moderation', id: 'MY_RATED_SESSIONS' }],
     }),

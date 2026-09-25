@@ -23,6 +23,7 @@ export interface BookingCardProps {
   onMessage?: (id: string) => void;
   onOpenDetail?: (booking: BookingItem) => void;
   onRate?: (booking: BookingItem) => void;
+  onViewRating?: (booking: BookingItem) => void;
   isAccepting?: boolean;
   isRejecting?: boolean;
   isCancelling?: boolean;
@@ -39,6 +40,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({
   onMessage,
   onOpenDetail,
   onRate,
+  onViewRating,
   isAccepting = false,
   isRejecting = false,
   isCancelling = false,
@@ -314,21 +316,27 @@ export const BookingCard: React.FC<BookingCardProps> = ({
               const canJoin = checkBookingSessionJoinable(booking);
               return (
                 <>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    size="sm"
-                    disabled={!canJoin}
-                    onClick={() => canJoin && onJoinRoom?.(booking.id)}
-                    className={`rounded-lg font-medium text-xs py-1.5 px-3 flex items-center gap-1.5 bg-primary-700 hover:bg-primary-800 text-white ${
-                      !canJoin
-                        ? 'opacity-40 cursor-not-allowed pointer-events-none'
-                        : 'cursor-pointer'
-                    }`}
-                  >
-                    <Video className="w-3.5 h-3.5" />
-                    <span>Vào phòng học</span>
-                  </Button>
+                  {canJoin ? (
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="sm"
+                      onClick={() => onJoinRoom?.(booking.id)}
+                      className="rounded-lg font-bold text-xs py-1.5 px-3 flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer shadow-xs animate-pulse"
+                    >
+                      <Video className="w-3.5 h-3.5" />
+                      <span>Vào phòng ngay</span>
+                    </Button>
+                  ) : (
+                    <div
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-800 font-semibold text-xs border border-amber-200/80 select-none"
+                      title="Phòng học sẽ tự động mở trước giờ bắt đầu 10 phút"
+                    >
+                      <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <span>Chưa đến giờ</span>
+                      <span className="text-[10px] text-amber-600/80 font-normal hidden sm:inline">(Mở trước 10p)</span>
+                    </div>
+                  )}
 
                   <Button
                     type="button"
@@ -368,24 +376,29 @@ export const BookingCard: React.FC<BookingCardProps> = ({
                 >
                   Tin nhắn
                 </Button>
-                {/* Chỉ Học viên mới được đánh giá Người dạy */}
-                {!isMentor && (
-                  isRated ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 font-medium text-xs select-none">
-                      <Check className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Đã đánh giá</span>
-                    </span>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onRate?.(booking)}
-                      className="rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-medium text-xs py-1.5 px-3 cursor-pointer"
-                    >
-                      Đánh giá
-                    </Button>
-                  )
+
+                {isRated ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onViewRating?.(booking)}
+                    className="rounded-lg bg-amber-50/70 hover:bg-amber-100/80 border border-amber-200 text-amber-800 font-semibold text-xs py-1.5 px-3 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  >
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <span>Xem đánh giá</span>
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onRate?.(booking)}
+                    className="rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs py-1.5 px-3 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  >
+                    <Star className="w-3.5 h-3.5 fill-white text-white" />
+                    <span>Đánh giá</span>
+                  </Button>
                 )}
               </>
             )}

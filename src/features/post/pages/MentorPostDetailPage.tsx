@@ -121,7 +121,7 @@ export const MentorPostDetailPage: React.FC = () => {
       );
 
       setBookingModal(null);
-      navigate('/manage/bookings');
+      navigate('/manage/bookings?role=LEARNING&tab=PENDING');
     } catch (err: unknown) {
       const msg =
         (err as { data?: { message?: string } })?.data?.message ||

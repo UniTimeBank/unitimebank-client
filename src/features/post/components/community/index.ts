@@ -17,3 +17,4 @@ export * from './GroupPostComments';
 export * from './GroupSidebarInfo';
 export * from './TransferOwnershipModal';
 export * from './DisbandGroupModal';
+export * from './ManageGroupMembersModal';

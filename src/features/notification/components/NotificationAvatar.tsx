@@ -10,6 +10,7 @@ import {
   FileText,
   Bell,
   AlarmClock,
+  Users,
 } from 'lucide-react';
 import type { NotificationItem } from '../types';
 import LogoImage from '@/assets/images/Logo.png';
@@ -51,6 +52,29 @@ export const NotificationAvatar: React.FC<NotificationAvatarProps> = ({ item }) 
     return (
       <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
         {initial}
+      </div>
+    );
+  }
+
+  // 1b. Group Sessions / Group Study Rooms (Lớp học nhóm, Phòng học nhóm)
+  const titleLower = (notif?.title || '').toLowerCase();
+  const bodyLower = (notif?.body || '').toLowerCase();
+  const isGroupSession =
+    kind.includes('GROUP') ||
+    kind.includes('ROOM') ||
+    sourceEvent.includes('GROUP') ||
+    sourceEvent.includes('ROOM') ||
+    titleLower.includes('phòng học nhóm') ||
+    titleLower.includes('lớp học nhóm') ||
+    titleLower.includes('học nhóm') ||
+    bodyLower.includes('phòng học nhóm') ||
+    bodyLower.includes('lớp học nhóm') ||
+    bodyLower.includes('học nhóm');
+
+  if (isGroupSession) {
+    return (
+      <div className="w-8 h-8 rounded-full bg-primary-50 border border-primary-200 text-primary-600 flex items-center justify-center shrink-0 mt-0.5">
+        <Users className="w-4 h-4" />
       </div>
     );
   }

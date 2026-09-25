@@ -5,8 +5,7 @@ import { Modal, Button } from '@/shared/components/ui';
 import { PostSessionRatingModal } from '@/features/moderation';
 import { useGetMyRatedSessionsQuery } from '@/core/api/moderation';
 
-interface SessionEndedModalProps {
-  isOpen: boolean;
+export interface SessionEndedData {
   creditsTransferred?: number;
   durationFormatted?: string;
   isHost?: boolean;
@@ -21,6 +20,11 @@ interface SessionEndedModalProps {
   redirectUrl?: string;
 }
 
+export interface SessionEndedModalProps extends SessionEndedData {
+  isOpen: boolean;
+  onClose?: () => void;
+}
+
 const STAR_TOOLTIPS: Record<number, string> = {
   1: 'Rất không hài lòng',
   2: 'Chưa hài lòng',
@@ -31,6 +35,7 @@ const STAR_TOOLTIPS: Record<number, string> = {
 
 export const SessionEndedModal: React.FC<SessionEndedModalProps> = ({
   isOpen,
+  onClose,
   creditsTransferred = 0,
   durationFormatted = '00:00',
   isHost = false,
@@ -81,7 +86,18 @@ export const SessionEndedModal: React.FC<SessionEndedModalProps> = ({
     setIsRatingOpen(true);
   };
 
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      navigate(targetExploreUrl);
+    }
+  };
+
   const handleNavigateExplore = () => {
+    if (onClose) {
+      onClose();
+    }
     navigate(targetExploreUrl);
   };
 
@@ -91,7 +107,7 @@ export const SessionEndedModal: React.FC<SessionEndedModalProps> = ({
     <>
       <Modal
         isOpen={isOpen}
-        onClose={handleNavigateExplore}
+        onClose={handleClose}
         size="md"
         title={
           <div className="flex items-center gap-2">

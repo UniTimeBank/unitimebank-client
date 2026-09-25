@@ -46,7 +46,7 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
     let q = curQ;
     for (let i = 0; i < 8; i++) {
       const val = `${y}-Q${q}`;
-      const label = i === 0 ? `Quý ${q}/${y} (Hiện tại)` : `Quý ${q}/${y}`;
+      const label =`Quý ${q}/${y}`;
       options.push({ value: val, label });
       q--;
       if (q === 0) {
@@ -64,7 +64,7 @@ export const LeaderboardHeaderBanner: React.FC<LeaderboardHeaderBannerProps> = (
     for (let i = 0; i < 5; i++) {
       const y = curYear - i;
       const val = `${y}`;
-      const label = i === 0 ? `Năm ${y} (Hiện tại)` : `Năm ${y}`;
+      const label = `Năm ${y}`;
       options.push({ value: val, label });
     }
     return options;

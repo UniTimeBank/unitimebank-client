@@ -12,4 +12,5 @@ export * from './useGroupPosts';
 export * from './useGroupComments';
 export * from './useCreateGroupForm';
 export * from './useCreateGroupPostForm';
+export * from './useCommunityRealtime';
 

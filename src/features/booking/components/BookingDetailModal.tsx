@@ -9,6 +9,7 @@ import {
   Video,
   FileText,
   AlertTriangle,
+  Star,
 } from 'lucide-react';
 import { Modal, Button } from '@/shared/components/ui';
 import { BookingStatus, type BookingItem } from '@/features/management/types';
@@ -25,10 +26,11 @@ export interface BookingDetailModalProps {
   onJoinRoom?: (bookingId: string) => void;
   onOpenCancel?: (bookingId: string) => void;
   onAccept?: (bookingId: string) => void;
-
   onReject?: (bookingId: string) => void;
   isAccepting?: boolean;
   isRejecting?: boolean;
+  isRated?: boolean;
+  onViewRating?: (booking: BookingItem) => void;
 }
 
 export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
@@ -43,6 +45,8 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
   onReject,
   isAccepting = false,
   isRejecting = false,
+  isRated = false,
+  onViewRating,
 }) => {
   const [isRatingOpen, setIsRatingOpen] = React.useState(false);
   const [isReportOpen, setIsReportOpen] = React.useState(false);
@@ -251,15 +255,30 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
 
           {booking.status === BookingStatus.COMPLETED && (
             <>
-              {!isMentor && (
+              {isRated ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  onClick={() => {
+                    onClose();
+                    onViewRating?.(booking);
+                  }}
+                  className="rounded-xl border-amber-200 bg-amber-50/70 hover:bg-amber-100/80 text-amber-800 font-bold text-xs px-4 shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  <span>Xem đánh giá</span>
+                </Button>
+              ) : (
                 <Button
                   type="button"
                   variant="primary"
                   size="md"
                   onClick={() => setIsRatingOpen(true)}
-                  className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-4 shadow-xs"
+                  className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-4 shadow-xs flex items-center gap-1.5 cursor-pointer"
                 >
-                  ⭐ Đánh giá buổi học
+                  <Star className="w-3.5 h-3.5 fill-white text-white" />
+                  <span>Đánh giá buổi học</span>
                 </Button>
               )}
               <Button
@@ -326,26 +345,30 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
                   </Button>
                 )}
 
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="md"
-                  disabled={!canJoin}
-                  onClick={() => {
-                    if (canJoin) {
+                {canJoin ? (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="md"
+                    onClick={() => {
                       onClose();
                       onJoinRoom?.(booking.id);
-                    }
-                  }}
-                  className={`rounded-xl font-bold text-xs px-5 shadow-xs bg-primary-700 hover:bg-primary-800 text-white ${
-                    !canJoin
-                      ? 'opacity-40 cursor-not-allowed pointer-events-none'
-                      : 'cursor-pointer'
-                  }`}
-                >
-                  <Video className="w-3.5 h-3.5" />
-                  <span>Vào phòng học</span>
-                </Button>
+                    }}
+                    className="rounded-xl font-bold text-xs px-5 shadow-xs bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer animate-pulse"
+                  >
+                    <Video className="w-3.5 h-3.5" />
+                    <span>Vào phòng ngay</span>
+                  </Button>
+                ) : (
+                  <div
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 text-amber-800 font-semibold text-xs border border-amber-200/80 select-none"
+                    title="Phòng học sẽ tự động mở trước giờ bắt đầu 10 phút"
+                  >
+                    <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>Chưa đến giờ</span>
+                    <span className="text-[11px] text-amber-600/80 font-normal">(Mở trước 10p)</span>
+                  </div>
+                )}
               </>
             );
           })()}
@@ -358,9 +381,18 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
       isOpen={isRatingOpen}
       onClose={() => setIsRatingOpen(false)}
       bookingId={booking.id}
-      mentorId={booking.mentorId}
-      mentorName={booking.mentorName}
-      mentorAvatar={booking.mentorAvatar}
+      mentorId={isMentor ? booking.learnerId : booking.mentorId}
+      mentorName={
+        isMentor
+          ? booking.learnerName && booking.learnerName !== 'Thành viên'
+            ? booking.learnerName
+            : 'Học viên'
+          : booking.mentorName && booking.mentorName !== 'Thành viên'
+          ? booking.mentorName
+          : 'Người hướng dẫn'
+      }
+      mentorAvatar={isMentor ? booking.learnerAvatar : booking.mentorAvatar}
+      partnerRole={isMentor ? 'Học viên' : 'Người hướng dẫn'}
       onSuccess={() => {
         setIsRatingOpen(false);
       }}

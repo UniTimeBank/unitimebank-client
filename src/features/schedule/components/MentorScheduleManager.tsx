@@ -17,7 +17,9 @@ export const MentorScheduleManager: React.FC = () => {
   });
 
   const confirmedCount = (bookingsData?.items || []).filter(
-    (b) => b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.STARTED,
+    (b) =>
+      (b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.STARTED) &&
+      new Date(b.scheduledEnd).getTime() >= Date.now(),
   ).length;
 
   const {

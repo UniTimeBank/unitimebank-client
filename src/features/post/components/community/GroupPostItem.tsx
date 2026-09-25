@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Heart,
   MessageSquare,
@@ -62,17 +63,29 @@ export const GroupPostItem: React.FC<GroupPostItemProps> = ({
       {/* Post Author Info */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <img
-            src={
-              post.authorAvatar ||
-              'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop'
-            }
-            alt={post.authorName}
-            className="w-10 h-10 rounded-full object-cover border border-gray-200"
-          />
+          <Link
+            to={`/profile/${post.authorId}`}
+            className="shrink-0 group/avatar cursor-pointer"
+            title={`Xem hồ sơ của ${post.authorName}`}
+          >
+            <img
+              src={
+                post.authorAvatar ||
+                'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop'
+              }
+              alt={post.authorName}
+              className="w-10 h-10 rounded-full object-cover border border-gray-200 group-hover/avatar:ring-2 group-hover/avatar:ring-primary-400 transition-all shadow-2xs"
+            />
+          </Link>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-bold text-gray-900">{post.authorName}</h4>
+              <Link
+                to={`/profile/${post.authorId}`}
+                className="text-sm font-bold text-gray-900 hover:text-primary-600 hover:underline transition-colors cursor-pointer"
+                title={`Xem hồ sơ của ${post.authorName}`}
+              >
+                {post.authorName}
+              </Link>
               <span
                 className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${tagInfo.bg} ${tagInfo.text} ${tagInfo.border}`}
               >

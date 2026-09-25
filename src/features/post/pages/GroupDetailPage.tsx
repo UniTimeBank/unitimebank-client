@@ -1,7 +1,12 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, HelpCircle, MessageSquare } from 'lucide-react';
-import { useGroupDetail, useGroupPosts, useCreateGroupPostForm } from '@/features/post/hooks';
+import {
+  useGroupDetail,
+  useGroupPosts,
+  useCreateGroupPostForm,
+  useCommunityRealtime,
+} from '@/features/post/hooks';
 import {
   GroupDetailHeader,
   GroupPostCreator,
@@ -9,8 +14,8 @@ import {
   GroupPostFilterTabs,
   GroupPostItem,
   GroupSidebarInfo,
-  TransferOwnershipModal,
   DisbandGroupModal,
+  ManageGroupMembersModal,
 } from '@/features/post/components/community';
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentUser } from '@/core/store';
@@ -20,7 +25,7 @@ export const GroupDetailPage: React.FC = () => {
   const authUser = useAppSelector(selectCurrentUser);
   const currentUserId = authUser?.id || authUser?._id;
 
-  const [isTransferModalOpen, setIsTransferModalOpen] = React.useState(false);
+  const [isManageMembersModalOpen, setIsManageMembersModalOpen] = React.useState(false);
   const [isDisbandModalOpen, setIsDisbandModalOpen] = React.useState(false);
 
   // 1. Group Info & Membership Hook
@@ -35,7 +40,10 @@ export const GroupDetailPage: React.FC = () => {
 
   const isGroupOwner = Boolean(currentUserId && group?.creatorId === currentUserId);
 
-  // 2. Group Posts & Feed Actions Hook
+  // 2. Realtime WebSocket Synchronization (Live Posts, Comments, Likes, Membership)
+  useCommunityRealtime(groupId, group?.isJoined, currentUserId);
+
+  // 3. Group Posts & Feed Actions Hook
   const {
     posts,
     filteredPosts,
@@ -47,7 +55,7 @@ export const GroupDetailPage: React.FC = () => {
     handleDeletePost,
   } = useGroupPosts(groupId, group?.isJoined);
 
-  // 3. Create Post Modal Form Hook
+  // 4. Create Post Modal Form Hook
   const postForm = useCreateGroupPostForm(groupId, group?.isJoined);
 
   if (isGroupLoading) {
@@ -101,7 +109,7 @@ export const GroupDetailPage: React.FC = () => {
         isMembershipProcessing={isMembershipProcessing}
         onToggleMembership={handleToggleMembership}
         onShareGroup={handleShareGroup}
-        onOpenTransferModal={() => setIsTransferModalOpen(true)}
+        onOpenManageMembersModal={() => setIsManageMembersModalOpen(true)}
         onOpenDisbandModal={() => setIsDisbandModalOpen(true)}
       />
 
@@ -168,11 +176,11 @@ export const GroupDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Transfer Ownership Modal */}
+      {/* Manage Group Members Modal */}
       {isGroupOwner && (
-        <TransferOwnershipModal
-          isOpen={isTransferModalOpen}
-          onClose={() => setIsTransferModalOpen(false)}
+        <ManageGroupMembersModal
+          isOpen={isManageMembersModalOpen}
+          onClose={() => setIsManageMembersModalOpen(false)}
           groupId={group._id}
           groupName={group.name}
           currentOwnerId={currentUserId || ''}
@@ -191,3 +199,4 @@ export const GroupDetailPage: React.FC = () => {
     </div>
   );
 };
+

@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Send, Trash2, Reply } from 'lucide-react';
 import { useGroupComments } from '@/features/post/hooks/useGroupComments';
 import { formatGroupPostDate } from '@/shared/utils';
@@ -62,19 +63,29 @@ export const GroupPostComments: React.FC<GroupPostCommentsProps> = ({
               <div key={rootComment._id} className="space-y-2">
                 {/* Level 1: Root Comment */}
                 <div className="flex items-start gap-2.5 group">
-                  <img
-                    src={
-                      rootComment.authorAvatar ||
-                      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop'
-                    }
-                    alt={rootComment.authorName}
-                    className="w-8 h-8 rounded-full object-cover border border-gray-200 mt-0.5 shrink-0 shadow-2xs"
-                  />
+                  <Link
+                    to={`/profile/${rootComment.authorId}`}
+                    className="shrink-0 group/avatar cursor-pointer"
+                    title={`Xem hồ sơ của ${rootComment.authorName}`}
+                  >
+                    <img
+                      src={
+                        rootComment.authorAvatar ||
+                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop'
+                      }
+                      alt={rootComment.authorName}
+                      className="w-8 h-8 rounded-full object-cover border border-gray-200 mt-0.5 shrink-0 shadow-2xs group-hover/avatar:ring-2 group-hover/avatar:ring-primary-400 transition-all"
+                    />
+                  </Link>
                   <div className="flex-1 min-w-0">
                     <div className="bg-gray-50/90 hover:bg-gray-50 p-3 rounded-2xl border border-gray-100/90 transition-colors">
-                      <h5 className="text-xs font-bold text-gray-900 leading-none truncate">
+                      <Link
+                        to={`/profile/${rootComment.authorId}`}
+                        className="text-xs font-bold text-gray-900 leading-none truncate hover:text-primary-600 hover:underline inline-block cursor-pointer"
+                        title={`Xem hồ sơ của ${rootComment.authorName}`}
+                      >
                         {rootComment.authorName}
-                      </h5>
+                      </Link>
                       <p className="text-xs text-gray-800 mt-1.5 leading-relaxed font-normal whitespace-pre-line break-words">
                         {rootComment.content}
                       </p>
@@ -119,19 +130,29 @@ export const GroupPostComments: React.FC<GroupPostCommentsProps> = ({
 
                       return (
                         <div key={reply._id} className="flex items-start gap-2.5 group">
-                          <img
-                            src={
-                              reply.authorAvatar ||
-                              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop'
-                            }
-                            alt={reply.authorName}
-                            className="w-7 h-7 rounded-full object-cover border border-gray-200 mt-0.5 shrink-0 shadow-2xs"
-                          />
+                          <Link
+                            to={`/profile/${reply.authorId}`}
+                            className="shrink-0 group/avatar cursor-pointer"
+                            title={`Xem hồ sơ của ${reply.authorName}`}
+                          >
+                            <img
+                              src={
+                                reply.authorAvatar ||
+                                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop'
+                              }
+                              alt={reply.authorName}
+                              className="w-7 h-7 rounded-full object-cover border border-gray-200 mt-0.5 shrink-0 shadow-2xs group-hover/avatar:ring-2 group-hover/avatar:ring-primary-400 transition-all"
+                            />
+                          </Link>
                           <div className="flex-1 min-w-0">
                             <div className="bg-gray-50/70 hover:bg-gray-50 p-2.5 rounded-2xl border border-gray-100/80 transition-colors">
-                              <h6 className="text-xs font-bold text-gray-900 leading-none truncate">
+                              <Link
+                                to={`/profile/${reply.authorId}`}
+                                className="text-xs font-bold text-gray-900 leading-none truncate hover:text-primary-600 hover:underline inline-block cursor-pointer"
+                                title={`Xem hồ sơ của ${reply.authorName}`}
+                              >
                                 {reply.authorName}
-                              </h6>
+                              </Link>
                               <p className="text-xs text-gray-800 mt-1 leading-relaxed font-normal whitespace-pre-line break-words">
                                 {reply.replyToUserName && (
                                   <span className="font-bold text-primary-600 mr-1.5">

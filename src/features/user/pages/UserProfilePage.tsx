@@ -92,6 +92,18 @@ export const UserProfilePage: React.FC = () => {
     }
   }, [location.state]);
 
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get('tab') === 'reviews') {
+      setTimeout(() => {
+        const reviewsElem = document.getElementById('reviews-section');
+        if (reviewsElem) {
+          reviewsElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 350);
+    }
+  }, [location.search]);
+
   const userName = isOtherUser
     ? targetPublicProfile?.displayName || 'Thành viên UniTime'
     : profile?.displayName || 'Sinh viên UniTime';
@@ -474,7 +486,14 @@ export const UserProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* 4. SỔ CÁI GIAO DỊCH VÍ CREDIT */}
+          {/* 4. ĐÁNH GIÁ & PHẢN HỒI CHẤT LƯỢNG */}
+          <PeerReviewsSection
+            userId={profile?.userId || profile?.id}
+            persona="MENTOR"
+            isOwnProfile={true}
+          />
+
+          {/* 5. SỔ CÁI GIAO DỊCH VÍ CREDIT */}
           <CreditLedgerTable ledgerTransactions={ledgerTransactions} />
         </div>
       )}
@@ -538,6 +557,7 @@ export const UserProfilePage: React.FC = () => {
               <PeerReviewsSection
                 userId={userId || profile?.userId || profile?.id}
                 persona={guestPersona}
+                isOwnProfile={!isOtherUser}
               />
             </div>
 

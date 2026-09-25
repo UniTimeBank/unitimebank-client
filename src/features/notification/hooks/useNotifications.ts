@@ -107,6 +107,55 @@ export const useNotifications = () => {
       return;
     }
 
+    // 1b. Ratings & Reviews (Đánh giá sau buổi học):
+    if (
+      kind === 'RATING' ||
+      kind.includes('RATING') ||
+      kind.includes('REVIEW') ||
+      sourceEvent.includes('RATING') ||
+      notif?.title?.includes('Đánh giá') ||
+      notif?.body?.toLowerCase().includes('đánh giá')
+    ) {
+      navigate('/profile?tab=reviews');
+      return;
+    }
+
+    // 1c. Group Sessions / Group Study Rooms (Lớp học nhóm, Phòng học nhóm):
+    const titleLower = (notif?.title || '').toLowerCase();
+    const bodyLower = (notif?.body || '').toLowerCase();
+    const isGroupSession =
+      kind.includes('GROUP') ||
+      kind.includes('ROOM') ||
+      sourceEvent.includes('GROUP') ||
+      sourceEvent.includes('ROOM') ||
+      titleLower.includes('phòng học nhóm') ||
+      titleLower.includes('lớp học nhóm') ||
+      titleLower.includes('học nhóm') ||
+      bodyLower.includes('phòng học nhóm') ||
+      bodyLower.includes('lớp học nhóm') ||
+      bodyLower.includes('học nhóm');
+
+    if (isGroupSession) {
+      const isHistoryOrClosed =
+        kind.includes('CLOSED') ||
+        kind.includes('COMPLETED') ||
+        kind.includes('ENDED') ||
+        kind.includes('TIMEOUT') ||
+        sourceEvent.includes('CLOSED') ||
+        sourceEvent.includes('COMPLETED') ||
+        sourceEvent.includes('ENDED') ||
+        sourceEvent.includes('TIMEOUT') ||
+        titleLower.includes('đã đóng') ||
+        titleLower.includes('kết thúc') ||
+        bodyLower.includes('đã đóng') ||
+        bodyLower.includes('kết thúc') ||
+        bodyLower.includes('vắng mặt');
+
+      const targetStatus = isHistoryOrClosed ? 'HISTORY' : 'ACTIVE';
+      navigate(`/manage/group-sessions?tab=${targetStatus}&role=HOST`);
+      return;
+    }
+
     // 2. Booking events (Yêu cầu đặt lịch, chấp nhận, hủy, từ chối, hoàn tất...):
     if (kind.includes('BOOKING') || sourceEvent.includes('BOOKING')) {
       let targetTab: 'PENDING' | 'UPCOMING' | 'HISTORY' = 'PENDING';

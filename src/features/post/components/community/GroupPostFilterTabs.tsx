@@ -22,13 +22,14 @@ export const GroupPostFilterTabs: React.FC<GroupPostFilterTabsProps> = ({
   totalPostsCount,
 }) => {
   return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-1">
+    <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-none">
       <button
+        type="button"
         onClick={() => onFilterTagSelect('ALL')}
-        className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors duration-150 cursor-pointer border ${
           filterTag === 'ALL'
-            ? 'bg-gray-900 text-white shadow-2xs'
-            : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-100'
+            ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
+            : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200/80 shadow-2xs'
         }`}
       >
         Tất cả bài viết ({totalPostsCount})
@@ -40,11 +41,12 @@ export const GroupPostFilterTabs: React.FC<GroupPostFilterTabsProps> = ({
         return (
           <button
             key={tagKey}
+            type="button"
             onClick={() => onFilterTagSelect(tagKey)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-colors duration-150 cursor-pointer flex items-center gap-1.5 border ${
               isSelected
-                ? 'bg-primary-600 text-white shadow-2xs'
-                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-100'
+                ? 'bg-primary-600 text-white border-primary-600 shadow-xs'
+                : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200/80 shadow-2xs'
             }`}
           >
             {TAG_ICONS[tagKey]}

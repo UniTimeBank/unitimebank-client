@@ -21,7 +21,6 @@ import {
   DeviceSettingsModal,
   AudioTrackRenderer,
   SessionRecordingsModal,
-  SessionEndedModal,
   PreJoinLobby,
 } from '../components';
 import { ReportViolationModal } from '@/features/moderation';
@@ -249,7 +248,6 @@ export const OneOnOneRoomPage: React.FC = () => {
   // 6. Auto-finish and exit when remaining time expires
   const [completeBookingMutation] = useCompleteBookingMutation();
   const [hasAutoEnded, setHasAutoEnded] = useState(false);
-  const [isEndedModalOpen, setIsEndedModalOpen] = useState(false);
 
   useEffect(() => {
     if (bookingDetail?.scheduledEnd && !hasAutoEnded && !isJoining) {
@@ -264,10 +262,36 @@ export const OneOnOneRoomPage: React.FC = () => {
             });
         }
         disconnect();
-        setIsEndedModalOpen(true);
+        navigate('/manage/bookings', {
+          replace: true,
+          state: {
+            sessionEnded: {
+              creditsTransferred: bookingDetail?.totalCreditEscrowed || 0,
+              durationFormatted: `${bookingDetail?.durationMinutes || 60} phút`,
+              isHost: isMentor,
+              bookingId,
+              sessionType: 'ONE_ON_ONE',
+              mentorId: bookingDetail?.mentorId,
+              mentorName: bookingDetail?.mentorName || partnerName,
+              mentorAvatar: bookingDetail?.mentorAvatar || partnerAvatar,
+            },
+          },
+        });
       }
     }
-  }, [now, bookingDetail, hasAutoEnded, isJoining, disconnect, bookingId, completeBookingMutation]);
+  }, [
+    now,
+    bookingDetail,
+    hasAutoEnded,
+    isJoining,
+    disconnect,
+    bookingId,
+    completeBookingMutation,
+    navigate,
+    isMentor,
+    partnerName,
+    partnerAvatar,
+  ]);
 
   // 7. Safe Leave Room handler with Shared Modal
   const handleLeaveRoom = () => {
@@ -277,7 +301,21 @@ export const OneOnOneRoomPage: React.FC = () => {
   const handleConfirmLeave = () => {
     setIsLeaveModalOpen(false);
     disconnect();
-    navigate('/manage/bookings');
+    navigate('/manage/bookings', {
+      replace: true,
+      state: {
+        sessionEnded: {
+          creditsTransferred: bookingDetail?.totalCreditEscrowed || 0,
+          durationFormatted: `${elapsedMinutes} phút`,
+          isHost: isMentor,
+          bookingId,
+          sessionType: 'ONE_ON_ONE',
+          mentorId: bookingDetail?.mentorId,
+          mentorName: bookingDetail?.mentorName || partnerName,
+          mentorAvatar: bookingDetail?.mentorAvatar || partnerAvatar,
+        },
+      },
+    });
   };
 
   // ════════════════════════════════════════════════════════════
@@ -521,19 +559,6 @@ export const OneOnOneRoomPage: React.FC = () => {
           setReportInitialFiles([clip.file]);
           setIsReportOpen(true);
         }}
-      />
-      {/* 8. Session Ended Modal (Rating & Result summary) */}
-      <SessionEndedModal
-        isOpen={isEndedModalOpen}
-        creditsTransferred={bookingDetail?.totalCreditEscrowed || 0}
-        durationFormatted={`${bookingDetail?.durationMinutes || 60} phút`}
-        isHost={isMentor}
-        bookingId={bookingId}
-        sessionType="ONE_ON_ONE"
-        mentorId={bookingDetail?.mentorId}
-        mentorName={bookingDetail?.mentorName || partnerName}
-        mentorAvatar={bookingDetail?.mentorAvatar || partnerAvatar}
-        redirectUrl="/explore"
       />
     </div>
   );

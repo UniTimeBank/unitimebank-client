@@ -23,17 +23,24 @@ export const useManageBookings = () => {
   const authUser = useAppSelector(selectCurrentUser);
   const currentUserId = profile?.userId || (profile as any)?.id || authUser?.id || (authUser as any)?.userId;
 
-  const urlRole = searchParams.get('role')?.toUpperCase() as BookingRoleType | undefined;
-  const urlTab = searchParams.get('tab')?.toUpperCase() as BookingTabType | undefined;
+  const rawRole = searchParams.get('role')?.toUpperCase();
+  const parsedRole: BookingRoleType | undefined =
+    rawRole === 'LEARNING' || rawRole === 'LEARNER' || rawRole === 'AS_LEARNER'
+      ? 'LEARNING'
+      : rawRole === 'TEACHING' || rawRole === 'MENTOR' || rawRole === 'AS_MENTOR' || rawRole === 'HOST'
+      ? 'TEACHING'
+      : undefined;
+
+  const rawTab = searchParams.get('tab')?.toUpperCase();
+  const parsedTab: BookingTabType | undefined =
+    rawTab === 'PENDING' || rawTab === 'UPCOMING' || rawTab === 'HISTORY'
+      ? (rawTab as BookingTabType)
+      : undefined;
+
   const urlBookingId = searchParams.get('bookingId');
 
-  const [roleTab, setRoleTab] = useState<BookingRoleType>(
-    urlRole && ['TEACHING', 'LEARNING'].includes(urlRole) ? urlRole : 'TEACHING',
-  );
-
-  const [activeTab, setActiveTab] = useState<BookingTabType>(
-    urlTab && ['PENDING', 'UPCOMING', 'HISTORY'].includes(urlTab) ? urlTab : 'PENDING',
-  );
+  const [roleTab, setRoleTab] = useState<BookingRoleType>(parsedRole || 'TEACHING');
+  const [activeTab, setActiveTab] = useState<BookingTabType>(parsedTab || 'PENDING');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Cancellation Modal State
@@ -45,16 +52,16 @@ export const useManageBookings = () => {
 
   // Sync tab with URL parameter
   useEffect(() => {
-    if (urlTab && ['PENDING', 'UPCOMING', 'HISTORY'].includes(urlTab)) {
-      setActiveTab(urlTab);
+    if (parsedTab) {
+      setActiveTab(parsedTab);
     }
-  }, [urlTab]);
+  }, [parsedTab]);
 
   useEffect(() => {
-    if (urlRole && ['TEACHING', 'LEARNING'].includes(urlRole)) {
-      setRoleTab(urlRole);
+    if (parsedRole) {
+      setRoleTab(parsedRole);
     }
-  }, [urlRole]);
+  }, [parsedRole]);
 
   // RTK Query API with Smart Targeted Polling (10s) & Window Focus Sync
   const {
@@ -102,20 +109,35 @@ export const useManageBookings = () => {
   }, [scopedBookings]);
 
   const upcomingBookings = useMemo(() => {
-    return scopedBookings.filter(
-      (b) => b.status === BookingStatus.CONFIRMED || b.status === BookingStatus.STARTED,
-    );
+    const now = Date.now();
+    return scopedBookings.filter((b) => {
+      if (b.status === BookingStatus.STARTED) return true;
+      if (b.status === BookingStatus.CONFIRMED) {
+        const endMs = new Date(b.scheduledEnd).getTime();
+        return isNaN(endMs) || endMs >= now;
+      }
+      return false;
+    });
   }, [scopedBookings]);
 
   const historyBookings = useMemo(() => {
-    return scopedBookings.filter(
-      (b) =>
+    const now = Date.now();
+    return scopedBookings.filter((b) => {
+      if (
         b.status === BookingStatus.COMPLETED ||
         b.status === BookingStatus.CANCELLED ||
         b.status === BookingStatus.REJECTED ||
         b.status === BookingStatus.NO_SHOW ||
-        b.status === BookingStatus.EXPIRED,
-    );
+        b.status === BookingStatus.EXPIRED
+      ) {
+        return true;
+      }
+      if (b.status === BookingStatus.CONFIRMED) {
+        const endMs = new Date(b.scheduledEnd).getTime();
+        return !isNaN(endMs) && endMs < now;
+      }
+      return false;
+    });
   }, [scopedBookings]);
 
   // Auto-focus booking from URL query param

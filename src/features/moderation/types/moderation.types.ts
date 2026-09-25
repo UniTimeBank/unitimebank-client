@@ -1,9 +1,13 @@
 export interface RatingItem {
   id: string;
-  bookingId: string;
+  bookingId?: string;
+  roomId?: string;
+  sessionType?: 'ONE_ON_ONE' | 'GROUP' | string;
   sessionId?: string;
-  learnerId: string;
-  mentorId: string;
+  learnerId?: string;
+  mentorId?: string;
+  mentorName?: string;
+  mentorAvatar?: string;
   stars: number;
   comment?: string;
   submittedAt: string;
@@ -17,6 +21,8 @@ export interface CreateRatingPayload {
   sessionType?: 'ONE_ON_ONE' | 'GROUP';
   sessionId?: string;
   mentorId: string;
+  mentorName?: string;
+  mentorAvatar?: string;
   stars: number;
   comment?: string;
   reviewerName?: string;

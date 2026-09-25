@@ -1,24 +1,37 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Plus, CalendarCheck, Search, X, GraduationCap, BookOpen } from 'lucide-react';
 import { BookingCard, CancelBookingModal } from '../components';
 import { BookingDetailModal } from '@/features/booking';
-import { PostSessionRatingModal } from '@/features/moderation';
-import { useGetMyRatedSessionsQuery } from '@/core/api/moderation';
+import { PostSessionRatingModal, ViewRatingModal } from '@/features/moderation';
+import type { RatingItem } from '@/features/moderation/types';
+import { SessionEndedModal, type SessionEndedData } from '@/features/session';
+import { useGetMyRatedSessionsQuery, useGetReviewsByUserQuery } from '@/core/api/moderation';
 import { Button, Tabs, Pagination } from '@/shared/components/ui';
 import { useManageBookings, type BookingRoleType, type BookingTabType } from '../hooks';
 import type { BookingItem } from '../types';
 
 export const BookingManagementPage: React.FC = () => {
+  const location = useLocation();
   const [ratingBooking, setRatingBooking] = useState<BookingItem | null>(null);
+  const [viewingRatingData, setViewingRatingData] = useState<{
+    rating: RatingItem;
+    mode: 'GIVEN' | 'RECEIVED';
+  } | null>(null);
+  const [sessionEndedData, setSessionEndedData] = useState<SessionEndedData | null>(
+    (location.state as any)?.sessionEnded || null,
+  );
 
-  // Lấy danh sách các buổi học đã được người dùng gửi đánh giá
-  const { data: myRatedSessions = [] } = useGetMyRatedSessionsQuery(undefined, {
-    refetchOnFocus: true,
-  });
+  useEffect(() => {
+    if ((location.state as any)?.sessionEnded) {
+      setSessionEndedData((location.state as any).sessionEnded);
+    }
+  }, [location.state]);
 
-  const ratedBookingIds = useMemo(() => {
-    return new Set(myRatedSessions.map((r: any) => r.bookingId).filter(Boolean));
-  }, [myRatedSessions]);
+  const handleCloseSessionEnded = () => {
+    setSessionEndedData(null);
+    window.history.replaceState({}, document.title);
+  };
 
   const {
     currentUserId,
@@ -58,6 +71,83 @@ export const BookingManagementPage: React.FC = () => {
     handleJoinRoom,
     navigate,
   } = useManageBookings();
+
+  // Lấy danh sách các buổi học đã được người dùng gửi đánh giá
+  const { data: myRatedSessions = [] } = useGetMyRatedSessionsQuery(undefined, {
+    refetchOnFocus: true,
+  });
+
+  // Lấy danh sách các buổi học/đánh giá mà người dùng nhận được từ đối tác
+  const { data: receivedReviewsData } = useGetReviewsByUserQuery(
+    { userId: currentUserId || '' },
+    { skip: !currentUserId, refetchOnFocus: true },
+  );
+
+  const ratedBookingIds = useMemo(() => {
+    const ids = new Set<string>();
+    myRatedSessions.forEach((r: any) => {
+      if (r.bookingId) ids.add(r.bookingId);
+    });
+    if (receivedReviewsData?.reviews) {
+      receivedReviewsData.reviews.forEach((r: any) => {
+        if (r.bookingId) ids.add(r.bookingId);
+      });
+    }
+    return ids;
+  }, [myRatedSessions, receivedReviewsData]);
+
+  const handleViewRating = (booking: BookingItem) => {
+    const isTeaching =
+      roleTab === 'TEACHING' || (currentUserId ? booking.mentorId === currentUserId : false);
+
+    const foundGiven = myRatedSessions.find((r) => r.bookingId === booking.id);
+    const foundReceived = receivedReviewsData?.reviews?.find((r) => r.bookingId === booking.id);
+    const found = isTeaching ? (foundReceived || foundGiven) : (foundGiven || foundReceived);
+
+    const mentorName =
+      found?.mentorName &&
+      found.mentorName !== 'Người hướng dẫn' &&
+      found.mentorName !== 'Thành viên' &&
+      found.mentorName !== 'Mentor'
+        ? found.mentorName
+        : booking.mentorName || 'Người hướng dẫn';
+    const mentorAvatar = found?.mentorAvatar || booking.mentorAvatar || '';
+    const reviewerName =
+      found?.reviewerName &&
+      found.reviewerName !== 'Học viên' &&
+      found.reviewerName !== 'Thành viên'
+        ? found.reviewerName
+        : booking.learnerName || 'Học viên';
+    const reviewerAvatar = found?.reviewerAvatar || booking.learnerAvatar || '';
+
+    setViewingRatingData({
+      rating: found
+        ? {
+            ...found,
+            learnerId: found.learnerId || booking.learnerId,
+            mentorId: found.mentorId || booking.mentorId,
+            mentorName,
+            mentorAvatar,
+            reviewerName,
+            reviewerAvatar,
+          }
+        : {
+            id: booking.id,
+            bookingId: booking.id,
+            stars: 5,
+            learnerId: booking.learnerId,
+            mentorId: booking.mentorId,
+            mentorName,
+            mentorAvatar,
+            reviewerName,
+            reviewerAvatar,
+            comment: 'Buổi học hoàn thành tốt.',
+            submittedAt: booking.createdAt,
+          },
+      mode: isTeaching ? 'RECEIVED' : 'GIVEN',
+    });
+  };
+
 
   return (
     <div className="bg-white rounded-3xl border border-gray-100 shadow-xs p-6 sm:p-8 relative space-y-6 animate-in fade-in duration-200">
@@ -253,6 +343,7 @@ export const BookingManagementPage: React.FC = () => {
                 onOpenDetail={handleOpenDetail}
                 onJoinRoom={handleJoinRoom}
                 onRate={(booking) => setRatingBooking(booking)}
+                onViewRating={handleViewRating}
                 isAccepting={isAccepting}
                 isRejecting={isRejecting}
                 isCancelling={isCancelling}
@@ -295,14 +386,58 @@ export const BookingManagementPage: React.FC = () => {
           isOpen={Boolean(ratingBooking)}
           onClose={() => setRatingBooking(null)}
           bookingId={ratingBooking.id}
-          mentorId={ratingBooking.mentorId}
-          mentorName={ratingBooking.mentorName}
-          mentorAvatar={ratingBooking.mentorAvatar}
+          mentorId={
+            roleTab === 'TEACHING' || ratingBooking.mentorId === currentUserId
+              ? ratingBooking.learnerId
+              : ratingBooking.mentorId
+          }
+          mentorName={
+            roleTab === 'TEACHING' || ratingBooking.mentorId === currentUserId
+              ? ratingBooking.learnerName && ratingBooking.learnerName !== 'Thành viên'
+                ? ratingBooking.learnerName
+                : 'Học viên'
+              : ratingBooking.mentorName && ratingBooking.mentorName !== 'Thành viên'
+              ? ratingBooking.mentorName
+              : 'Người hướng dẫn'
+          }
+          mentorAvatar={
+            roleTab === 'TEACHING' || ratingBooking.mentorId === currentUserId
+              ? ratingBooking.learnerAvatar
+              : ratingBooking.mentorAvatar
+          }
+          partnerRole={
+            roleTab === 'TEACHING' || ratingBooking.mentorId === currentUserId
+              ? 'Học viên'
+              : 'Người hướng dẫn'
+          }
           onSuccess={() => {
             setRatingBooking(null);
           }}
         />
       )}
+
+      {/* View Rating Detail Modal */}
+      <ViewRatingModal
+        isOpen={Boolean(viewingRatingData)}
+        onClose={() => setViewingRatingData(null)}
+        rating={viewingRatingData?.rating || null}
+        mode={viewingRatingData?.mode || (roleTab === 'TEACHING' ? 'RECEIVED' : 'GIVEN')}
+        fallbackPartnerName={
+          roleTab === 'TEACHING'
+            ? viewingRatingData?.rating?.reviewerName
+            : viewingRatingData?.rating?.mentorName
+        }
+        fallbackPartnerAvatar={
+          roleTab === 'TEACHING'
+            ? viewingRatingData?.rating?.reviewerAvatar
+            : viewingRatingData?.rating?.mentorAvatar
+        }
+        fallbackPartnerId={
+          roleTab === 'TEACHING'
+            ? viewingRatingData?.rating?.learnerId
+            : viewingRatingData?.rating?.mentorId
+        }
+      />
 
       <BookingDetailModal
         booking={detailModalBooking}
@@ -316,7 +451,18 @@ export const BookingManagementPage: React.FC = () => {
         onReject={handleReject}
         isAccepting={isAccepting}
         isRejecting={isRejecting}
+        isRated={detailModalBooking ? ratedBookingIds.has(detailModalBooking.id) : false}
+        onViewRating={handleViewRating}
       />
+
+      {/* Modal Buổi học kết thúc & Đánh giá tự động khi vừa rời/kết thúc phòng */}
+      {sessionEndedData && (
+        <SessionEndedModal
+          isOpen={Boolean(sessionEndedData)}
+          onClose={handleCloseSessionEnded}
+          {...sessionEndedData}
+        />
+      )}
     </div>
   );
 };

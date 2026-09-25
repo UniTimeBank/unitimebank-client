@@ -27,7 +27,6 @@ import {
   InRoomParticipantsPanel,
   WhiteboardModal,
   DeviceSettingsModal,
-  SessionEndedModal,
   GroupEscrowModal,
   PreJoinLobby,
 } from '../components';
@@ -93,7 +92,6 @@ export const GroupRoomPage: React.FC = () => {
 
   // Modals & States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isEndedModalOpen, setIsEndedModalOpen] = useState(false);
   const [isEscrowModalOpen, setIsEscrowModalOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -108,7 +106,6 @@ export const GroupRoomPage: React.FC = () => {
   // Trạng thái hiện diện của Chủ phòng (Host) & Đóng băng phòng
   const [socketHostPresent, setSocketHostPresent] = useState<boolean | null>(null);
   const [hostAbsentSecondsRemaining, setHostAbsentSecondsRemaining] = useState<number>(300);
-  const [roomEndReason, setRoomEndReason] = useState<{ title?: string; description?: string } | null>(null);
   const hostDisconnectedAtRef = useRef<number | null>(null);
 
   // Theo dõi số Credit đóng góp thời gian thực từ các học viên đang có mặt trong phòng
@@ -190,6 +187,12 @@ export const GroupRoomPage: React.FC = () => {
     closeChat,
   } = useInRoomChat(initialMessages || []);
 
+  // Lưu ref giá trị tính phí hiện tại để dùng an toàn trong các callback ngắt kết nối
+  const heartbeatRef = useRef<{ totalCreditsCharged: number; durationFormatted: string }>({
+    totalCreditsCharged: 0,
+    durationFormatted: '00:00',
+  });
+
   const {
     localParticipant,
     remoteParticipants,
@@ -214,7 +217,26 @@ export const GroupRoomPage: React.FC = () => {
     preferredAudioDeviceId: preJoinSettings.audioDeviceId,
     preferredVideoDeviceId: preJoinSettings.videoDeviceId,
     onDisconnected: () => {
-      setIsEndedModalOpen(true);
+      // Khi ngắt kết nối, thoát ra sảnh quản lý lớp học nhóm
+      if (!isHost) {
+        navigate('/manage/group-sessions', {
+          replace: true,
+          state: {
+            sessionEnded: {
+              creditsTransferred: heartbeatRef.current.totalCreditsCharged,
+              isHost: false,
+              roomId: tokenData?.roomId || roomId,
+              sessionType: 'GROUP',
+              mentorId: tokenData?.mentorId,
+              mentorName: tokenData?.mentorName || 'Người hướng dẫn',
+              mentorAvatar: tokenData?.mentorAvatar,
+              durationFormatted: heartbeatRef.current.durationFormatted,
+            },
+          },
+        });
+      } else {
+        navigate('/manage/group-sessions');
+      }
     },
   });
 
@@ -315,12 +337,24 @@ export const GroupRoomPage: React.FC = () => {
       }
     },
     onRoomClosed: (evt) => {
-      setRoomEndReason({
-        title: 'Phòng học đã kết thúc',
-        description: evt.message || 'Phòng học nhóm đã tự động đóng do chủ phòng vắng mặt quá 5 phút.',
-      });
       disconnect();
-      setIsEndedModalOpen(true);
+      navigate('/manage/group-sessions', {
+        replace: true,
+        state: {
+          sessionEnded: {
+            creditsTransferred: heartbeatRef.current.totalCreditsCharged,
+            isHost: false,
+            roomId: tokenData?.roomId || roomId,
+            sessionType: 'GROUP',
+            mentorId: tokenData?.mentorId,
+            mentorName: tokenData?.mentorName || 'Người hướng dẫn',
+            mentorAvatar: tokenData?.mentorAvatar,
+            durationFormatted: heartbeatRef.current.durationFormatted,
+            title: 'Phòng học đã kết thúc',
+            description: evt.message || 'Phòng học nhóm đã tự động đóng do chủ phòng vắng mặt quá 5 phút.',
+          },
+        },
+      });
     },
   });
 
@@ -357,13 +391,25 @@ export const GroupRoomPage: React.FC = () => {
 
         if (remaining <= 0) {
           clearInterval(timer);
-          setRoomEndReason({
-            title: 'Phòng học nhóm đã kết thúc',
-            description:
-              'Chủ phòng (Mentor) đã vắng mặt quá 5 phút. Buổi học đã tự động đóng để đảm bảo quyền lợi và không trừ credit của bạn.',
-          });
           disconnect();
-          setIsEndedModalOpen(true);
+          navigate('/manage/group-sessions', {
+            replace: true,
+            state: {
+              sessionEnded: {
+                creditsTransferred: heartbeatRef.current.totalCreditsCharged,
+                isHost: false,
+                roomId: tokenData?.roomId || roomId,
+                sessionType: 'GROUP',
+                mentorId: tokenData?.mentorId,
+                mentorName: tokenData?.mentorName || 'Người hướng dẫn',
+                mentorAvatar: tokenData?.mentorAvatar,
+                durationFormatted: heartbeatRef.current.durationFormatted,
+                title: 'Phòng học nhóm đã kết thúc',
+                description:
+                  'Chủ phòng (Mentor) đã vắng mặt quá 5 phút. Buổi học đã tự động đóng để đảm bảo quyền lợi và không trừ credit của bạn.',
+              },
+            },
+          });
           return 0;
         }
         return remaining;
@@ -371,7 +417,7 @@ export const GroupRoomPage: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isHost, isHostPresent, disconnect]);
+  }, [isHost, isHostPresent, disconnect, navigate, tokenData, roomId]);
 
   // 7. Session Billing Timer Hook (Optimistic Metering)
   // Khi isHostPresent = false hoặc khi đang ở phòng chờ, đồng hồ ĐÓNG BĂNG, không tăng giây và không trừ credit
@@ -395,6 +441,13 @@ export const GroupRoomPage: React.FC = () => {
     },
   });
 
+  useEffect(() => {
+    heartbeatRef.current = {
+      totalCreditsCharged: heartbeatHelper.totalCreditsCharged,
+      durationFormatted: heartbeatHelper.durationFormatted,
+    };
+  }, [heartbeatHelper.totalCreditsCharged, heartbeatHelper.durationFormatted]);
+
   // 8. Leave Group Call (Learners & Host Temporary Leave)
   const handleConfirmLeave = useCallback(async () => {
     setIsLeaveModalOpen(false);
@@ -407,11 +460,25 @@ export const GroupRoomPage: React.FC = () => {
     }
     disconnect();
     if (!isHost) {
-      setIsEndedModalOpen(true);
+      navigate('/manage/group-sessions', {
+        replace: true,
+        state: {
+          sessionEnded: {
+            creditsTransferred: heartbeatHelper.totalCreditsCharged,
+            isHost: false,
+            roomId: tokenData?.roomId || roomId,
+            sessionType: 'GROUP',
+            mentorId: tokenData?.mentorId,
+            mentorName: tokenData?.mentorName || 'Người hướng dẫn',
+            mentorAvatar: tokenData?.mentorAvatar,
+            durationFormatted: heartbeatHelper.durationFormatted,
+          },
+        },
+      });
     } else {
       navigate('/manage/group-sessions');
     }
-  }, [roomId, leaveGroup, disconnect, navigate, isHost]);
+  }, [roomId, leaveGroup, disconnect, navigate, isHost, heartbeatHelper, tokenData]);
 
   const handleLeaveClick = useCallback(() => {
     if (isHost) {
@@ -437,9 +504,22 @@ export const GroupRoomPage: React.FC = () => {
     } finally {
       setIsCloseModalOpen(false);
       disconnect();
-      navigate('/manage/group-sessions');
+      navigate('/manage/group-sessions', {
+        replace: true,
+        state: {
+          sessionEnded: {
+            creditsTransferred: hostAccumulatedCredits,
+            isHost: true,
+            roomId: tokenData?.roomId || roomId,
+            sessionType: 'GROUP',
+            durationFormatted: heartbeatHelper.durationFormatted,
+            title: 'Buổi học nhóm đã kết thúc',
+            description: 'Bạn đã đóng phòng học nhóm thành công.',
+          },
+        },
+      });
     }
-  }, [roomId, closeGroupRoom, disconnect, navigate]);
+  }, [roomId, closeGroupRoom, disconnect, navigate, hostAccumulatedCredits, tokenData, heartbeatHelper]);
 
   // Loading Screen
   if (isJoining) {
@@ -841,23 +921,7 @@ export const GroupRoomPage: React.FC = () => {
         </div>
       </Modal>
 
-      {/* 9. Ended Modal (Supports Group Session Rating for Learners) */}
-      <SessionEndedModal
-        isOpen={isEndedModalOpen}
-        creditsTransferred={heartbeatHelper.totalCreditsCharged}
-        isHost={tokenData?.role === 'MENTOR'}
-        roomId={tokenData?.roomId || roomId}
-        sessionType="GROUP"
-        mentorId={tokenData?.mentorId}
-        mentorName={tokenData?.mentorName || 'Người hướng dẫn'}
-        mentorAvatar={tokenData?.mentorAvatar}
-        durationFormatted={heartbeatHelper.durationFormatted}
-        title={roomEndReason?.title}
-        description={roomEndReason?.description}
-        redirectUrl="/explore"
-      />
-
-      {/* 10. Group Escrow & Participant Breakdown Modal (Host) */}
+      {/* 9. Group Escrow & Participant Breakdown Modal (Host) */}
       <GroupEscrowModal
         isOpen={isEscrowModalOpen}
         onClose={() => setIsEscrowModalOpen(false)}
