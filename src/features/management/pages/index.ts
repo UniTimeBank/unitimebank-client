@@ -5,3 +5,4 @@ export * from './DashboardManagementPage';
 export * from './PostsManagementPage';
 export * from './WalletManagementPage';
 export * from './MessagesManagementPage';
+export * from './AccountSecurityPage';

@@ -81,6 +81,7 @@ export const authApi = baseApi.injectEndpoints({
         method: 'POST',
         body,
       }),
+      invalidatesTags: ['User'],
     }),
 
     // Đổi mật khẩu (khi đã đăng nhập)
@@ -90,6 +91,13 @@ export const authApi = baseApi.injectEndpoints({
         method: 'POST',
         body,
       }),
+      invalidatesTags: ['User'],
+    }),
+
+    // Lấy trạng thái bảo mật của tài khoản
+    getSecurityStatus: builder.query<{ userId: string; email: string; hasPassword: boolean; hasGoogleLinked?: boolean }, string>({
+      query: (userId) => `/auth/security-status/${userId}`,
+      providesTags: ['User'],
     }),
 
     // ========== QUÊN MẬT KHẨU ==========
@@ -151,6 +159,7 @@ export const {
   useGoogleLoginMutation,
   useSetPasswordMutation,
   useChangePasswordMutation,
+  useGetSecurityStatusQuery,
   useForgotPasswordMutation,
   useResetPasswordMutation,
   useRefreshTokenMutation,

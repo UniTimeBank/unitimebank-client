@@ -3,3 +3,4 @@ export * from './CancelBookingModal';
 export * from './ManagePostCard';
 export * from './DeletePostModal';
 export * from './ManageGroupRoomCard';
+export * from './account';

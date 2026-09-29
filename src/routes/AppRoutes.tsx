@@ -23,6 +23,7 @@ import {
   PostsManagementPage,
   WalletManagementPage,
   MessagesManagementPage,
+  AccountSecurityPage,
 } from '@/features/management';
 import {
   OneOnOneRoomPage,
@@ -169,7 +170,35 @@ export const AppRoutes = () => {
         <Route path="posts" element={<PostsManagementPage />} />
         <Route path="wallet" element={<WalletManagementPage />} />
         <Route path="messages" element={<MessagesManagementPage />} />
+        <Route path="account" element={<AccountSecurityPage />} />
+        <Route path="security" element={<AccountSecurityPage />} />
       </Route>
+
+      {/* Direct aliases for Account & Security */}
+      <Route
+        path={ROUTES.ACCOUNT}
+        element={
+          <ProtectedRoute>
+            <Navigate to={ROUTES.MANAGE.ACCOUNT} replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/security"
+        element={
+          <ProtectedRoute>
+            <Navigate to={ROUTES.MANAGE.ACCOUNT} replace />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/account"
+        element={
+          <ProtectedRoute>
+            <Navigate to={ROUTES.MANAGE.ACCOUNT} replace />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Route bảo vệ - Phòng học trực tuyến & Thời gian thực (Full-screen) */}
       <Route

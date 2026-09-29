@@ -329,6 +329,14 @@ export const UserProfilePage: React.FC = () => {
                   <Pencil className="w-4 h-4" />
                 </button>
 
+                <Link
+                  to="/manage/account"
+                  className="w-9 h-9 flex items-center justify-center text-gray-600 hover:text-emerald-700 bg-gray-50 hover:bg-emerald-50/70 border border-gray-200/80 hover:border-emerald-200 rounded-xl transition-all cursor-pointer"
+                  title="Quản lý Tài khoản & Bảo mật (Đổi / Đặt mật khẩu)"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                </Link>
+
                 <button
                   type="button"
                   onClick={() => {
