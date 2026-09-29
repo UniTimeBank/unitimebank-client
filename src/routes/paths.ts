@@ -27,7 +27,10 @@ export const ROUTES = {
     WALLET: '/manage/wallet',
     MESSAGES: '/manage/messages',
     DASHBOARD: '/manage/dashboard',
+    ACCOUNT: '/manage/account',
+    SECURITY: '/manage/security',
   },
+  ACCOUNT: '/account',
   ROOMS: {
     ONE_ON_ONE: '/rooms/one-on-one/:bookingId',
     GROUP: '/rooms/group/:roomId',

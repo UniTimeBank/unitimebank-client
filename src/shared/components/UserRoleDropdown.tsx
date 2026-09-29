@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Calendar, ReceiptText, LogOut, CalendarCheck, LayoutDashboard, FileText, Users } from 'lucide-react';
+import { User, Calendar, ReceiptText, LogOut, CalendarCheck, LayoutDashboard, FileText, Users, ShieldCheck } from 'lucide-react';
 import LogoImage from '@/assets/images/Logo.png';
 
 interface UserRoleDropdownProps {
@@ -141,6 +141,15 @@ export const UserRoleDropdown: React.FC<UserRoleDropdownProps> = ({
             >
               <User className="w-4 h-4 text-slate-400 stroke-[1.75]" />
               <span>Trang cá nhân & Hồ sơ</span>
+            </Link>
+
+            <Link
+              to="/manage/account"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+            >
+              <ShieldCheck className="w-4 h-4 text-slate-400 stroke-[1.75]" />
+              <span>Tài khoản & Bảo mật</span>
             </Link>
 
             <Link

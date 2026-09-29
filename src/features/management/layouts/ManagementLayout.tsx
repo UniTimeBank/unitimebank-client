@@ -8,6 +8,7 @@ import {
   Users,
   Wallet,
   MessageSquare,
+  ShieldCheck,
 } from 'lucide-react';
 
 export const ManagementLayout: React.FC = () => {
@@ -46,6 +47,11 @@ export const ManagementLayout: React.FC = () => {
       label: 'Tin nhắn',
       path: '/manage/messages',
       icon: MessageSquare,
+    },
+    {
+      label: 'Tài khoản & Bảo mật',
+      path: '/manage/account',
+      icon: ShieldCheck,
     },
   ];
 
