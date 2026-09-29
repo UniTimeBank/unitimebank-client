@@ -91,17 +91,17 @@ export const GroupLobbyPage: React.FC = () => {
             <p className="text-xs text-slate-400 font-medium">Đang tải danh sách phòng học nhóm...</p>
           </div>
         ) : filteredRooms.length === 0 ? (
-          <div className="py-16 bg-white border border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center text-center p-6 shadow-2xs">
-            <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary-600 border border-primary-200/60 flex items-center justify-center mb-3">
-              <Users className="w-7 h-7" />
+          <div className="py-16 sm:py-20 flex flex-col items-center justify-center text-center px-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center mb-3.5">
+              <Users className="w-6 h-6 text-primary-600" />
             </div>
-            <h3 className="text-sm sm:text-base font-bold text-slate-800">Hiện chưa có phòng học nhóm nào mở</h3>
-            <p className="text-xs text-slate-500 mt-1 max-w-sm font-medium">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">Hiện chưa có phòng học nhóm nào mở</h3>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-sm font-normal leading-relaxed">
               Bạn có thể là người đầu tiên tạo phòng học nhóm để cùng trao đổi kiến thức với mọi người!
             </p>
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="mt-4 px-4 py-2 bg-primary-700 hover:bg-primary-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="mt-4 px-5 py-2.5 bg-primary-700 hover:bg-primary-800 active:scale-[0.98] text-white rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-xs hover:shadow flex items-center gap-2 cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Mở phòng ngay
             </button>

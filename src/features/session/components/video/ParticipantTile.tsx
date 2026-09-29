@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Participant, Track, LocalParticipant, RemoteParticipant, ParticipantEvent } from 'livekit-client';
-import { Mic, MicOff, VideoOff, Crown } from 'lucide-react';
+import { Mic, MicOff, Crown } from 'lucide-react';
 
 interface ParticipantTileProps {
   participant: Participant | LocalParticipant | RemoteParticipant;
@@ -22,6 +22,7 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
   canModerate = false,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [imgError, setImgError] = useState(false);
 
   // Dynamic state reactive to LiveKit events
   const [isCameraEnabled, setIsCameraEnabled] = useState(participant.isCameraEnabled);
@@ -30,9 +31,23 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
     return participant.getTrackPublication(Track.Source.Camera)?.track || null;
   });
   
-  const rawName = participant.name || participant.identity;
+  // Trích xuất metadata (avatarUrl, displayName thực tế nếu có)
+  let avatarUrl: string | undefined;
+  let parsedName: string | undefined;
+  try {
+    if (participant.metadata) {
+      const parsed = JSON.parse(participant.metadata);
+      avatarUrl = parsed.avatarUrl || parsed.avatar;
+      parsedName = parsed.displayName || parsed.name;
+    }
+  } catch {
+    // ignore parse error
+  }
+
+  const rawName = participant.name || parsedName || participant.identity;
   const isGenericMentor = !rawName || rawName.trim().toLowerCase() === 'mentor';
-  const displayName = isGenericMentor ? (isLocal ? 'Tôi' : (isHost ? 'Host' : 'Thành viên')) : rawName;
+  const displayName = isGenericMentor ? (isLocal ? 'Bạn' : (isHost ? 'Host' : 'Thành viên')) : rawName;
+  const initialLetter = (displayName || 'U').trim().charAt(0).toUpperCase();
 
   useEffect(() => {
     setIsCameraEnabled(participant.isCameraEnabled);
@@ -125,12 +140,12 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
 
   return (
     <div
-      className={`relative w-full h-full rounded-3xl overflow-hidden shadow-sm border-2 transition-all duration-300 flex items-center justify-center ${
+      className={`group relative w-full h-full rounded-3xl overflow-hidden shadow-xs border transition-all duration-300 flex items-center justify-center select-none ${
+        isCameraEnabled ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200/90'
+      } ${
         isSpeaking
-          ? 'border-primary-500 shadow-primary-500/20 ring-4 ring-primary-500/20'
-          : isCameraEnabled
-          ? 'bg-slate-900 border-slate-800'
-          : 'bg-white border-slate-200/90'
+          ? 'border-emerald-500 shadow-emerald-500/20 ring-4 ring-emerald-500/20'
+          : ''
       }`}
     >
       {/* Video Element */}
@@ -143,66 +158,83 @@ export const ParticipantTile: React.FC<ParticipantTileProps> = ({
           muted={isLocal}
         />
       ) : (
-        /* Avatar Placeholder when Camera is OFF */
-        <div className="flex flex-col items-center justify-center p-6 text-center select-none">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-full bg-primary-50 text-primary-700 font-extrabold text-2xl md:text-3xl flex items-center justify-center shadow-xs border-4 border-primary-100/90">
-            {(isHost && displayName === 'Host' ? 'H' : displayName.charAt(0)).toUpperCase()}
-          </div>
-          <div className="mt-3.5 flex items-center justify-center gap-1.5 flex-wrap">
-            {isHost ? (
-              <span className="bg-primary-50 text-primary-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-primary-200 flex items-center gap-1">
-                <Crown className="w-3 h-3 text-primary-600" /> Host
-              </span>
-            ) : isLocal ? (
-              <span className="text-[11px] text-primary-700 font-bold bg-primary-50 px-2 py-0.5 rounded-full border border-primary-200">
-                Tôi
-              </span>
-            ) : null}
-            {displayName !== 'Host' && displayName !== 'Học viên' && displayName !== 'Tôi' && (
-              <span className="text-slate-800 font-bold text-sm md:text-base">
-                {displayName}
-              </span>
+        /* Avatar Placeholder when Camera is OFF - Clean Light Theme */
+        <div className="flex items-center justify-center p-6 text-center">
+          <div className="relative flex items-center justify-center">
+            {avatarUrl && !imgError ? (
+              <img
+                src={avatarUrl}
+                alt={displayName}
+                onError={() => setImgError(true)}
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover shadow-md border-4 border-slate-100 ring-2 ring-slate-200/60"
+              />
+            ) : (
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-tr from-primary-700 via-primary-600 to-primary-500 text-white font-bold text-3xl sm:text-4xl flex items-center justify-center shadow-md border-4 border-slate-100 ring-2 ring-slate-200/60 tracking-wider">
+                {initialLetter}
+              </div>
+            )}
+
+            {/* Speaking Pulse Wave */}
+            {isSpeaking && (
+              <span className="absolute -inset-2.5 rounded-full border-2 border-emerald-400 animate-ping opacity-75" />
             )}
           </div>
-          <span className="text-xs text-slate-400 font-medium flex items-center gap-1 mt-1">
-            <VideoOff className="w-3.5 h-3.5" /> Camera đang tắt
-          </span>
         </div>
       )}
 
-      {/* Participant Name Badge & Indicators (Bottom Left) */}
+      {/* Google Meet Style Name Tag (Bottom Left) */}
       <div
-        className={`absolute bottom-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-xs backdrop-blur-md ${
+        className={`absolute bottom-3.5 left-3.5 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium shadow-xs border z-10 select-none transition-all ${
           isCameraEnabled
-            ? 'bg-slate-950/75 border-slate-700/60 text-slate-200'
-            : 'bg-white/95 border-slate-200 text-slate-800'
+            ? 'bg-slate-950/70 backdrop-blur-md text-white border-white/15'
+            : 'bg-white/95 backdrop-blur-md text-slate-800 border-slate-200/90 shadow-sm'
         }`}
       >
-        {isHost ? (
-          <span className="bg-primary-50 text-primary-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 border border-primary-200 shrink-0">
-            <Crown className="w-3 h-3 text-primary-600" /> Host
-          </span>
-        ) : null}
-        {displayName !== 'Host' && displayName !== 'Học viên' && displayName !== 'Tôi' && (
-          <span className="text-xs font-bold truncate max-w-[120px] md:max-w-[160px]">
-            {displayName}
-          </span>
-        )}
-        {isLocal && (
-          <span className="text-xs font-bold text-slate-500 truncate">
-            (Tôi)
+        {isHost && (
+          <span
+            className={`flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+              isCameraEnabled
+                ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30'
+                : 'bg-amber-50 text-amber-700 border border-amber-200'
+            }`}
+          >
+            <Crown className="w-3 h-3 text-amber-500" />
+            <span>Host</span>
           </span>
         )}
-        <div
-          className={`p-1 rounded-full border ${
-            isMicEnabled
-              ? 'bg-primary-50 text-primary-700 border-primary-200'
-              : 'bg-rose-50 text-rose-600 border-rose-200'
+        <span
+          className={`truncate max-w-[130px] sm:max-w-[180px] font-medium ${
+            isCameraEnabled ? 'text-slate-100' : 'text-slate-800'
           }`}
-          title={isMicEnabled ? 'Micro đang bật' : 'Micro đang tắt'}
         >
-          {isMicEnabled ? <Mic className="w-3 h-3" /> : <MicOff className="w-3 h-3" />}
-        </div>
+          {displayName}
+        </span>
+        {isLocal && (
+          <span
+            className={`text-[11px] font-normal shrink-0 ${
+              isCameraEnabled ? 'text-slate-400' : 'text-slate-500'
+            }`}
+          >
+            (Bạn)
+          </span>
+        )}
+        <span
+          className={`shrink-0 flex items-center justify-center w-5 h-5 rounded-full ml-0.5 ${
+            isMicEnabled
+              ? isCameraEnabled
+                ? 'bg-emerald-500/20 text-emerald-400'
+                : 'bg-emerald-50 text-emerald-600'
+              : isCameraEnabled
+              ? 'bg-rose-500/20 text-rose-400'
+              : 'bg-rose-50 text-rose-600'
+          }`}
+        >
+          {isMicEnabled ? (
+            <Mic className="w-3 h-3" />
+          ) : (
+            <MicOff className="w-3 h-3" />
+          )}
+        </span>
       </div>
 
       {/* Host Moderation Quick Actions (Top Right) */}

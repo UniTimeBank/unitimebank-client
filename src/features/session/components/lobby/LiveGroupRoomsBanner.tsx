@@ -1,12 +1,27 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Users, Plus, Radio, Video } from 'lucide-react';
+import { ArrowRight, Users, Plus, Radio, Video, RotateCcw } from 'lucide-react';
 import { useGetActiveGroupRoomsQuery } from '@/core/api/session';
 import { FeaturedGroupRoomCard, type GroupRoomDisplayItem } from './FeaturedGroupRoomCard';
 import { MiniGroupRoomCard } from './MiniGroupRoomCard';
 import { CreateGroupRoomModal } from './CreateGroupRoomModal';
+import type { SessionType } from '@/features/post/types';
 
-export const LiveGroupRoomsBanner: React.FC = () => {
+export interface LiveGroupRoomsBannerProps {
+  selectedCategory?: string;
+  searchKeyword?: string;
+  sessionType?: 'ALL' | SessionType;
+  minTrustScore?: number;
+  onResetFilters?: () => void;
+}
+
+export const LiveGroupRoomsBanner: React.FC<LiveGroupRoomsBannerProps> = ({
+  selectedCategory = 'ALL',
+  searchKeyword = '',
+  sessionType = 'ALL',
+  minTrustScore = 0,
+  onResetFilters,
+}) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const { data, isLoading } = useGetActiveGroupRoomsQuery(undefined, {
@@ -15,8 +30,51 @@ export const LiveGroupRoomsBanner: React.FC = () => {
 
   const activeRooms = data?.rooms || [];
 
+  // Lọc phòng nhóm theo danh mục, từ khóa và bộ lọc nâng cao từ trang Explore
+  const filteredRooms = useMemo(() => {
+    return activeRooms.filter((r) => {
+      // 1. Lọc theo danh mục
+      if (selectedCategory && selectedCategory !== 'ALL') {
+        const roomCat = (r.category || '').toUpperCase();
+        if (roomCat !== selectedCategory.toUpperCase()) {
+          return false;
+        }
+      }
+
+      // 2. Lọc theo từ khóa tìm kiếm
+      if (searchKeyword && searchKeyword.trim()) {
+        const kw = searchKeyword.toLowerCase().trim();
+        const matchTitle = (r.title || '').toLowerCase().includes(kw);
+        const mentorName = r.mentorName || (r as any).hostName || (r as any).displayName || '';
+        const matchMentor = mentorName.toLowerCase().includes(kw);
+        const matchCat = (r.category || '').toLowerCase().includes(kw);
+        const skillsArray =
+          Array.isArray(r.skills) && r.skills.length > 0
+            ? r.skills
+            : (r as any).skill
+            ? [(r as any).skill]
+            : [];
+        const matchSkills = skillsArray.some((s: string) => s.toLowerCase().includes(kw));
+
+        if (!matchTitle && !matchMentor && !matchCat && !matchSkills) {
+          return false;
+        }
+      }
+
+      // 3. Lọc theo điểm uy tín tối thiểu
+      if (minTrustScore && minTrustScore > 0) {
+        const score = r.mentorTrustScore ?? (r as any).trustScore ?? 100;
+        if (score < minTrustScore) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [activeRooms, selectedCategory, searchKeyword, minTrustScore]);
+
   const displayRooms: GroupRoomDisplayItem[] = useMemo(() => {
-    return activeRooms.map((r) => {
+    return filteredRooms.map((r) => {
       const skillsArray =
         Array.isArray(r.skills) && r.skills.length > 0
           ? r.skills
@@ -40,7 +98,12 @@ export const LiveGroupRoomsBanner: React.FC = () => {
         coverImage: r.coverImage,
       };
     });
-  }, [activeRooms]);
+  }, [filteredRooms]);
+
+  // Nếu người dùng chủ động chọn lọc riêng lớp 1:1, ẩn sảnh phòng nhóm
+  if (sessionType === 'ONE_ON_ONE') {
+    return null;
+  }
 
   const featuredRoom = displayRooms[0];
   const otherRooms = displayRooms.slice(1, 4);
@@ -51,7 +114,7 @@ export const LiveGroupRoomsBanner: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            {activeRooms.length > 0 ? (
+            {displayRooms.length > 0 ? (
               <span className="flex h-2.5 w-2.5 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 shadow-sm shadow-red-500/50" />
@@ -70,45 +133,80 @@ export const LiveGroupRoomsBanner: React.FC = () => {
 
         {/* Nút Xem tất cả góc phải */}
         <Link
-          to="/rooms/group"
-          className="inline-flex items-center gap-1 text-xs text-slate-700 hover:text-primary-700 font-bold transition-colors cursor-pointer py-1 group shrink-0"
+          to={selectedCategory && selectedCategory !== 'ALL' ? `/rooms/group?category=${selectedCategory}` : '/rooms/group'}
+          className="inline-flex items-center gap-1.5 text-xs text-slate-700 hover:text-primary-700 font-bold transition-colors cursor-pointer py-1 group shrink-0"
         >
-          <span>Xem tất cả ({activeRooms.length})</span>
+          <span>Xem tất cả</span>
           <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-primary-700 group-hover:translate-x-0.5 transition-all" />
         </Link>
       </div>
 
       {/* 2. Content */}
       {isLoading ? (
-        <div className="py-12 bg-white rounded-3xl border border-slate-100 flex flex-col items-center justify-center text-center p-6 shadow-2xs animate-pulse">
-          <div className="w-12 h-12 rounded-2xl bg-slate-100 mb-3" />
-          <div className="h-4 w-48 bg-slate-100 rounded-md mb-2" />
-          <div className="h-3 w-64 bg-slate-100 rounded-md" />
+        <div className="py-10 sm:py-12 flex flex-col items-center justify-center text-center px-4 animate-pulse">
+          <div className="w-12 h-12 rounded-2xl bg-slate-200/70 mb-3" />
+          <div className="h-4 w-48 bg-slate-200/70 rounded-md mb-2" />
+          <div className="h-3 w-64 bg-slate-200/50 rounded-md" />
         </div>
-      ) : activeRooms.length === 0 ? (
-        /* Empty State chuẩn UI đồng bộ với Sảnh Nhóm */
-        <div className="py-12 bg-white border border-dashed border-slate-200/90 rounded-3xl flex flex-col items-center justify-center text-center p-6 sm:p-8 shadow-2xs">
-          <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary-600 border border-primary-200/60 flex items-center justify-center mb-3.5 shadow-2xs">
-            <Users className="w-7 h-7" />
+      ) : displayRooms.length === 0 ? (
+        activeRooms.length === 0 ? (
+          /* Không có phòng nào trong hệ thống */
+          <div className="py-10 sm:py-12 flex flex-col items-center justify-center text-center px-4">
+            <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center mb-3.5">
+              <Users className="w-6 h-6 text-primary-600" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+              Hiện chưa có phòng học nhóm nào mở
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md font-normal leading-relaxed">
+              Bạn có thể là người đầu tiên tạo phòng học nhóm để cùng trao đổi kiến thức với mọi người!
+            </p>
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-700 hover:bg-primary-800 active:scale-[0.98] text-white font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-xs hover:shadow cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Mở phòng học nhóm ngay</span>
+              </button>
+            </div>
           </div>
-          <h3 className="text-base sm:text-lg font-bold text-slate-900">
-            Hiện chưa có phòng học nhóm nào mở
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md font-normal leading-relaxed">
-            Bạn có thể là người đầu tiên tạo phòng học nhóm để cùng trao đổi kiến thức với mọi người!
-          </p>
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={() => setIsCreateModalOpen(true)}
-              className="px-5 py-2.5 bg-primary-700 hover:bg-primary-800 text-white font-bold text-xs sm:text-sm rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Mở phòng học nhóm ngay</span>
-            </button>
+        ) : (
+          /* Có phòng nhưng không khớp bộ lọc đang chọn */
+          <div className="py-10 sm:py-12 flex flex-col items-center justify-center text-center px-4">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center mb-3.5">
+              <Users className="w-6 h-6 text-slate-400" />
+            </div>
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+              Không tìm thấy phòng nhóm phù hợp với bộ lọc
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md font-normal leading-relaxed">
+              Hiện có {activeRooms.length} phòng học nhóm đang hoạt động ở các chủ đề khác. Hãy thử chọn danh mục khác hoặc xóa bộ lọc.
+            </p>
+            <div className="mt-4 flex items-center justify-center gap-2.5 flex-wrap">
+              {onResetFilters && (
+                <button
+                  type="button"
+                  onClick={onResetFilters}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white hover:bg-slate-50 active:scale-[0.98] text-slate-700 font-semibold text-xs sm:text-sm rounded-xl border border-slate-200 transition-all shadow-2xs cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Xem tất cả phòng</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-700 hover:bg-primary-800 active:scale-[0.98] text-white font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-xs hover:shadow cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Mở phòng học nhóm ngay</span>
+              </button>
+            </div>
           </div>
-        </div>
-      ) : activeRooms.length === 1 ? (
+        )
+      ) : displayRooms.length === 1 ? (
         /* Chỉ có 1 phòng */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           <div className="lg:col-span-8 flex flex-col">

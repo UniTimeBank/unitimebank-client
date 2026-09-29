@@ -15,6 +15,7 @@ import { UnifiedPostCard } from '../components/cards';
 import { SessionType, type ExploreCardItem } from '../types';
 import { mapMentorPostToCardItem, mapLearnerRequestToCardItem } from '../utils';
 import { LiveGroupRoomsBanner } from '@/features/session/components';
+import { Modal } from '@/shared/components/ui';
 
 // Danh mục filter pills chuẩn theo UniTime Bank
 const FILTER_PILLS = [
@@ -148,46 +149,57 @@ export const PostExplorePage: React.FC = () => {
           )}
         </div>
 
-        {/* Dải Pills Lĩnh Vực & Nút Lọc Thêm */}
-        <div className="flex flex-wrap items-center justify-center gap-2 max-w-4xl mx-auto mt-5">
-          {FILTER_PILLS.map((cat) => {
-            const isActive = selectedCategory === cat.value;
-            return (
-              <button
-                key={cat.value}
-                type="button"
-                onClick={() => setSelectedCategory(cat.value)}
-                className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer border ${
-                  isActive
-                    ? 'bg-primary-600 text-white border-primary-600 shadow-2xs'
-                    : 'bg-white text-slate-700 hover:border-slate-300 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                {cat.label}
-              </button>
-            );
-          })}
+        {/* Dải Pills Lĩnh Vực */}
+        <div className="w-full max-w-6xl mx-auto mt-5 px-2">
+          <div className="flex items-center justify-start lg:justify-center gap-2 overflow-x-auto scrollbar-none py-1">
+            {FILTER_PILLS.map((cat) => {
+              const isActive = selectedCategory === cat.value;
+              return (
+                <button
+                  key={cat.value}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border shrink-0 whitespace-nowrap ${
+                    isActive
+                      ? 'bg-primary-600 text-white border-primary-600 shadow-2xs'
+                      : 'bg-white text-slate-700 hover:border-slate-300 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setIsFilterModalOpen(true)}
-            className={`px-4 py-2 rounded-full text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer ${
-              advancedFilter.sessionType !== 'ALL' || advancedFilter.minTrustScore > 0
-                ? 'bg-primary-50 text-primary-800 border-primary-300 font-bold'
-                : 'bg-white text-slate-700 hover:border-slate-300 border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
-            <span>Lọc thêm</span>
-            {(advancedFilter.sessionType !== 'ALL' || advancedFilter.minTrustScore > 0) && (
-              <span className="w-2 h-2 rounded-full bg-primary-600" />
-            )}
-          </button>
+          {/* Nút Lọc Thêm Nằm Dưới */}
+          <div className="flex items-center justify-center mt-3.5">
+            <button
+              type="button"
+              onClick={() => setIsFilterModalOpen(true)}
+              className={`px-4 py-1.5 rounded-full text-xs font-medium border flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-[0.98] ${
+                advancedFilter.sessionType !== 'ALL' || advancedFilter.minTrustScore > 0
+                  ? 'bg-primary-50 text-primary-800 border-primary-300 font-semibold'
+                  : 'bg-white text-slate-600 hover:text-slate-900 hover:border-slate-300 border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+              <span>Lọc thêm</span>
+              {(advancedFilter.sessionType !== 'ALL' || advancedFilter.minTrustScore > 0) && (
+                <span className="w-2 h-2 rounded-full bg-primary-600" />
+              )}
+            </button>
+          </div>
         </div>
       </section>
 
       {/* 2. Banner Live Sảnh Học Nhóm Trực Tuyến */}
-      <LiveGroupRoomsBanner />
+      <LiveGroupRoomsBanner
+        selectedCategory={selectedCategory}
+        searchKeyword={searchKeyword}
+        sessionType={advancedFilter.sessionType}
+        minTrustScore={advancedFilter.minTrustScore}
+        onResetFilters={handleResetFilters}
+      />
 
       {/* 3. Section: Danh Sách Bài Đăng (Header tích hợp 2 Tab Pill Clean & Tinh Tế) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-2">
@@ -429,110 +441,102 @@ export const PostExplorePage: React.FC = () => {
 
 
       {/* 5. Modal Bộ Lọc Thêm */}
-      {isFilterModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-200 shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900">Bộ Lọc Nâng Cao</h3>
-              <button
-                type="button"
-                onClick={() => setIsFilterModalOpen(false)}
-                className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Hình thức buổi học */}
-            <div className="space-y-2">
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                HÌNH THỨC BUỔI HỌC
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label: 'Tất cả', value: 'ALL' },
-                  { label: 'Lớp 1:1', value: 'ONE_ON_ONE' },
-                  { label: 'Lớp nhóm', value: 'GROUP' },
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() =>
-                      setAdvancedFilter((prev) => ({
-                        ...prev,
-                        sessionType: opt.value as SessionType | 'ALL',
-                      }))
-                    }
-                    className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${
-                      advancedFilter.sessionType === opt.value
-                        ? 'bg-primary-600 text-white border-primary-600 shadow-2xs'
-                        : 'bg-white text-slate-700 hover:border-slate-300 border-slate-200'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Điểm uy tín tối thiểu */}
-            <div className="space-y-2">
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                ĐIỂM UY TÍN TỐI THIỂU
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { label: 'Tất cả', value: 0 },
-                  { label: '≥ 90 điểm', value: 90 },
-                  { label: '100 điểm', value: 100 },
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() =>
-                      setAdvancedFilter((prev) => ({
-                        ...prev,
-                        minTrustScore: opt.value,
-                      }))
-                    }
-                    className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${
-                      advancedFilter.minTrustScore === opt.value
-                        ? 'bg-primary-600 text-white border-primary-600 shadow-2xs'
-                        : 'bg-white text-slate-700 hover:border-slate-300 border-slate-200'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="pt-2 flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setAdvancedFilter({
-                    sessionType: 'ALL',
-                    minTrustScore: 0,
-                    sortBy: 'relevance',
-                  });
-                }}
-                className="w-1/2 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
-              >
-                Đặt lại
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsFilterModalOpen(false)}
-                className="w-1/2 py-2.5 rounded-xl bg-primary-600 text-white text-xs font-semibold hover:bg-primary-700 transition-colors shadow-2xs cursor-pointer"
-              >
-                Áp dụng
-              </button>
+      <Modal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        title="Bộ Lọc Nâng Cao"
+        size="md"
+      >
+        <div className="space-y-5 pt-1">
+          {/* Hình thức buổi học */}
+          <div className="space-y-2">
+            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+              HÌNH THỨC BUỔI HỌC
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: 'Tất cả', value: 'ALL' },
+                { label: 'Lớp 1:1', value: 'ONE_ON_ONE' },
+                { label: 'Lớp nhóm', value: 'GROUP' },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() =>
+                    setAdvancedFilter((prev) => ({
+                      ...prev,
+                      sessionType: opt.value as SessionType | 'ALL',
+                    }))
+                  }
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${
+                    advancedFilter.sessionType === opt.value
+                      ? 'bg-primary-600 text-white border-primary-600 shadow-2xs'
+                      : 'bg-white text-slate-700 hover:border-slate-300 border-slate-200'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
+
+          {/* Điểm uy tín tối thiểu */}
+          <div className="space-y-2">
+            <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+              ĐIỂM UY TÍN TỐI THIỂU
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: 'Tất cả', value: 0 },
+                { label: '≥ 90 điểm', value: 90 },
+                { label: '100 điểm', value: 100 },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() =>
+                    setAdvancedFilter((prev) => ({
+                      ...prev,
+                      minTrustScore: opt.value,
+                    }))
+                  }
+                  className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-center ${
+                    advancedFilter.minTrustScore === opt.value
+                      ? 'bg-primary-600 text-white border-primary-600 shadow-2xs'
+                      : 'bg-white text-slate-700 hover:border-slate-300 border-slate-200'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* CTA Buttons */}
+          <div className="pt-2 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                setAdvancedFilter({
+                  sessionType: 'ALL',
+                  minTrustScore: 0,
+                  sortBy: 'relevance',
+                });
+              }}
+              className="w-1/2 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
+            >
+              Đặt lại
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsFilterModalOpen(false)}
+              className="w-1/2 py-2.5 rounded-xl bg-primary-600 text-white text-xs font-semibold hover:bg-primary-700 transition-colors shadow-2xs cursor-pointer"
+            >
+              Áp dụng
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 };
