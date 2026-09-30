@@ -256,30 +256,26 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
           {booking.status === BookingStatus.COMPLETED && (
             <>
               {isRated ? (
-                <Button
+                <button
                   type="button"
-                  variant="outline"
-                  size="md"
                   onClick={() => {
                     onClose();
                     onViewRating?.(booking);
                   }}
-                  className="rounded-xl border-amber-200 bg-amber-50/70 hover:bg-amber-100/80 text-amber-800 font-bold text-xs px-4 shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs py-2 px-4 transition-colors cursor-pointer"
                 >
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
                   <span>Xem đánh giá</span>
-                </Button>
+                </button>
               ) : (
-                <Button
+                <button
                   type="button"
-                  variant="primary"
-                  size="md"
                   onClick={() => setIsRatingOpen(true)}
-                  className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-4 shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs py-2 px-4 transition-colors cursor-pointer"
                 >
-                  <Star className="w-3.5 h-3.5 fill-white text-white" />
+                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
                   <span>Đánh giá buổi học</span>
-                </Button>
+                </button>
               )}
               <Button
                 type="button"

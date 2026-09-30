@@ -5,6 +5,7 @@ import type {
   GetActiveGroupRoomsResponse,
   InRoomChatMessage,
   GroupRoomStatsResponse,
+  GroupRoomPreviewResponse,
 } from '@/features/session/types';
 
 export const sessionApi = baseApi.injectEndpoints({
@@ -135,12 +136,18 @@ export const sessionApi = baseApi.injectEndpoints({
       providesTags: ['Session'],
     }),
 
-    // 11. Lấy lịch sử chat trong phòng
+    // 11. Xem trước thông tin phòng học nhóm cho màn hình chờ (Pre-Join Lobby)
+    getGroupRoomPreview: builder.query<GroupRoomPreviewResponse, string>({
+      query: (roomId) => `/rooms/group/${roomId}/preview`,
+      providesTags: (_result, _error, roomId) => [{ type: 'Session', id: `preview-${roomId}` }],
+    }),
+
+    // 12. Lấy lịch sử chat trong phòng
     getRoomChatMessages: builder.query<InRoomChatMessage[], string>({
       query: (roomId) => `/rooms/${roomId}/chat`,
     }),
 
-    // 12. Gửi tin nhắn chat trong phòng qua HTTP REST (fallback)
+    // 13. Gửi tin nhắn chat trong phòng qua HTTP REST (fallback)
     sendRoomChatMessage: builder.mutation<InRoomChatMessage, { roomId: string; content: string }>({
       query: ({ roomId, content }) => ({
         url: `/rooms/${roomId}/chat`,
@@ -149,7 +156,7 @@ export const sessionApi = baseApi.injectEndpoints({
       }),
     }),
 
-    // 13. Mute thành viên (Host)
+    // 14. Mute thành viên (Host)
     muteParticipant: builder.mutation<
       { participantId: string; userId: string; isMuted: boolean },
       { roomId: string; participantId: string; isMuted?: boolean }
@@ -161,7 +168,7 @@ export const sessionApi = baseApi.injectEndpoints({
       }),
     }),
 
-    // 14. Kick thành viên (Host)
+    // 15. Kick thành viên (Host)
     kickParticipant: builder.mutation<
       { participantId: string; userId: string; isKicked: boolean },
       { roomId: string; participantId: string; reason?: string }
@@ -186,8 +193,10 @@ export const {
   useGetActiveGroupRoomsQuery,
   useGetGroupRoomsHistoryQuery,
   useGetGroupRoomStatsQuery,
+  useGetGroupRoomPreviewQuery,
   useGetRoomChatMessagesQuery,
   useSendRoomChatMessageMutation,
   useMuteParticipantMutation,
   useKickParticipantMutation,
 } = sessionApi;
+

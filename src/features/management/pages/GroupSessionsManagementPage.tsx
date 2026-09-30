@@ -716,10 +716,8 @@ export const GroupSessionsManagementPage: React.FC = () => {
                   {/* Actions - subtle primary touch matching brand */}
                   <div className="shrink-0 flex items-center justify-end">
                     {isRoomRated ? (
-                      <Button
+                      <button
                         type="button"
-                        variant="outline"
-                        size="sm"
                         onClick={() => {
                           const found = myRatedSessions.find((r) => r.roomId === room.roomId);
                           const mentorName = (found?.mentorName && found.mentorName !== 'Người hướng dẫn' && found.mentorName !== 'Thành viên')
@@ -746,21 +744,20 @@ export const GroupSessionsManagementPage: React.FC = () => {
                             mode: 'GIVEN',
                           });
                         }}
-                        className="rounded-lg bg-amber-50/70 hover:bg-amber-100/80 border border-amber-200 text-amber-800 font-semibold text-xs py-1.5 px-3 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-medium text-xs py-1.5 px-3 transition-colors cursor-pointer"
                       >
-                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
                         <span>Xem lại đánh giá</span>
-                      </Button>
+                      </button>
                     ) : (
-                      <Button
+                      <button
                         type="button"
-                        variant="outline"
-                        size="sm"
                         onClick={() => setSelectedRatingRoom(room)}
-                        className="rounded-lg bg-white hover:bg-primary-50 border border-primary-200 text-primary-700 hover:text-primary-800 font-semibold text-xs py-1.5 px-3.5 shadow-2xs transition-colors cursor-pointer"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-medium text-xs py-1.5 px-3 transition-colors cursor-pointer"
                       >
-                        Đánh giá
-                      </Button>
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                        <span>Đánh giá</span>
+                      </button>
                     )}
                   </div>
                 </div>

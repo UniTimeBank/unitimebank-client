@@ -90,7 +90,7 @@ export const useHeartbeat = ({
       setPaidSeconds(paid);
       setTotalCreditsCharged(totalCharged);
 
-      if (totalCharged !== lastEmittedCreditRef.current) {
+      if (totalCharged !== lastEmittedCreditRef.current || totalActiveSeconds % 5 === 0) {
         lastEmittedCreditRef.current = totalCharged;
         onTickRef.current?.({
           activeSeconds: totalActiveSeconds,

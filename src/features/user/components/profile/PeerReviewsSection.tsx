@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useGetReviewsByUserQuery, useGetMyRatedSessionsQuery } from '@/core/api/moderation';
 import { ViewRatingModal } from '@/features/moderation';
+import { Pagination } from '@/shared/components/ui';
 import type { RatingItem } from '@/features/moderation/types';
 import LogoImage from '@/assets/images/Logo.png';
 
@@ -103,14 +104,21 @@ export const PeerReviewsSection: React.FC<PeerReviewsSectionProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'RECEIVED' | 'GIVEN'>('RECEIVED');
   const [starFilter, setStarFilter] = useState<number | 'ALL'>('ALL');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(5);
   const [selectedRatingDetail, setSelectedRatingDetail] = useState<{
     rating: RatingItem;
     mode: 'GIVEN' | 'RECEIVED';
   } | null>(null);
 
+  // Reset pagination when activeTab or starFilter changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, starFilter, userId]);
+
   // 1. Fetch Received Reviews (Mentor mode)
   const { data: reviewsData, isLoading: isReceivedLoading } = useGetReviewsByUserQuery(
-    { userId: userId || '', page: 1, limit: 50 },
+    { userId: userId || '', page: 1, limit: 100 },
     { skip: !userId },
   );
 
@@ -138,6 +146,27 @@ export const PeerReviewsSection: React.FC<PeerReviewsSectionProps> = ({
     if (starFilter === 'ALL') return myGivenRatings;
     return myGivenRatings.filter((r) => Math.round(r.stars) === starFilter);
   }, [myGivenRatings, starFilter]);
+
+  // Paginated slices
+  const totalReceivedPages = Math.ceil(filteredReceived.length / pageSize) || 1;
+  const paginatedReceived = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredReceived.slice(start, start + pageSize);
+  }, [filteredReceived, currentPage, pageSize]);
+
+  const totalGivenPages = Math.ceil(filteredGiven.length / pageSize) || 1;
+  const paginatedGiven = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredGiven.slice(start, start + pageSize);
+  }, [filteredGiven, currentPage, pageSize]);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    const element = document.getElementById('reviews-section');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
 
   // Parse tags helper
   const parseTags = (comment?: string) => {
@@ -328,92 +357,115 @@ export const PeerReviewsSection: React.FC<PeerReviewsSectionProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredReceived.map((r, idx) => {
-              const author = r.reviewerName || 'Học viên UniTime';
-              const avatarBg = BG_COLORS[idx % BG_COLORS.length];
-              const date = r.submittedAt ? new Date(r.submittedAt).toLocaleDateString('vi-VN') : '';
-              const { tags, cleanComment } = parseTags(r.comment);
+            <div className="space-y-4">
+              {paginatedReceived.map((r, idx) => {
+                const author = r.reviewerName || 'Học viên UniTime';
+                const avatarBg = BG_COLORS[idx % BG_COLORS.length];
+                const date = r.submittedAt ? new Date(r.submittedAt).toLocaleDateString('vi-VN') : '';
+                const { tags, cleanComment } = parseTags(r.comment);
 
-              return (
-                <div
-                  key={r.id}
-                  className="p-4 rounded-2xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50/40 transition-all space-y-2.5"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <ReviewAvatar
-                        src={r.reviewerAvatar}
-                        name={author}
-                        bgClass={avatarBg}
-                        userId={r.learnerId}
-                      />
-                      <div>
-                        {r.learnerId ? (
-                          <Link
-                            to={`/profile/${r.learnerId}`}
-                            className="text-xs font-bold text-gray-900 hover:text-primary-600 hover:underline block leading-tight transition-colors cursor-pointer"
-                            title={`Xem hồ sơ của ${author}`}
-                          >
-                            {author}
-                          </Link>
-                        ) : (
-                          <span className="text-xs font-bold text-gray-900 block leading-tight">
-                            {author}
-                          </span>
-                        )}
-                        <div className="flex items-center gap-1 mt-0.5">
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <Star
-                              key={s}
-                              className={`w-3 h-3 ${
-                                s <= r.stars
-                                  ? 'fill-amber-400 text-amber-400'
-                                  : 'text-gray-200'
-                              }`}
-                            />
-                          ))}
-                          <span className="text-[10px] font-bold text-slate-600 ml-1">
-                            {r.stars}/5
-                          </span>
+                return (
+                  <div
+                    key={r.id}
+                    className="p-4 rounded-2xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50/40 transition-all space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <ReviewAvatar
+                          src={r.reviewerAvatar}
+                          name={author}
+                          bgClass={avatarBg}
+                          userId={r.learnerId}
+                        />
+                        <div>
+                          {r.learnerId ? (
+                            <Link
+                              to={`/profile/${r.learnerId}`}
+                              className="text-xs font-bold text-gray-900 hover:text-primary-600 hover:underline block leading-tight transition-colors cursor-pointer"
+                              title={`Xem hồ sơ của ${author}`}
+                            >
+                              {author}
+                            </Link>
+                          ) : (
+                            <span className="text-xs font-bold text-gray-900 block leading-tight">
+                              {author}
+                            </span>
+                          )}
+                          <div className="flex items-center gap-1 mt-0.5">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star
+                                key={s}
+                                className={`w-3 h-3 ${
+                                  s <= r.stars
+                                    ? 'fill-amber-400 text-amber-400'
+                                    : 'text-gray-200'
+                                }`}
+                              />
+                            ))}
+                            <span className="text-[10px] font-bold text-slate-600 ml-1">
+                              {r.stars}/5
+                            </span>
+                          </div>
                         </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-gray-400 font-medium">{date}</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRatingDetail({ rating: r, mode: 'RECEIVED' })}
+                          className="p-1 text-gray-400 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-colors cursor-pointer"
+                          title="Xem chi tiết"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-gray-400 font-medium">{date}</span>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedRatingDetail({ rating: r, mode: 'RECEIVED' })}
-                        className="p-1 text-gray-400 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-colors cursor-pointer"
-                        title="Xem chi tiết"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    {/* Feedback Tags */}
+                    {tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pl-11">
+                        {tags.map((t, tIdx) => (
+                          <span
+                            key={tIdx}
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100"
+                          >
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                            <span>{t}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Feedback Content */}
+                    <p className="text-xs text-gray-600 leading-relaxed pl-11 italic">
+                      "{cleanComment || 'Buổi học rất bổ ích và chất lượng!'}"
+                    </p>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Feedback Tags */}
-                  {tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pl-11">
-                      {tags.map((t, tIdx) => (
-                        <span
-                          key={tIdx}
-                          className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100"
-                        >
-                          <CheckCircle2 className="w-2.5 h-2.5" />
-                          <span>{t}</span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Feedback Content */}
-                  <p className="text-xs text-gray-600 leading-relaxed pl-11 italic">
-                    "{cleanComment || 'Buổi học rất bổ ích và chất lượng!'}"
-                  </p>
-                </div>
-              );
-            })}
+            {/* Pagination for Received Reviews */}
+            {totalReceivedPages > 1 && (
+              <div className="pt-2">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalReceivedPages}
+                  totalItems={filteredReceived.length}
+                  pageSize={pageSize}
+                  onPageChange={handlePageChange}
+                  onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setCurrentPage(1);
+                  }}
+                  pageSizeOptions={[5, 10, 20]}
+                  showPageSizeSelector
+                  showItemCount
+                  itemLabel="đánh giá"
+                />
+              </div>
+            )}
           </div>
         )
       ) : (
@@ -432,98 +484,121 @@ export const PeerReviewsSection: React.FC<PeerReviewsSectionProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredGiven.map((r, idx) => {
-              const mentorName = r.mentorName || 'Người hướng dẫn';
-              const avatarBg = BG_COLORS[idx % BG_COLORS.length];
-              const date = r.submittedAt ? new Date(r.submittedAt).toLocaleDateString('vi-VN') : '';
-              const { tags, cleanComment } = parseTags(r.comment);
-              const sessionLabel = r.sessionType === 'GROUP' || r.roomId ? 'Học nhóm' : 'Buổi kèm 1:1';
+            <div className="space-y-4">
+              {paginatedGiven.map((r, idx) => {
+                const mentorName = r.mentorName || 'Người hướng dẫn';
+                const avatarBg = BG_COLORS[idx % BG_COLORS.length];
+                const date = r.submittedAt ? new Date(r.submittedAt).toLocaleDateString('vi-VN') : '';
+                const { tags, cleanComment } = parseTags(r.comment);
+                const sessionLabel = r.sessionType === 'GROUP' || r.roomId ? 'Học nhóm' : 'Buổi kèm 1:1';
 
-              return (
-                <div
-                  key={r.id}
-                  className="p-4 rounded-2xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50/40 transition-all space-y-2.5"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <ReviewAvatar
-                        src={r.mentorAvatar}
-                        name={mentorName}
-                        bgClass={avatarBg}
-                        userId={r.mentorId}
-                      />
-                      <div>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {r.mentorId ? (
-                            <Link
-                              to={`/profile/${r.mentorId}`}
-                              className="text-xs font-bold text-gray-900 hover:text-primary-600 hover:underline block leading-tight transition-colors cursor-pointer"
-                              title={`Xem hồ sơ của ${mentorName}`}
-                            >
-                              {mentorName}
-                            </Link>
-                          ) : (
-                            <span className="text-xs font-bold text-gray-900 block leading-tight">
-                              {mentorName}
+                return (
+                  <div
+                    key={r.id}
+                    className="p-4 rounded-2xl border border-gray-100 hover:border-gray-200 hover:bg-gray-50/40 transition-all space-y-2.5"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <ReviewAvatar
+                          src={r.mentorAvatar}
+                          name={mentorName}
+                          bgClass={avatarBg}
+                          userId={r.mentorId}
+                        />
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {r.mentorId ? (
+                              <Link
+                                to={`/profile/${r.mentorId}`}
+                                className="text-xs font-bold text-gray-900 hover:text-primary-600 hover:underline block leading-tight transition-colors cursor-pointer"
+                                title={`Xem hồ sơ của ${mentorName}`}
+                              >
+                                {mentorName}
+                              </Link>
+                            ) : (
+                              <span className="text-xs font-bold text-gray-900 block leading-tight">
+                                {mentorName}
+                              </span>
+                            )}
+                            <span className="text-[10px] font-bold text-primary-700 bg-primary-50 px-1.5 py-0.2 rounded border border-primary-100">
+                              {sessionLabel}
                             </span>
-                          )}
-                          <span className="text-[10px] font-bold text-primary-700 bg-primary-50 px-1.5 py-0.2 rounded border border-primary-100">
-                            {sessionLabel}
-                          </span>
+                          </div>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star
+                                key={s}
+                                className={`w-3 h-3 ${
+                                  s <= r.stars
+                                    ? 'fill-amber-400 text-amber-400'
+                                    : 'text-gray-200'
+                                }`}
+                              />
+                            ))}
+                            <span className="text-[10px] font-bold text-slate-600 ml-1">
+                              {r.stars}/5
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <Star
-                              key={s}
-                              className={`w-3 h-3 ${
-                                s <= r.stars
-                                  ? 'fill-amber-400 text-amber-400'
-                                  : 'text-gray-200'
-                              }`}
-                            />
-                          ))}
-                          <span className="text-[10px] font-bold text-slate-600 ml-1">
-                            {r.stars}/5
-                          </span>
-                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-gray-400 font-medium">{date}</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRatingDetail({ rating: r, mode: 'GIVEN' })}
+                          className="p-1 text-gray-400 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-colors cursor-pointer"
+                          title="Xem chi tiết"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-gray-400 font-medium">{date}</span>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedRatingDetail({ rating: r, mode: 'GIVEN' })}
-                        className="p-1 text-gray-400 hover:text-primary-600 rounded-lg hover:bg-primary-50 transition-colors cursor-pointer"
-                        title="Xem chi tiết"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    {/* Feedback Tags */}
+                    {tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pl-11">
+                        {tags.map((t, tIdx) => (
+                          <span
+                            key={tIdx}
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100"
+                          >
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                            <span>{t}</span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Feedback Content */}
+                    <p className="text-xs text-gray-600 leading-relaxed pl-11 italic">
+                      "{cleanComment || 'Buổi học rất tốt!'}"
+                    </p>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Feedback Tags */}
-                  {tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pl-11">
-                      {tags.map((t, tIdx) => (
-                        <span
-                          key={tIdx}
-                          className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100"
-                        >
-                          <CheckCircle2 className="w-2.5 h-2.5" />
-                          <span>{t}</span>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Feedback Content */}
-                  <p className="text-xs text-gray-600 leading-relaxed pl-11 italic">
-                    "{cleanComment || 'Buổi học rất tốt!'}"
-                  </p>
-                </div>
-              );
-            })}
+            {/* Pagination for Given Reviews */}
+            {totalGivenPages > 1 && (
+              <div className="pt-2">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalGivenPages}
+                  totalItems={filteredGiven.length}
+                  pageSize={pageSize}
+                  onPageChange={handlePageChange}
+                  onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setCurrentPage(1);
+                  }}
+                  pageSizeOptions={[5, 10, 20]}
+                  showPageSizeSelector
+                  showItemCount
+                  itemLabel="đánh giá"
+                />
+              </div>
+            )}
           </div>
         )
       )}

@@ -15,13 +15,15 @@ import {
   ArrowLeft,
   AlertCircle,
   CheckCircle2,
-  Radio,
   Loader2,
   Star,
 } from 'lucide-react';
 import { useMediaDevicePreview } from '../../hooks';
 import { DeviceSettingsModal } from '../layout/DeviceSettingsModal';
 import { PermissionPromptModal } from './PermissionPromptModal';
+import { SKILL_CATEGORY_LABELS } from '@/features/post/constants';
+import LogoImage from '@/assets/images/Logo.png';
+import { Button } from '@/shared/components/ui';
 
 export interface PreJoinLobbyProps {
   title: string;
@@ -124,6 +126,13 @@ export const PreJoinLobby: React.FC<PreJoinLobbyProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [toggleCamera, toggleMicrophone]);
 
+  // Đảm bảo dừng mic & camera ngay lập tức khi người dùng điều hướng ra trang khác (Navbar, browser back, etc.)
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
+  }, [cleanup]);
+
   const handleJoinClick = () => {
     // Clean preview stream so hardware is freed for LiveKit
     cleanup();
@@ -141,7 +150,10 @@ export const PreJoinLobby: React.FC<PreJoinLobbyProps> = ({
   };
 
   const isOneOnOne = roomType === 'ONE_ON_ONE';
-  const roleLabel = currentUser.role === 'MENTOR' ? 'Mentor (Người dạy)' : 'Học viên';
+  const roleLabel = currentUser.role === 'MENTOR' ? 'Người hướng dẫn' : 'Học viên';
+
+  const rawCat = (sessionMeta?.category || '').toUpperCase();
+  const categoryLabel = SKILL_CATEGORY_LABELS[rawCat] || sessionMeta?.category;
 
   // Format title if it's an internal code like "utb-group-..."
   const isInternalRoomCode = title?.startsWith('utb-group-') || title?.startsWith('utb-1on1-');
@@ -160,13 +172,15 @@ export const PreJoinLobby: React.FC<PreJoinLobbyProps> = ({
       {/* Top Header */}
       <header className="relative z-10 w-full px-6 py-3.5 flex items-center justify-between border-b border-slate-200/80 backdrop-blur-md bg-white/85 shadow-2xs">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary-600 to-emerald-500 flex items-center justify-center text-white shadow-sm shadow-primary-600/20">
-            <Radio className="w-5 h-5 animate-pulse" />
-          </div>
+          <img
+            src={LogoImage}
+            alt="UniTime Bank Logo"
+            className="w-9 h-9 sm:w-10 sm:h-10 object-contain shrink-0"
+          />
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-extrabold tracking-tight text-slate-900">
-                UniTime Bank
+              <span className="text-base font-black tracking-tight text-slate-900 whitespace-nowrap">
+                UniTime<span className="text-primary-600">Bank</span>
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                 PHÒNG CHỜ
@@ -202,7 +216,7 @@ export const PreJoinLobby: React.FC<PreJoinLobbyProps> = ({
         {/* LEFT COLUMN: Video Preview & Hardware Controls */}
         <div className="w-full lg:flex-1 max-w-2xl flex flex-col gap-4">
           {/* 16:9 Video Canvas Frame */}
-          <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-slate-950 border border-slate-200/90 shadow-xl shadow-slate-200/50 flex items-center justify-center group">
+          <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-gradient-to-br from-slate-100 via-white to-slate-100/90 border border-slate-200/90 shadow-xl shadow-slate-200/50 flex items-center justify-center group">
             {/* Permission warning banner if permission denied */}
             {hasPermission === false && (
               <div className="absolute inset-0 z-30 bg-white/95 backdrop-blur-md p-6 flex flex-col items-center justify-center text-center">
@@ -232,105 +246,75 @@ export const PreJoinLobby: React.FC<PreJoinLobbyProps> = ({
               autoPlay
               playsInline
               muted
-              className={`w-full h-full object-cover scale-x-[-1] transition-opacity duration-300 ${
-                isCameraEnabled && hasPermission !== false ? 'opacity-100' : 'opacity-0 absolute'
+              className={`absolute inset-0 w-full h-full object-cover scale-x-[-1] transition-opacity duration-300 z-0 ${
+                isCameraEnabled && hasPermission !== false ? 'opacity-100' : 'opacity-0 pointer-events-none'
               }`}
             />
 
-            {/* Camera OFF Placeholder (Google Meet Style) */}
+            {/* Camera OFF Placeholder (Light Modern Style) */}
             {(!isCameraEnabled || hasPermission === false) && (
-              <div className="flex flex-col items-center justify-center text-center p-6 select-none animate-in fade-in duration-300">
+              <div className="relative z-10 flex flex-col items-center justify-center text-center p-6 select-none animate-in fade-in duration-300">
+                {/* Soft ambient glow behind avatar */}
+                <div className="absolute w-36 h-36 rounded-full bg-primary-100/60 blur-2xl pointer-events-none" />
+
                 <div className="relative mb-3">
                   {currentUser.avatar ? (
                     <img
                       src={currentUser.avatar}
                       alt={currentUser.name}
-                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-slate-700 shadow-xl"
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover ring-4 ring-white shadow-xl shadow-slate-300/60"
                     />
                   ) : (
-                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-tr from-primary-700 to-emerald-600 border-4 border-slate-700 flex items-center justify-center text-white text-3xl font-extrabold shadow-xl">
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-tr from-primary-600 to-emerald-500 ring-4 ring-white flex items-center justify-center text-white text-3xl font-extrabold shadow-xl shadow-primary-500/20">
                       {currentUser.name.charAt(0).toUpperCase()}
                     </div>
                   )}
 
                   {/* Pulsing ring */}
-                  <span className="absolute -inset-1.5 rounded-full border-2 border-emerald-500/30 animate-pulse pointer-events-none" />
+                  <span className="absolute -inset-1.5 rounded-full border-2 border-emerald-400/50 animate-pulse pointer-events-none" />
                 </div>
 
-                <h4 className="text-base font-bold text-white">{currentUser.name}</h4>
-                <p className="text-xs text-slate-300 mt-0.5 flex items-center gap-1.5 font-medium">
-                  <VideoOff className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Máy ảnh đang tắt</span>
-                </p>
+                <h4 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight">
+                  {currentUser.name}
+                </h4>
               </div>
             )}
 
-            {/* Top-Left: Status Overlay Badge */}
-            <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-slate-950/60 backdrop-blur-md border border-white/10 text-[11px] font-semibold text-white flex items-center gap-1.5 shadow-sm">
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    isCameraEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'
-                  }`}
-                />
-                <span>{isCameraEnabled ? 'Camera trực tiếp' : 'Camera đã tắt'}</span>
-              </span>
-            </div>
-
-            {/* Top-Right: Live Audio Sensitivity VU Meter */}
-            <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
-              <div
-                className={`px-3 py-1.5 rounded-full backdrop-blur-md border transition-all flex items-center gap-2 shadow-sm ${
-                  isMicEnabled
-                    ? 'bg-slate-950/60 border-white/10 text-white'
-                    : 'bg-rose-950/70 border-rose-600/50 text-rose-200'
-                }`}
-              >
-                {isMicEnabled ? (
-                  <>
-                    <Mic className="w-3.5 h-3.5 text-emerald-400" />
-                    {/* Animated 4 Equalizer Bars */}
-                    <div className="flex items-center gap-1 h-3.5 px-0.5">
-                      <span
-                        className="w-1 bg-emerald-400 rounded-full transition-all duration-75"
-                        style={{ height: `${Math.max(3, (audioLevel * 14) / 100)}px` }}
-                      />
-                      <span
-                        className="w-1 bg-emerald-400 rounded-full transition-all duration-75"
-                        style={{ height: `${Math.max(4, (audioLevel * 18) / 100)}px` }}
-                      />
-                      <span
-                        className="w-1 bg-emerald-400 rounded-full transition-all duration-75"
-                        style={{ height: `${Math.max(3, (audioLevel * 14) / 100)}px` }}
-                      />
-                      <span
-                        className="w-1 bg-emerald-400 rounded-full transition-all duration-75"
-                        style={{ height: `${Math.max(2, (audioLevel * 10) / 100)}px` }}
-                      />
-                    </div>
-                    <span className="text-[11px] font-semibold text-emerald-300 hidden sm:inline">
-                      {audioLevel > 5 ? 'Đang nhận giọng' : 'Micro sẵn sàng'}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <MicOff className="w-3.5 h-3.5 text-rose-400" />
-                    <span className="text-[11px] font-semibold text-rose-300">Đã tắt micro</span>
-                  </>
-                )}
+            {/* Top-Right: Audio Sensitivity VU Meter (Only shown when mic is active, no redundant text) */}
+            {isMicEnabled && (
+              <div className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-xs">
+                <Mic className="w-3.5 h-3.5 text-emerald-600" />
+                <div className="flex items-center gap-1 h-3 px-0.5">
+                  <span
+                    className="w-1 bg-emerald-500 rounded-full transition-all duration-75"
+                    style={{ height: `${Math.max(3, (audioLevel * 12) / 100)}px` }}
+                  />
+                  <span
+                    className="w-1 bg-emerald-500 rounded-full transition-all duration-75"
+                    style={{ height: `${Math.max(4, (audioLevel * 16) / 100)}px` }}
+                  />
+                  <span
+                    className="w-1 bg-emerald-500 rounded-full transition-all duration-75"
+                    style={{ height: `${Math.max(3, (audioLevel * 12) / 100)}px` }}
+                  />
+                  <span
+                    className="w-1 bg-emerald-500 rounded-full transition-all duration-75"
+                    style={{ height: `${Math.max(2, (audioLevel * 8) / 100)}px` }}
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Floating Glass Control Dock (Bottom Center of Video Preview) */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 px-4 py-2.5 rounded-full bg-slate-950/75 backdrop-blur-xl border border-white/15 shadow-2xl">
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 px-3.5 py-2 rounded-full bg-white/80 hover:bg-white/90 backdrop-blur-2xl border border-slate-200/90 shadow-xl shadow-slate-900/10 transition-all">
               {/* Mic Toggle Button */}
               <button
                 type="button"
                 onClick={toggleMicrophone}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-md cursor-pointer ${
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all cursor-pointer active:scale-95 ${
                   isMicEnabled
-                    ? 'bg-slate-800/90 hover:bg-slate-700 text-white border border-slate-600'
-                    : 'bg-rose-600 hover:bg-rose-700 text-white border border-rose-500 shadow-rose-600/30 animate-pulse'
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 shadow-2xs'
+                    : 'bg-rose-500 hover:bg-rose-600 text-white border border-rose-400 shadow-md shadow-rose-500/25'
                 }`}
                 title={isMicEnabled ? 'Tắt Microphone (Ctrl+D)' : 'Bật Microphone (Ctrl+D)'}
               >
@@ -341,10 +325,10 @@ export const PreJoinLobby: React.FC<PreJoinLobbyProps> = ({
               <button
                 type="button"
                 onClick={toggleCamera}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-md cursor-pointer ${
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all cursor-pointer active:scale-95 ${
                   isCameraEnabled
-                    ? 'bg-slate-800/90 hover:bg-slate-700 text-white border border-slate-600'
-                    : 'bg-rose-600 hover:bg-rose-700 text-white border border-rose-500 shadow-rose-600/30'
+                    ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 shadow-2xs'
+                    : 'bg-rose-500 hover:bg-rose-600 text-white border border-rose-400 shadow-md shadow-rose-500/25'
                 }`}
                 title={isCameraEnabled ? 'Tắt Camera (Ctrl+E)' : 'Bật Camera (Ctrl+E)'}
               >
@@ -392,13 +376,13 @@ export const PreJoinLobby: React.FC<PreJoinLobbyProps> = ({
         </div>
 
         {/* RIGHT COLUMN: Session Details & Join Card */}
-        <div className="w-full lg:w-[420px] flex flex-col">
-          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-200/50 p-6 sm:p-7 flex flex-col justify-between text-slate-800 space-y-5">
-            {/* Top Tag & Session Title */}
+        <div className="w-full lg:w-[380px] xl:w-[400px] flex flex-col">
+          <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-200/50 p-5 sm:p-6 flex flex-col justify-between text-slate-800 space-y-4">
+            {/* Header: Badges & Title */}
             <div>
-              <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-1.5 mb-2.5 flex-nowrap">
                 <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider shrink-0 ${
                     isOneOnOne
                       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                       : 'bg-primary-50 text-primary-700 border border-primary-200'
@@ -406,209 +390,171 @@ export const PreJoinLobby: React.FC<PreJoinLobbyProps> = ({
                 >
                   {isOneOnOne ? (
                     <>
-                      <UserCheck className="w-3.5 h-3.5" />
-                      <span>Phòng học 1:1</span>
+                      <UserCheck className="w-3 h-3" />
+                      <span>Phòng 1:1</span>
                     </>
                   ) : (
                     <>
-                      <Users className="w-3.5 h-3.5" />
-                      <span>Phòng học nhóm</span>
+                      <Users className="w-3 h-3" />
+                      <span>Phòng nhóm</span>
                     </>
                   )}
                 </span>
 
+                {!isOneOnOne && sessionMeta?.activeParticipants !== undefined && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>
+                      {sessionMeta.activeParticipants > 0
+                        ? `${sessionMeta.activeParticipants} người`
+                        : 'Chờ Host'}
+                    </span>
+                  </span>
+                )}
+
                 {!isOneOnOne && sessionMeta?.isFreeTier !== false && (
-                  <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-bold">
-                    5 phút đầu miễn phí
+                  <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold shrink-0">
+                    5p miễn phí
                   </span>
                 )}
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug line-clamp-2">
+              <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight leading-snug line-clamp-2">
                 {displayTitle}
               </h2>
 
-              {isInternalRoomCode && (
-                <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-                  Mã phòng: {title}
-                </p>
-              )}
-
-              {sessionMeta?.category && (
-                <p className="text-xs text-slate-500 font-medium mt-1">
-                  Chủ đề: <span className="text-slate-800 font-semibold">{sessionMeta.category}</span>
-                </p>
-              )}
+              <div className="flex items-center gap-3 text-xs text-slate-500 font-medium mt-1">
+                {categoryLabel && (
+                  <p>
+                    Chủ đề: <span className="text-slate-800 font-semibold">{categoryLabel}</span>
+                  </p>
+                )}
+                {isInternalRoomCode && (
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    Mã: {title}
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Partner / Host Information */}
+            {/* Partner / Host Information (Compact) */}
             {partnerInfo && (
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-3">
                 {partnerInfo.avatar ? (
                   <img
                     src={partnerInfo.avatar}
                     alt={partnerInfo.name}
-                    className="w-12 h-12 rounded-xl object-cover border border-slate-200"
+                    className="w-10 h-10 rounded-xl object-cover border border-slate-200 shrink-0"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-base border border-primary-200">
-                    {partnerInfo.name.charAt(0).toUpperCase()}
+                  <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-sm shrink-0 border border-primary-200">
+                    {(partnerInfo.name || 'N').charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-bold text-slate-900 truncate">
-                      {partnerInfo.name}
+                      {partnerInfo.name ? partnerInfo.name.replace(/\bMentor\b/gi, 'Người hướng dẫn') : 'Người hướng dẫn'}
                     </span>
-                    <span className="px-1.5 py-0.5 rounded-md bg-slate-200 text-slate-700 text-[10px] font-semibold shrink-0">
-                      {partnerInfo.role === 'MENTOR' ? 'Mentor' : 'Học viên'}
+                    <span className="px-1.5 py-0.2 rounded bg-slate-200/80 text-slate-700 text-[10px] font-semibold shrink-0">
+                      {partnerInfo.role === 'MENTOR' ? 'Người hướng dẫn' : 'Học viên'}
                     </span>
                   </div>
-                  {partnerInfo.headline ? (
-                    <p className="text-[11px] text-slate-500 truncate mt-0.5">{partnerInfo.headline}</p>
-                  ) : (
-                    <p className="text-[11px] text-slate-400 mt-0.5">Thành viên UniTime Bank</p>
-                  )}
-                  {partnerInfo.trustScore !== undefined && partnerInfo.trustScore > 0 && (
-                    <div className="flex items-center gap-1 text-[11px] text-amber-600 font-bold mt-1">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                      <span>{partnerInfo.trustScore} điểm uy tín</span>
-                    </div>
-                  )}
+                  <p className="text-[11px] text-slate-500 truncate">
+                    {partnerInfo.headline
+                      ? partnerInfo.headline.replace(/\bMentor\b/gi, 'Người hướng dẫn')
+                      : 'Người hướng dẫn UniTime Bank'}
+                  </p>
                 </div>
+                {partnerInfo.trustScore !== undefined && partnerInfo.trustScore > 0 && (
+                  <div className="flex items-center gap-1 text-[11px] text-amber-600 font-bold shrink-0">
+                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                    <span>{partnerInfo.trustScore}</span>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Session Metadata Grid */}
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              {sessionMeta?.durationMinutes && (
-                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-primary-600 shrink-0" />
-                  <div>
-                    <span className="text-slate-400 text-[10px] block">Thời lượng</span>
-                    <span className="font-bold text-slate-800">{sessionMeta.durationMinutes} phút</span>
-                  </div>
-                </div>
-              )}
-
-              {sessionMeta?.totalCredits !== undefined && (
-                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-2">
-                  <Coins className="w-4 h-4 text-amber-500 shrink-0" />
-                  <div>
-                    <span className="text-slate-400 text-[10px] block">Chi phí</span>
-                    <span className="font-bold text-slate-800">
-                      {sessionMeta.totalCredits > 0
-                        ? `${sessionMeta.totalCredits} Credit`
-                        : '1 Credit / phút'}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {!isOneOnOne && sessionMeta?.activeParticipants !== undefined && (
-                <div className="col-span-2 p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-100 flex items-center gap-2 text-emerald-800">
-                  <Users className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span className="font-medium text-xs">
-                    Hiện có <span className="font-bold">{sessionMeta.activeParticipants} người</span> đang
-                    trong phòng học
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Current User Identity Badge */}
-            <div className="pt-2 border-t border-slate-100">
-              <span className="text-[11px] font-semibold text-slate-400 block mb-2">
-                Đang chuẩn bị tham gia với tư cách:
-              </span>
-              <div className="flex items-center gap-3">
-                {currentUser.avatar ? (
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    className="w-9 h-9 rounded-full object-cover border border-slate-200"
-                  />
-                ) : (
-                  <div className="w-9 h-9 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs border border-slate-200">
-                    {currentUser.name.charAt(0).toUpperCase()}
+            {/* Session Metadata Grid (Duration / Credits if present) */}
+            {(sessionMeta?.durationMinutes || sessionMeta?.totalCredits !== undefined) && (
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {sessionMeta?.durationMinutes && (
+                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-primary-600 shrink-0" />
+                    <div>
+                      <span className="text-slate-400 text-[10px] block">Thời lượng</span>
+                      <span className="font-bold text-slate-800">{sessionMeta.durationMinutes} phút</span>
+                    </div>
                   </div>
                 )}
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 leading-tight">{currentUser.name}</h4>
-                  <span className="text-[11px] text-primary-600 font-semibold">{roleLabel}</span>
+
+                {sessionMeta?.totalCredits !== undefined && (
+                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-2">
+                    <Coins className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <div>
+                      <span className="text-slate-400 text-[10px] block">Chi phí</span>
+                      <span className="font-bold text-slate-800">
+                        {sessionMeta.totalCredits > 0
+                          ? `${sessionMeta.totalCredits} Credit`
+                          : '1 Credit / phút'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Current User Identity (Compact Single Row) */}
+            <div className="px-3 py-2 rounded-xl bg-slate-50 border border-slate-100/90 flex items-center gap-2.5">
+              {currentUser.avatar ? (
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  className="w-7 h-7 rounded-full object-cover border border-slate-200 shrink-0"
+                />
+              ) : (
+                <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
+                  {currentUser.name.charAt(0).toUpperCase()}
                 </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <span className="text-xs font-bold text-slate-800 truncate block">
+                  {currentUser.name}
+                </span>
               </div>
+              <span className="text-[10px] text-primary-700 font-bold bg-primary-50 border border-primary-200/60 px-2 py-0.5 rounded-full shrink-0">
+                {roleLabel}
+              </span>
             </div>
 
-            {/* Pre-flight Device Status Checklist */}
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 space-y-1.5 text-xs">
-              <div className="flex items-center justify-between text-slate-600">
-                <span className="flex items-center gap-1.5">
-                  <Mic className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Microphone:</span>
-                </span>
-                <span
-                  className={`font-bold flex items-center gap-1 ${
-                    isMicEnabled ? 'text-emerald-600' : 'text-slate-500'
-                  }`}
-                >
-                  <CheckCircle2 className="w-3 h-3" />
-                  {isMicEnabled ? 'Sẵn sàng' : 'Tắt tiếng'}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-slate-600">
-                <span className="flex items-center gap-1.5">
-                  <Video className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Camera:</span>
-                </span>
-                <span
-                  className={`font-bold flex items-center gap-1 ${
-                    isCameraEnabled ? 'text-emerald-600' : 'text-slate-500'
-                  }`}
-                >
-                  <CheckCircle2 className="w-3 h-3" />
-                  {isCameraEnabled ? 'Sẵn sàng' : 'Tắt hình'}
-                </span>
-              </div>
-            </div>
-
-            {/* Actions: Join Call & Back */}
-            <div className="space-y-2.5 pt-2">
-              <button
-                type="button"
+            {/* Actions: Join Call */}
+            <div className="space-y-2 pt-1">
+              <Button
+                variant="primary"
+                size="md"
+                fullWidth
                 onClick={handleJoinClick}
                 disabled={isJoining || isLoading}
-                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-primary-600 via-emerald-600 to-teal-600 hover:from-primary-700 hover:via-emerald-700 hover:to-teal-700 active:scale-[0.98] text-white font-extrabold text-sm tracking-wide shadow-lg shadow-primary-700/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                isLoading={isJoining}
+                rightIcon={<ArrowRight className="w-4 h-4" />}
               >
-                {isJoining ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Đang kết nối vào phòng...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Vào phòng học ngay</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
+                Vào phòng học ngay
+              </Button>
 
               <button
                 type="button"
                 onClick={handleBackClick}
                 disabled={isJoining}
-                className="w-full py-2.5 px-4 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-1 text-center text-xs text-slate-400 hover:text-slate-600 font-medium transition-colors cursor-pointer"
               >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Quay lại</span>
+                Quay lại
               </button>
             </div>
 
             {/* Security footnote */}
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-400 font-medium text-center">
+            <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400 font-medium text-center">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>Kết nối mã hóa WebRTC an toàn bởi UniTime Bank</span>
+              <span>Kết nối mã hóa WebRTC an toàn</span>
             </div>
           </div>
         </div>

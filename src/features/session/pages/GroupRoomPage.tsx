@@ -9,6 +9,7 @@ import {
   useCloseGroupRoomMutation,
   useGetRoomChatMessagesQuery,
   useGetGroupRoomStatsQuery,
+  useGetGroupRoomPreviewQuery,
 } from '@/core/api/session';
 import {
   useLiveKitRoom,
@@ -17,7 +18,8 @@ import {
   useWhiteboard,
   useHeartbeat,
 } from '../hooks';
-import type { InRoomChatMessage } from '../types';
+import type { InRoomChatMessage, ConnectionStatus } from '../types';
+import { Track } from 'livekit-client';
 import {
   SessionHeader,
   SessionControlsBar,
@@ -47,21 +49,6 @@ export const GroupRoomPage: React.FC = () => {
   const [leaveGroup] = useLeaveGroupRoomMutation();
   const [closeGroupRoom, { isLoading: isClosingRoom }] = useCloseGroupRoomMutation();
 
-  const isHost = tokenData?.role === 'MENTOR';
-
-  // Thống kê quỹ tạm giữ dành cho Host (Cập nhật theo dữ liệu thực tế)
-  const {
-    data: roomStats,
-    isLoading: isLoadingStats,
-    refetch: refetchStats,
-  } = useGetGroupRoomStatsQuery(tokenData?.roomId || '', {
-    skip: !tokenData?.roomId || !isHost,
-  });
-
-  const { data: initialMessages } = useGetRoomChatMessagesQuery(tokenData?.roomId || '', {
-    skip: !tokenData?.roomId,
-  });
-
   // Pre-join Lobby State: Bỏ qua màn hình chờ nếu Mentor vừa tạo phòng
   const isAutoJoin = useMemo(() => {
     if ((location.state as any)?.autoJoin) return true;
@@ -80,6 +67,35 @@ export const GroupRoomPage: React.FC = () => {
     }
   }, [isAutoJoin, hasJoinedRoom]);
 
+  // Chỉ lấy thông tin preview khi chưa vào phòng (đang ở màn hình chờ PreJoinLobby)
+  // Tuyệt đối KHÔNG gọi joinGroup khi đang ở màn hình chờ để tránh ghi nhận học viên ảo
+  const {
+    data: previewData,
+    isLoading: isLoadingPreview,
+    error: previewError,
+  } = useGetGroupRoomPreviewQuery(roomId || '', {
+    skip: !roomId || hasJoinedRoom,
+  });
+
+  const isHost =
+    tokenData?.role === 'MENTOR' ||
+    previewData?.isHost ||
+    Boolean(previewData?.mentorId && previewData.mentorId === authUser?.id);
+
+  // Thống kê quỹ tạm giữ dành cho Host (Cập nhật theo dữ liệu thực tế)
+  const {
+    data: roomStats,
+    isLoading: isLoadingStats,
+    refetch: refetchStats,
+  } = useGetGroupRoomStatsQuery(tokenData?.roomId || '', {
+    skip: !tokenData?.roomId || !isHost,
+    pollingInterval: 10000,
+  });
+
+  const { data: initialMessages } = useGetRoomChatMessagesQuery(tokenData?.roomId || '', {
+    skip: !tokenData?.roomId,
+  });
+
   const [preJoinSettings, setPreJoinSettings] = useState<{
     isMicEnabled: boolean;
     isCameraEnabled: boolean;
@@ -93,6 +109,12 @@ export const GroupRoomPage: React.FC = () => {
   // Modals & States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isEscrowModalOpen, setIsEscrowModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (isEscrowModalOpen && isHost) {
+      refetchStats();
+    }
+  }, [isEscrowModalOpen, isHost, refetchStats]);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
@@ -126,38 +148,17 @@ export const GroupRoomPage: React.FC = () => {
     return Math.max(serverTotal, liveTotal);
   }, [isHost, roomStats?.accumulatedCredits, liveLearnerEscrows]);
 
-  const mergedStats = useMemo(() => {
-    if (!roomStats) return null;
-    const learners = roomStats.learners.map((l) => {
-      const live = liveLearnerEscrows[l.userId];
-      if (live) {
-        return {
-          ...l,
-          activeSeconds: Math.max(l.activeSeconds, live.activeSeconds),
-          paidMinutes: Math.max(l.paidMinutes, Math.floor(live.paidSeconds / 60)),
-          creditsContributed: Math.max(l.creditsContributed, live.credits),
-        };
-      }
-      return l;
-    });
-
-    return {
-      ...roomStats,
-      accumulatedCredits: hostAccumulatedCredits,
-      learners,
-    };
-  }, [roomStats, liveLearnerEscrows, hostAccumulatedCredits]);
-
-  // 1. Initial Join Group Room
+  // 1. Initial Join Group Room (Chỉ tự động gọi join nếu isAutoJoin = true, ví dụ Mentor vừa tạo phòng)
+  // Đối với học viên bình thường, chỉ gọi joinGroup khi bấm nút "Vào phòng học ngay" trên PreJoinLobby
   useEffect(() => {
-    if (roomId) {
+    if (isAutoJoin && roomId && !tokenData && !isJoining) {
       joinGroup(roomId)
         .unwrap()
         .catch((err) => {
-          console.error('Failed to join group room:', err);
+          console.error('Failed to auto-join group room:', err);
         });
     }
-  }, [roomId, joinGroup]);
+  }, [isAutoJoin, roomId, tokenData, isJoining, joinGroup]);
 
   // Đồng bộ trạng thái hiện diện và đồng hồ đếm ngược phòng từ backend khi load xong tokenData
   useEffect(() => {
@@ -216,6 +217,16 @@ export const GroupRoomPage: React.FC = () => {
     initialCameraEnabled: preJoinSettings.isCameraEnabled,
     preferredAudioDeviceId: preJoinSettings.audioDeviceId,
     preferredVideoDeviceId: preJoinSettings.videoDeviceId,
+    onParticipantConnected: () => {
+      if (isHost) {
+        refetchStats();
+      }
+    },
+    onParticipantDisconnected: () => {
+      if (isHost) {
+        refetchStats();
+      }
+    },
     onDisconnected: () => {
       // Khi ngắt kết nối, thoát ra sảnh quản lý lớp học nhóm
       if (!isHost) {
@@ -239,6 +250,56 @@ export const GroupRoomPage: React.FC = () => {
       }
     },
   });
+
+  // Hợp nhất dữ liệu thống kê Quỹ tạm giữ với LiveKit WebRTC Ground Truth:
+  // Nếu học viên không có trong remoteParticipants của phòng WebRTC, chắc chắn họ đã ngắt kết nối (DISCONNECTED).
+  const mergedStats = useMemo(() => {
+    if (!roomStats) return null;
+    const remoteIdentities = new Set(remoteParticipants.map((p) => p.identity));
+
+    const learners = roomStats.learners.map((l) => {
+      const live = liveLearnerEscrows[l.userId];
+      const isActuallyOnline = remoteIdentities.has(l.userId);
+      const effectiveConnectionStatus: ConnectionStatus = isActuallyOnline ? 'ONLINE' : 'DISCONNECTED';
+
+      if (live) {
+        return {
+          ...l,
+          connectionStatus: effectiveConnectionStatus,
+          activeSeconds: Math.max(l.activeSeconds, live.activeSeconds),
+          paidMinutes: Math.max(l.paidMinutes, Math.floor(live.paidSeconds / 60)),
+          creditsContributed: Math.max(l.creditsContributed, live.credits),
+        };
+      }
+      return {
+        ...l,
+        connectionStatus: effectiveConnectionStatus,
+      };
+    });
+
+    const activeLearnersCount = learners.filter((l) => l.connectionStatus === 'ONLINE').length;
+
+    return {
+      ...roomStats,
+      accumulatedCredits: hostAccumulatedCredits,
+      totalLearnersCount: learners.length,
+      activeLearnersCount,
+      learners,
+    };
+  }, [roomStats, liveLearnerEscrows, hostAccumulatedCredits, remoteParticipants]);
+
+  // Dọn dẹp và dừng mọi luồng Mic/Cam khi unmount trang (điều hướng ra trang khác)
+  useEffect(() => {
+    return () => {
+      disconnect();
+    };
+  }, [disconnect]);
+
+  // Tạo stream xem trước từ camera của localParticipant nếu có
+  const localCameraStream = useMemo(() => {
+    const track = localParticipant?.getTrackPublication(Track.Source.Camera)?.track?.mediaStreamTrack;
+    return track ? new MediaStream([track]) : undefined;
+  }, [localParticipant, isCameraEnabled]);
 
   // 4. Whiteboard
   const {
@@ -273,10 +334,33 @@ export const GroupRoomPage: React.FC = () => {
     },
     onEscrowMeteringUpdate: (data) => {
       if (isHost) {
-        setLiveLearnerEscrows((prev) => ({
-          ...prev,
-          [data.userId]: data,
-        }));
+        if (data.connectionStatus === 'DISCONNECTED') {
+          setLiveLearnerEscrows((prev) => {
+            const next = { ...prev };
+            delete next[data.userId];
+            return next;
+          });
+          refetchStats();
+        } else {
+          setLiveLearnerEscrows((prev) => ({
+            ...prev,
+            [data.userId]: {
+              activeSeconds: data.activeSeconds ?? 0,
+              paidSeconds: data.paidSeconds ?? 0,
+              credits: data.credits ?? 0,
+            },
+          }));
+        }
+      }
+    },
+    onUserLeftRoom: (data) => {
+      if (isHost && data.userId) {
+        setLiveLearnerEscrows((prev) => {
+          const next = { ...prev };
+          delete next[data.userId];
+          return next;
+        });
+        refetchStats();
       }
     },
     onParticipantMuted: (evt) => {
@@ -521,8 +605,8 @@ export const GroupRoomPage: React.FC = () => {
     }
   }, [roomId, closeGroupRoom, disconnect, navigate, hostAccumulatedCredits, tokenData, heartbeatHelper]);
 
-  // Loading Screen
-  if (isJoining) {
+  // Loading Screen (Chỉ hiển thị khi người dùng đã bấm tham gia hoặc autoJoin)
+  if (isJoining && hasJoinedRoom) {
     return (
       <div className="fixed inset-0 w-full h-full bg-slate-50 flex flex-col items-center justify-center text-center p-6 select-none animate-in fade-in duration-200 z-50">
         <div className="w-16 h-16 rounded-3xl bg-primary-50 border border-primary-200/80 flex items-center justify-center mb-4 shadow-sm">
@@ -536,8 +620,34 @@ export const GroupRoomPage: React.FC = () => {
     );
   }
 
-  // Error Screen
-  if (joinError) {
+  // Preview Error Screen (Lỗi khi tải thông tin xem trước phòng chờ)
+  if (!hasJoinedRoom && previewError) {
+    const errorMessage =
+      (previewError as any)?.data?.message || 'Không thể xem thông tin phòng học nhóm này.';
+    return (
+      <div className="fixed inset-0 w-full h-full bg-slate-50 flex flex-col items-center justify-center text-center p-6 select-none z-50">
+        <div className="max-w-md w-full bg-white border border-slate-200 rounded-3xl p-8 space-y-4 shadow-xl">
+          <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-center justify-center mx-auto text-rose-500">
+            <AlertTriangle className="w-7 h-7" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-800">Không thể vào phòng học</h2>
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed font-medium">{errorMessage}</p>
+          </div>
+          <button
+            onClick={() => navigate('/manage/group-sessions')}
+            className="w-full py-2.5 px-4 bg-primary-700 hover:bg-primary-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Quay lại danh sách phòng</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Join Error Screen
+  if (hasJoinedRoom && joinError) {
     const errorMessage =
       (joinError as any)?.data?.message || 'Không thể tham gia phòng học nhóm này.';
     return (
@@ -551,7 +661,10 @@ export const GroupRoomPage: React.FC = () => {
             <p className="text-xs text-slate-500 mt-1 leading-relaxed font-medium">{errorMessage}</p>
           </div>
           <button
-            onClick={() => navigate('/manage/bookings')}
+            onClick={() => {
+              setHasJoinedRoom(false);
+              navigate('/manage/group-sessions');
+            }}
             className="w-full py-2.5 px-4 bg-primary-700 hover:bg-primary-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -568,38 +681,47 @@ export const GroupRoomPage: React.FC = () => {
   if (!hasJoinedRoom) {
     return (
       <PreJoinLobby
-        title={tokenData?.title || tokenData?.livekitRoomName || 'Lớp học nhóm trực tuyến'}
+        title={previewData?.title || tokenData?.title || 'Lớp học nhóm trực tuyến'}
         roomType="GROUP"
         currentUser={{
           name: displayName,
           avatar: avatarUrl,
-          role: tokenData?.role || (isHost ? 'MENTOR' : 'LEARNER'),
+          role: previewData?.role || tokenData?.role || (isHost ? 'MENTOR' : 'LEARNER'),
         }}
         partnerInfo={
-          !isHost && tokenData?.mentorName
+          !isHost && (previewData?.mentorName || tokenData?.mentorName)
             ? {
-                name: tokenData.mentorName,
-                avatar: tokenData.mentorAvatar,
+                name: previewData?.mentorName || tokenData?.mentorName || 'Người hướng dẫn',
+                avatar: previewData?.mentorAvatar || tokenData?.mentorAvatar,
                 role: 'MENTOR',
               }
             : undefined
         }
         sessionMeta={{
-          category: tokenData?.category,
-          activeParticipants: 1 + remoteParticipants.length,
+          category: previewData?.category || tokenData?.category,
+          skills: previewData?.skills,
+          activeParticipants:
+            previewData?.currentParticipants ??
+            tokenData?.currentParticipants ??
+            (isHost ? 0 : isHostPresent ? 1 : 0),
           isFreeTier: true,
         }}
-        isLoading={isJoining}
-        isJoining={false}
-        onJoin={(settings) => {
+        isLoading={isLoadingPreview}
+        isJoining={isJoining}
+        onJoin={async (settings) => {
           setPreJoinSettings(settings);
-          setHasJoinedRoom(true);
+          if (roomId) {
+            try {
+              await joinGroup(roomId).unwrap();
+              setHasJoinedRoom(true);
+            } catch (err: any) {
+              console.error('Join group error:', err);
+              toast.error(err?.data?.message || 'Không thể tham gia phòng học nhóm.');
+            }
+          }
         }}
         onBack={() => {
-          if (roomId && !isHost) {
-            leaveGroup(roomId).catch(() => {});
-          }
-          navigate('/rooms/group');
+          navigate('/manage/group-sessions');
         }}
       />
     );
@@ -817,6 +939,7 @@ export const GroupRoomPage: React.FC = () => {
         currentVideoDeviceId={preJoinSettings.videoDeviceId}
         onSelectAudioDevice={switchAudioDevice}
         onSelectVideoDevice={switchVideoDevice}
+        previewStream={localCameraStream}
       />
 
       {/* 6. Violation Report Modal */}

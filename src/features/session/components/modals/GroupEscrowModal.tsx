@@ -68,11 +68,13 @@ export const GroupEscrowModal: React.FC<GroupEscrowModalProps> = ({
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
             <div className="flex items-center gap-1.5 text-slate-600 text-xs font-semibold">
               <Users className="w-3.5 h-3.5" />
-              <span>Học viên</span>
+              <span>Học viên đang học</span>
             </div>
             <div className="mt-1.5 flex items-baseline gap-1">
-              <span className="text-xl font-bold text-slate-800">{activeCount}</span>
-              <span className="text-xs text-slate-500 font-medium">/ {totalCount} người</span>
+              <span className={`text-xl font-bold ${activeCount > 0 ? 'text-slate-800' : 'text-slate-500'}`}>
+                {activeCount}
+              </span>
+              <span className="text-xs text-slate-500 font-medium">/ {totalCount} đã tham gia</span>
             </div>
           </div>
 
@@ -161,7 +163,9 @@ export const GroupEscrowModal: React.FC<GroupEscrowModalProps> = ({
                             {activeSecondsMod.toString().padStart(2, '0')}
                           </span>
                           <span>•</span>
-                          {isFreeTrial ? (
+                          {!isOnline ? (
+                            <span className="text-slate-400">Đã rời phòng</span>
+                          ) : isFreeTrial ? (
                             <span className="text-slate-500">
                               Học thử (còn {learner.freeSecondsRemaining}s)
                             </span>
