@@ -275,7 +275,7 @@ export const BookingDetailModal: React.FC<BookingDetailModalProps> = ({
                   variant="primary"
                   size="md"
                   onClick={() => setIsRatingOpen(true)}
-                  className="rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-4 shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  className="rounded-xl !bg-amber-500 hover:!bg-amber-600 !text-white font-bold text-xs px-4 shadow-xs flex items-center gap-1.5 cursor-pointer border-0"
                 >
                   <Star className="w-3.5 h-3.5 fill-white text-white" />
                   <span>Đánh giá buổi học</span>

@@ -391,10 +391,10 @@ export const BookingCard: React.FC<BookingCardProps> = ({
                 ) : (
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="primary"
                     size="sm"
                     onClick={() => onRate?.(booking)}
-                    className="rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs py-1.5 px-3 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                    className="rounded-lg !bg-amber-500 hover:!bg-amber-600 !text-white font-bold text-xs py-1.5 px-3 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer border-0"
                   >
                     <Star className="w-3.5 h-3.5 fill-white text-white" />
                     <span>Đánh giá</span>

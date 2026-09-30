@@ -13,7 +13,7 @@ import {
   useCloseGroupRoomMutation,
 } from '@/core/api/session';
 import { toast } from '@/shared/utils';
-import { Button, Tabs } from '@/shared/components/ui';
+import { Button, Tabs, Pagination } from '@/shared/components/ui';
 import { FALLBACK_CATEGORY_IMAGES, DEFAULT_POST_COVER, SKILL_CATEGORY_LABELS } from '@/features/post/constants';
 import type { RootState } from '@/core/store';
 
@@ -175,6 +175,37 @@ export const GroupSessionsManagementPage: React.FC = () => {
         r.category?.toLowerCase().includes(q),
     );
   }, [searchQuery, myParticipantHistoryRooms]);
+
+  // Phân trang danh sách hiện tại
+  const currentList = useMemo(() => {
+    if (roleTab === 'HOST') {
+      return groupTab === 'ACTIVE' ? filteredActiveRooms : filteredHostHistoryRooms;
+    } else {
+      return groupTab === 'ACTIVE' ? filteredActiveParticipantRooms : filteredParticipantRooms;
+    }
+  }, [
+    roleTab,
+    groupTab,
+    filteredActiveRooms,
+    filteredHostHistoryRooms,
+    filteredActiveParticipantRooms,
+    filteredParticipantRooms,
+  ]);
+
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
+
+  useEffect(() => {
+    setPage(1);
+  }, [roleTab, groupTab, searchQuery]);
+
+  const totalItems = currentList.length;
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+  const paginatedList = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return currentList.slice(startIndex, startIndex + pageSize);
+  }, [currentList, page, pageSize]);
 
   // Helper lấy ảnh bìa theo danh mục an toàn
   const getCategoryCover = (category?: string) => {
@@ -395,7 +426,7 @@ export const GroupSessionsManagementPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredActiveRooms.map((room) => (
+              {paginatedList.map((room) => (
                 <ManageGroupRoomCard
                   key={room.roomId}
                   room={room}
@@ -428,7 +459,7 @@ export const GroupSessionsManagementPage: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredHostHistoryRooms.map((room: any) => {
+              {paginatedList.map((room: any) => {
                 const rawCat = (room.category || 'PROGRAMMING').toUpperCase();
                 const categoryLabel = (SKILL_CATEGORY_LABELS[rawCat] || room.category || 'HỌC NHÓM').toUpperCase();
                 const coverUrl = room.coverImage || getCategoryCover(room.category);
@@ -534,7 +565,7 @@ export const GroupSessionsManagementPage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredActiveParticipantRooms.map((room) => (
+            {paginatedList.map((room) => (
               <ManageGroupRoomCard
                 key={room.roomId}
                 room={room}
@@ -578,7 +609,7 @@ export const GroupSessionsManagementPage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredParticipantRooms.map((room: any) => {
+            {paginatedList.map((room: any) => {
               const rawCat = (room.category || 'PROGRAMMING').toUpperCase();
               const categoryLabel = (SKILL_CATEGORY_LABELS[rawCat] || room.category || 'HỌC NHÓM').toUpperCase();
               const coverUrl = room.coverImage || getCategoryCover(room.category);
@@ -768,6 +799,23 @@ export const GroupSessionsManagementPage: React.FC = () => {
             })}
           </div>
         )
+      )}
+
+      {/* 5. PAGINATION */}
+      {totalPages > 1 && (
+        <div className="pt-2">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            showPageSizeSelector={true}
+            pageSizeOptions={[6, 12, 24]}
+            itemLabel="lớp học nhóm"
+          />
+        </div>
       )}
 
       {/* Modal Tạo Phòng Nhóm */}
