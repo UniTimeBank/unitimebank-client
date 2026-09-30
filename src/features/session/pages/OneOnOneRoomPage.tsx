@@ -14,6 +14,7 @@ import {
 import { useLiveKitRoom, useSessionSocket, useInRoomChat, useSessionRecorder } from '../hooks';
 import type { InRoomChatMessage } from '../types';
 import type { DirectUploadAsset } from '@/core/api/upload';
+import { Track } from 'livekit-client';
 import {
   SessionHeader,
   OneOnOneSpotlightVideo,
@@ -145,6 +146,19 @@ export const OneOnOneRoomPage: React.FC = () => {
       navigate('/manage/bookings');
     },
   });
+
+  // Dọn dẹp và dừng mọi luồng Mic/Cam khi unmount trang (điều hướng ra trang khác)
+  useEffect(() => {
+    return () => {
+      disconnect();
+    };
+  }, [disconnect]);
+
+  // Tạo stream xem trước từ camera hiện tại của phòng học (nếu đang bật)
+  const localCameraStream = useMemo(() => {
+    const track = localParticipant?.getTrackPublication(Track.Source.Camera)?.track?.mediaStreamTrack;
+    return track ? new MediaStream([track]) : undefined;
+  }, [localParticipant, isCameraEnabled]);
 
   const { sendMessage } = useSessionSocket({
     roomId: hasJoinedRoom ? tokenData?.roomId : undefined,
@@ -485,6 +499,7 @@ export const OneOnOneRoomPage: React.FC = () => {
         currentVideoDeviceId={preJoinSettings.videoDeviceId}
         onSelectAudioDevice={switchAudioDevice}
         onSelectVideoDevice={switchVideoDevice}
+        previewStream={localCameraStream}
       />
 
       {/* 5. Violation Report Modal */}

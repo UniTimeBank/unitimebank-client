@@ -378,27 +378,25 @@ export const BookingCard: React.FC<BookingCardProps> = ({
                 </Button>
 
                 {isRated ? (
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
                     onClick={() => onViewRating?.(booking)}
-                    className="rounded-lg bg-amber-50/70 hover:bg-amber-100/80 border border-amber-200 text-amber-800 font-semibold text-xs py-1.5 px-3 flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                    className="rounded-lg bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-medium text-xs py-1.5 px-2.5 flex items-center gap-1.5 transition-colors cursor-pointer"
                   >
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
                     <span>Xem đánh giá</span>
-                  </Button>
+                  </button>
                 ) : (
-                  <Button
+                  <button
                     type="button"
                     variant="primary"
                     size="sm"
                     onClick={() => onRate?.(booking)}
                     className="rounded-lg !bg-amber-500 hover:!bg-amber-600 !text-white font-bold text-xs py-1.5 px-3 flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer border-0"
                   >
-                    <Star className="w-3.5 h-3.5 fill-white text-white" />
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
                     <span>Đánh giá</span>
-                  </Button>
+                  </button>
                 )}
               </>
             )}

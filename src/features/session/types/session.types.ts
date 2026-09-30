@@ -40,6 +40,26 @@ export interface LiveKitTokenResponse {
   isHostPresent?: boolean;
   hostDisconnectedAt?: string | null;
   hostAbsentSecondsRemaining?: number;
+  currentParticipants?: number;
+}
+
+export interface GroupRoomPreviewResponse {
+  roomId: string;
+  roomType: RoomType;
+  title: string;
+  category?: string;
+  skills?: string[];
+  coverImage?: string;
+  mentorId: string;
+  mentorName?: string;
+  mentorAvatar?: string;
+  currentParticipants: number;
+  maxParticipants?: number;
+  isHost: boolean;
+  role: ParticipantRole;
+  isHostPresent: boolean;
+  hostDisconnectedAt?: string | null;
+  hostAbsentSecondsRemaining?: number;
 }
 
 export interface ActiveGroupRoomItem {

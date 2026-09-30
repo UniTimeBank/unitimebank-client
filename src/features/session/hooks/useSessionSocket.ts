@@ -35,9 +35,15 @@ export interface UseSessionSocketProps {
   }) => void;
   onEscrowMeteringUpdate?: (data: {
     userId: string;
-    activeSeconds: number;
-    paidSeconds: number;
-    credits: number;
+    activeSeconds?: number;
+    paidSeconds?: number;
+    credits?: number;
+    connectionStatus?: string;
+  }) => void;
+  onUserLeftRoom?: (data: {
+    userId: string;
+    socketId?: string;
+    timestamp?: string;
   }) => void;
 }
 
@@ -57,6 +63,7 @@ export const useSessionSocket = ({
   onHostPresenceChanged,
   onRoomClosed,
   onEscrowMeteringUpdate,
+  onUserLeftRoom,
 }: UseSessionSocketProps) => {
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -74,6 +81,7 @@ export const useSessionSocket = ({
     onHostPresenceChanged,
     onRoomClosed,
     onEscrowMeteringUpdate,
+    onUserLeftRoom,
   });
 
   useEffect(() => {
@@ -89,6 +97,7 @@ export const useSessionSocket = ({
       onHostPresenceChanged,
       onRoomClosed,
       onEscrowMeteringUpdate,
+      onUserLeftRoom,
     };
   });
 
@@ -173,11 +182,20 @@ export const useSessionSocket = ({
       'escrow-metering-update',
       (data: {
         userId: string;
-        activeSeconds: number;
-        paidSeconds: number;
-        credits: number;
+        activeSeconds?: number;
+        paidSeconds?: number;
+        credits?: number;
+        connectionStatus?: string;
       }) => {
         callbacksRef.current.onEscrowMeteringUpdate?.(data);
+      },
+    );
+
+    // User Left Room
+    socket.on(
+      'user-left-room',
+      (data: { userId: string; socketId?: string; timestamp?: string }) => {
+        callbacksRef.current.onUserLeftRoom?.(data);
       },
     );
 
@@ -205,19 +223,19 @@ export const useSessionSocket = ({
       callbacksRef.current.onRoomClosed?.(data);
     });
 
-    // Nếu người tham gia là Mentor (Host), định kỳ gửi heartbeat mỗi 25 giây để duy trì trạng thái ONLINE trên Backend
-    let mentorHeartbeatInterval: any = null;
-    if (role === 'MENTOR') {
-      mentorHeartbeatInterval = setInterval(() => {
+    // Định kỳ gửi heartbeat mỗi 20 giây để duy trì trạng thái ONLINE trên Backend cho mọi người tham gia phòng
+    let heartbeatInterval: any = null;
+    if (roomId && userId) {
+      heartbeatInterval = setInterval(() => {
         if (socket.connected) {
           socket.emit('heartbeat', { roomId, userId });
         }
-      }, 25000);
+      }, 20000);
     }
 
     return () => {
-      if (mentorHeartbeatInterval) {
-        clearInterval(mentorHeartbeatInterval);
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
       }
       if (socket.connected) {
         socket.emit('leave-room', { roomId, userId });

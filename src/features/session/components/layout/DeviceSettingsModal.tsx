@@ -2,14 +2,15 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   Mic,
   Video,
+  VideoOff,
   Volume2,
   Settings,
   X,
   Check,
   Smile,
-  ChevronDown,
+  Loader2,
 } from 'lucide-react';
-import { Modal } from '@/shared/components/ui';
+import { Modal, Select, type SelectOption } from '@/shared/components/ui';
 
 export type SettingsTab = 'AUDIO' | 'VIDEO' | 'GENERAL' | 'REACTIONS';
 
@@ -76,12 +77,12 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
   const [selectedOutput, setSelectedOutput] = useState<string>('');
   const [isTestingSpeaker, setIsTestingSpeaker] = useState(false);
 
-  // Settings from Screenshot 2: "Cài đặt chung"
+  // Settings for: "Cài đặt chung"
   const [pipMode, setPipMode] = useState<string>('ALWAYS'); // "Luôn tự động hiển thị"
   const [screenNotifications, setScreenNotifications] = useState(false); // "Thông báo trên màn hình"
   const [autoLeaveEmptyCall, setAutoLeaveEmptyCall] = useState(true); // "Rời khỏi cuộc gọi không có ai tham gia"
 
-  // Settings for "Phản ứng"
+  // Settings for: "Phản ứng"
   const [enableReactions, setEnableReactions] = useState(true);
   const [reactionSounds, setReactionSounds] = useState(true);
 
@@ -89,25 +90,30 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
   const [sendResolution, setSendResolution] = useState('720p');
 
   const miniVideoRef = useRef<HTMLVideoElement | null>(null);
+  const localVideoStreamRef = useRef<MediaStream | null>(null);
+  const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
+  const [isCameraLoading, setIsCameraLoading] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
-  // Attach preview stream to mini video element if available
-  useEffect(() => {
-    if (activeTab === 'VIDEO' && miniVideoRef.current && previewStream) {
-      miniVideoRef.current.srcObject = previewStream;
-      miniVideoRef.current.play().catch(() => {});
-    }
-  }, [activeTab, previewStream]);
+  // Live mic analyser state
+  const [internalAudioLevel, setInternalAudioLevel] = useState(0);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const localAudioStreamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     if (currentAudioDeviceId) setSelectedAudio(currentAudioDeviceId);
     if (currentVideoDeviceId) setSelectedVideo(currentVideoDeviceId);
   }, [currentAudioDeviceId, currentVideoDeviceId]);
 
+  // 1. Enumerate devices when modal opens
   useEffect(() => {
     if (!isOpen) return;
 
     const loadDevices = async () => {
       try {
+        if (!navigator.mediaDevices?.enumerateDevices) return;
         const devices = await navigator.mediaDevices.enumerateDevices();
         const audios = devices.filter((d) => d.kind === 'audioinput');
         const videos = devices.filter((d) => d.kind === 'videoinput');
@@ -133,6 +139,228 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
 
     loadDevices();
   }, [isOpen, selectedAudio, selectedVideo, selectedOutput]);
+
+  // 2. Manage Camera Preview: Full-width live mirror with fallback
+  useEffect(() => {
+    if (!isOpen || activeTab !== 'VIDEO') {
+      if (localVideoStreamRef.current) {
+        localVideoStreamRef.current.getTracks().forEach((t) => t.stop());
+        localVideoStreamRef.current = null;
+      }
+      setVideoStream(null);
+      return;
+    }
+
+    // Check if previewStream has an active video track
+    const hasLiveVideoTrack =
+      previewStream &&
+      previewStream.getVideoTracks().some((t) => t.readyState === 'live' && t.enabled !== false);
+
+    if (hasLiveVideoTrack) {
+      if (localVideoStreamRef.current) {
+        localVideoStreamRef.current.getTracks().forEach((t) => t.stop());
+        localVideoStreamRef.current = null;
+      }
+      setVideoStream(previewStream);
+      setIsCameraLoading(false);
+      setCameraError(null);
+      return;
+    }
+
+    // Otherwise, acquire local video stream for selected camera
+    let isCancelled = false;
+
+    const startCamera = async () => {
+      try {
+        setIsCameraLoading(true);
+        setCameraError(null);
+
+        if (localVideoStreamRef.current) {
+          localVideoStreamRef.current.getTracks().forEach((t) => t.stop());
+          localVideoStreamRef.current = null;
+        }
+
+        let stream: MediaStream;
+        try {
+          const constraints: MediaStreamConstraints = {
+            video: selectedVideo
+              ? { deviceId: { exact: selectedVideo }, width: { ideal: 1280 }, height: { ideal: 720 } }
+              : { width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: false,
+          };
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (exactErr) {
+          console.warn('Exact camera constraint failed, retrying without exact deviceId:', exactErr);
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: selectedVideo ? { deviceId: selectedVideo } : true,
+            audio: false,
+          });
+        }
+
+        if (isCancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+
+        localVideoStreamRef.current = stream;
+        setVideoStream(stream);
+      } catch (err: any) {
+        if (!isCancelled) {
+          console.warn('Could not acquire local video preview:', err);
+          setCameraError(
+            'Không thể mở máy ảnh. Vui lòng kiểm tra quyền truy cập camera hoặc thiết bị đang được ứng dụng khác sử dụng.',
+          );
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsCameraLoading(false);
+        }
+      }
+    };
+
+    startCamera();
+
+    return () => {
+      isCancelled = true;
+      if (localVideoStreamRef.current) {
+        localVideoStreamRef.current.getTracks().forEach((t) => t.stop());
+        localVideoStreamRef.current = null;
+      }
+      setVideoStream(null);
+    };
+  }, [isOpen, activeTab, selectedVideo, previewStream]);
+
+  // Synchronize videoStream to HTML video element
+  useEffect(() => {
+    if (activeTab === 'VIDEO' && miniVideoRef.current && videoStream) {
+      if (miniVideoRef.current.srcObject !== videoStream) {
+        miniVideoRef.current.srcObject = videoStream;
+      }
+      miniVideoRef.current.play().catch((err) => {
+        console.warn('Video preview play failed:', err);
+      });
+    }
+  }, [videoStream, activeTab]);
+
+  // 3. Manage Microphone Live Sensitivity Analyser
+  useEffect(() => {
+    if (!isOpen || activeTab !== 'AUDIO') {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+      }
+      if (localAudioStreamRef.current) {
+        localAudioStreamRef.current.getTracks().forEach((t) => t.stop());
+        localAudioStreamRef.current = null;
+      }
+      setInternalAudioLevel(0);
+      return;
+    }
+
+    let isCancelled = false;
+
+    const setupMicAnalysis = async () => {
+      try {
+        if (animFrameRef.current) {
+          cancelAnimationFrame(animFrameRef.current);
+          animFrameRef.current = null;
+        }
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close().catch(() => {});
+          audioContextRef.current = null;
+        }
+        if (localAudioStreamRef.current) {
+          localAudioStreamRef.current.getTracks().forEach((t) => t.stop());
+          localAudioStreamRef.current = null;
+        }
+
+        let micStream: MediaStream | null = null;
+        if (
+          previewStream &&
+          previewStream.getAudioTracks().some((t) => t.readyState === 'live')
+        ) {
+          micStream = previewStream;
+        } else {
+          const constraints: MediaStreamConstraints = {
+            audio: selectedAudio ? { deviceId: { exact: selectedAudio } } : true,
+            video: false,
+          };
+          micStream = await navigator.mediaDevices.getUserMedia(constraints);
+          localAudioStreamRef.current = micStream;
+        }
+
+        if (isCancelled || !micStream) return;
+
+        const AudioCtx =
+          window.AudioContext ||
+          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (!AudioCtx) return;
+
+        const ctx = new AudioCtx();
+        audioContextRef.current = ctx;
+
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 128;
+        analyser.smoothingTimeConstant = 0.4;
+        analyserRef.current = analyser;
+
+        const source = ctx.createMediaStreamSource(micStream);
+        source.connect(analyser);
+
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+
+        const checkVolume = () => {
+          if (!analyserRef.current) {
+            setInternalAudioLevel(0);
+            return;
+          }
+
+          analyserRef.current.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < bufferLength; i++) {
+            sum += dataArray[i];
+          }
+          const average = sum / bufferLength;
+          // Scale 0..100 with sensitivity multiplier
+          const normalized = Math.min(100, Math.round((average / 128) * 100 * 1.8));
+          setInternalAudioLevel(normalized);
+
+          animFrameRef.current = requestAnimationFrame(checkVolume);
+        };
+
+        checkVolume();
+      } catch (err) {
+        console.warn('Could not setup mic analysis in DeviceSettingsModal:', err);
+        setInternalAudioLevel(0);
+      }
+    };
+
+    setupMicAnalysis();
+
+    return () => {
+      isCancelled = true;
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
+      }
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
+      }
+      if (localAudioStreamRef.current) {
+        localAudioStreamRef.current.getTracks().forEach((t) => t.stop());
+        localAudioStreamRef.current = null;
+      }
+      setInternalAudioLevel(0);
+    };
+  }, [isOpen, activeTab, selectedAudio, previewStream]);
+
+  const displayAudioLevel = audioLevel > 0 ? audioLevel : internalAudioLevel;
 
   const handleAudioChange = (deviceId: string) => {
     setSelectedAudio(deviceId);
@@ -188,6 +416,49 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
     }
   }, [isTestingSpeaker]);
 
+  // Options mapped for custom <Select />
+  const audioInputOptions: SelectOption[] = useMemo(() => {
+    if (audioInputs.length === 0) return [{ value: '', label: 'Không tìm thấy Micrô' }];
+    return audioInputs.map((device, idx) => ({
+      value: device.deviceId,
+      label: device.label || `Microphone ${idx + 1}`,
+    }));
+  }, [audioInputs]);
+
+  const audioOutputOptions: SelectOption[] = useMemo(() => {
+    if (audioOutputs.length === 0) return [{ value: '', label: 'Loa mặc định hệ thống' }];
+    return audioOutputs.map((device, idx) => ({
+      value: device.deviceId,
+      label: device.label || `Loa ${idx + 1}`,
+    }));
+  }, [audioOutputs]);
+
+  const videoInputOptions: SelectOption[] = useMemo(() => {
+    if (videoInputs.length === 0) return [{ value: '', label: 'Không tìm thấy Máy ảnh' }];
+    return videoInputs.map((device, idx) => ({
+      value: device.deviceId,
+      label: device.label || `Camera ${idx + 1}`,
+    }));
+  }, [videoInputs]);
+
+  const resolutionOptions: SelectOption[] = useMemo(
+    () => [
+      { value: '720p', label: 'Độ nét cao (720p HD)' },
+      { value: '360p', label: 'Độ nét chuẩn (360p)' },
+      { value: 'auto', label: 'Tự động điều chỉnh' },
+    ],
+    [],
+  );
+
+  const pipModeOptions: SelectOption[] = useMemo(
+    () => [
+      { value: 'ALWAYS', label: 'Luôn tự động hiển thị' },
+      { value: 'TAB_CHANGE', label: 'Chỉ khi chuyển thẻ trình duyệt' },
+      { value: 'DISABLED', label: 'Không tự động hiển thị' },
+    ],
+    [],
+  );
+
   return (
     <Modal
       isOpen={isOpen}
@@ -241,7 +512,7 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
               <span>Video</span>
             </button>
 
-            {/* Tab 3: General (Active in user screenshot) */}
+            {/* Tab 3: General */}
             <button
               type="button"
               onClick={() => setActiveTab('GENERAL')}
@@ -276,76 +547,59 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
             {activeTab === 'AUDIO' && (
               <div className="space-y-6 animate-in fade-in duration-150">
                 {/* Microphone Section */}
-                <div className="space-y-2">
+                <div className="space-y-2 relative z-20">
                   <label className="text-sm font-medium text-slate-800 block">
                     Micrô
                   </label>
 
-                  <div className="relative">
-                    <select
-                      value={selectedAudio}
-                      onChange={(e) => handleAudioChange(e.target.value)}
-                      className="w-full h-12 pl-4 pr-10 rounded-lg border border-[#747775]/50 hover:border-[#1F1F1F] focus:border-[#0b57d0] focus:ring-1 focus:ring-[#0b57d0] outline-none text-sm text-slate-800 bg-white appearance-none cursor-pointer"
-                    >
-                      {audioInputs.length > 0 ? (
-                        audioInputs.map((device, idx) => (
-                          <option key={device.deviceId} value={device.deviceId}>
-                            {device.label || `Microphone ${idx + 1}`}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="">Không tìm thấy Micrô</option>
-                      )}
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3.5 top-4 pointer-events-none" />
-                  </div>
+                  <Select
+                    options={audioInputOptions}
+                    value={selectedAudio}
+                    onChange={handleAudioChange}
+                    placeholder="Chọn Micrô..."
+                    size="md"
+                  />
 
-                  {/* Sensitivity Wave Bar */}
-                  <div className="flex items-center gap-2 pt-1">
-                    <span className="text-xs text-slate-500">Độ nhạy mic:</span>
-                    <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden flex items-center">
+                  {/* Sensitivity Wave Bar with Live Reactivity */}
+                  <div className="flex items-center gap-2 pt-2">
+                    <span className="text-xs text-slate-500 shrink-0">Độ nhạy mic:</span>
+                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden flex items-center p-0.5 border border-slate-200/60">
                       <div
                         className="h-full bg-emerald-500 rounded-full transition-all duration-75"
-                        style={{ width: `${Math.max(4, audioLevel)}%` }}
+                        style={{ width: `${Math.max(4, displayAudioLevel)}%` }}
                       />
                     </div>
+                    <span className="text-[11px] font-mono font-medium text-slate-400 w-9 text-right shrink-0">
+                      {displayAudioLevel}%
+                    </span>
                   </div>
                 </div>
 
                 {/* Speaker Section */}
-                <div className="space-y-2 pt-3 border-t border-slate-100">
+                <div className="space-y-2 pt-3 border-t border-slate-100 relative z-10">
                   <label className="text-sm font-medium text-slate-800 block">
                     Loa
                   </label>
 
                   <div className="flex items-center gap-3">
-                    <div className="relative flex-1">
-                      <select
+                    <div className="flex-1">
+                      <Select
+                        options={audioOutputOptions}
                         value={selectedOutput}
-                        onChange={(e) => setSelectedOutput(e.target.value)}
-                        className="w-full h-12 pl-4 pr-10 rounded-lg border border-[#747775]/50 hover:border-[#1F1F1F] focus:border-[#0b57d0] focus:ring-1 focus:ring-[#0b57d0] outline-none text-sm text-slate-800 bg-white appearance-none cursor-pointer"
-                      >
-                        {audioOutputs.length > 0 ? (
-                          audioOutputs.map((device, idx) => (
-                            <option key={device.deviceId} value={device.deviceId}>
-                              {device.label || `Loa ${idx + 1}`}
-                            </option>
-                          ))
-                        ) : (
-                          <option value="">Loa mặc định hệ thống</option>
-                        )}
-                      </select>
-                      <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3.5 top-4 pointer-events-none" />
+                        onChange={setSelectedOutput}
+                        placeholder="Chọn Loa..."
+                        size="md"
+                      />
                     </div>
 
                     <button
                       type="button"
                       onClick={testSpeaker}
                       disabled={isTestingSpeaker}
-                      className={`h-12 px-5 rounded-full text-xs font-semibold flex items-center gap-2 transition-all shrink-0 cursor-pointer border ${
+                      className={`h-11 px-5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all shrink-0 cursor-pointer border ${
                         isTestingSpeaker
                           ? 'bg-amber-50 text-amber-800 border-amber-300 animate-pulse'
-                          : 'bg-white hover:bg-slate-50 text-[#0b57d0] border-slate-300 hover:border-[#0b57d0]'
+                          : 'bg-white hover:bg-slate-50 text-[#0b57d0] border-slate-300 hover:border-[#0b57d0] shadow-2xs'
                       }`}
                     >
                       <Volume2 className="w-4 h-4" />
@@ -360,78 +614,76 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
             {activeTab === 'VIDEO' && (
               <div className="space-y-5 animate-in fade-in duration-150">
                 {/* Camera Select */}
-                <div className="space-y-2">
+                <div className="space-y-2 relative z-20">
                   <label className="text-sm font-medium text-slate-800 block">
                     Máy ảnh
                   </label>
 
-                  <div className="relative">
-                    <select
-                      value={selectedVideo}
-                      onChange={(e) => handleVideoChange(e.target.value)}
-                      className="w-full h-12 pl-4 pr-10 rounded-lg border border-[#747775]/50 hover:border-[#1F1F1F] focus:border-[#0b57d0] focus:ring-1 focus:ring-[#0b57d0] outline-none text-sm text-slate-800 bg-white appearance-none cursor-pointer"
-                    >
-                      {videoInputs.length > 0 ? (
-                        videoInputs.map((device, idx) => (
-                          <option key={device.deviceId} value={device.deviceId}>
-                            {device.label || `Camera ${idx + 1}`}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="">Không tìm thấy Camera</option>
-                      )}
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3.5 top-4 pointer-events-none" />
-                  </div>
+                  <Select
+                    options={videoInputOptions}
+                    value={selectedVideo}
+                    onChange={handleVideoChange}
+                    placeholder="Chọn Máy ảnh..."
+                    size="md"
+                  />
                 </div>
 
-                {/* Live Mini Preview Frame */}
+                {/* Live Full-Width Preview Frame */}
                 <div className="space-y-2">
-                  <span className="text-xs font-medium text-slate-600">Xem trước hình ảnh</span>
-                  <div className="w-[360px] max-w-full aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-sm relative flex items-center justify-center">
-                    {previewStream ? (
-                      <video
-                        ref={miniVideoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-cover scale-x-[-1]"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center text-slate-400 text-xs gap-1.5">
-                        <Video className="w-6 h-6 text-slate-500" />
-                        <span>Chưa mở camera</span>
+                  <label className="text-sm font-medium text-slate-800 block">
+                    Xem trước hình ảnh
+                  </label>
+                  <div className="w-full aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-slate-200 shadow-sm relative flex items-center justify-center">
+                    <video
+                      ref={(el) => {
+                        miniVideoRef.current = el;
+                        if (el && videoStream && el.srcObject !== videoStream) {
+                          el.srcObject = videoStream;
+                          el.play().catch(() => {});
+                        }
+                      }}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover scale-x-[-1]"
+                    />
+
+                    {isCameraLoading && (
+                      <div className="absolute inset-0 bg-slate-900/80 flex flex-col items-center justify-center text-slate-400 text-xs gap-2 z-10 backdrop-blur-xs">
+                        <Loader2 className="w-7 h-7 text-primary-400 animate-spin" />
+                        <span>Đang khởi động máy ảnh...</span>
+                      </div>
+                    )}
+
+                    {cameraError && !isCameraLoading && (
+                      <div className="absolute inset-0 bg-slate-900 flex flex-col items-center justify-center text-slate-400 text-xs gap-1.5 px-4 text-center z-10">
+                        <VideoOff className="w-7 h-7 text-rose-400" />
+                        <span className="text-rose-300 font-medium">{cameraError}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Resolution option */}
-                <div className="space-y-2 pt-2 border-t border-slate-100">
+                <div className="space-y-2 pt-2 border-t border-slate-100 relative z-10">
                   <label className="text-sm font-medium text-slate-800 block">
                     Độ phân giải gửi (tối đa)
                   </label>
-                  <div className="relative">
-                    <select
-                      value={sendResolution}
-                      onChange={(e) => setSendResolution(e.target.value)}
-                      className="w-full h-12 pl-4 pr-10 rounded-lg border border-[#747775]/50 hover:border-[#1F1F1F] focus:border-[#0b57d0] focus:ring-1 focus:ring-[#0b57d0] outline-none text-sm text-slate-800 bg-white appearance-none cursor-pointer"
-                    >
-                      <option value="720p">Độ nét cao (720p HD)</option>
-                      <option value="360p">Độ nét chuẩn (360p)</option>
-                      <option value="auto">Tự động điều chỉnh</option>
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3.5 top-4 pointer-events-none" />
-                  </div>
+                  <Select
+                    options={resolutionOptions}
+                    value={sendResolution}
+                    onChange={setSendResolution}
+                    size="md"
+                  />
                 </div>
               </div>
             )}
 
-            {/* ══════════════════ TAB 3: CÀI ĐẶT CHUNG (GENERAL) - EXACT SCREENSHOT 2 ══════════════════ */}
+            {/* ══════════════════ TAB 3: CÀI ĐẶT CHUNG (GENERAL) ══════════════════ */}
             {activeTab === 'GENERAL' && (
               <div className="space-y-6 animate-in fade-in duration-150">
                 {/* Section 1: Chế độ hình trong hình tự động */}
-                <div className="space-y-2">
+                <div className="space-y-2 relative z-20">
                   <h3 className="text-sm font-medium text-slate-900">
                     Chế độ hình trong hình tự động
                   </h3>
@@ -439,17 +691,13 @@ export const DeviceSettingsModal: React.FC<DeviceSettingsModalProps> = ({
                     Chọn thời điểm bạn muốn tự động hiển thị chế độ hình trong hình
                   </p>
 
-                  <div className="relative mt-2">
-                    <select
+                  <div className="mt-2">
+                    <Select
+                      options={pipModeOptions}
                       value={pipMode}
-                      onChange={(e) => setPipMode(e.target.value)}
-                      className="w-full h-12 pl-4 pr-10 rounded-lg border border-[#747775]/50 hover:border-[#1F1F1F] focus:border-[#0b57d0] focus:ring-1 focus:ring-[#0b57d0] outline-none text-sm text-slate-800 bg-white appearance-none cursor-pointer"
-                    >
-                      <option value="ALWAYS">Luôn tự động hiển thị</option>
-                      <option value="TAB_CHANGE">Chỉ khi chuyển thẻ trình duyệt</option>
-                      <option value="DISABLED">Không tự động hiển thị</option>
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3.5 top-4 pointer-events-none" />
+                      onChange={setPipMode}
+                      size="md"
+                    />
                   </div>
                 </div>
 

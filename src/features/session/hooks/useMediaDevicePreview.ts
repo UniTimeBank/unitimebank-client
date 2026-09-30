@@ -35,6 +35,13 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number | null>(null);
+  const isMountedRef = useRef<boolean>(true);
+
+  // Lưu giữ trạng thái qua Refs để tránh recreate các callback và trigger mount effect
+  const isCameraEnabledRef = useRef<boolean>(true);
+  const isMicEnabledRef = useRef<boolean>(true);
+  const selectedAudioIdRef = useRef<string>('');
+  const selectedVideoIdRef = useRef<string>('');
 
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [isCameraEnabled, setIsCameraEnabled] = useState(true);
@@ -54,7 +61,7 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
   const [isTestingSpeaker, setIsTestingSpeaker] = useState(false);
   const [isPermissionPromptOpen, setIsPermissionPromptOpen] = useState(false);
 
-  // 1. Enumerate available media devices
+  // 1. Enumerate available media devices (Callback ổn định, không phụ thuộc state)
   const updateDevices = useCallback(async () => {
     try {
       if (!navigator.mediaDevices?.enumerateDevices) return;
@@ -67,19 +74,22 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
       setVideoInputs(videos);
       setAudioOutputs(outputs);
 
-      if (audios.length > 0 && !selectedAudioId) {
+      if (audios.length > 0 && !selectedAudioIdRef.current) {
+        selectedAudioIdRef.current = audios[0].deviceId;
         setSelectedAudioId(audios[0].deviceId);
       }
-      if (videos.length > 0 && !selectedVideoId) {
+      if (videos.length > 0 && !selectedVideoIdRef.current) {
+        selectedVideoIdRef.current = videos[0].deviceId;
         setSelectedVideoId(videos[0].deviceId);
       }
-      if (outputs.length > 0 && !selectedOutputId) {
-        setSelectedOutputId(outputs[0].deviceId);
-      }
+      setSelectedOutputId((prev) => {
+        if (!prev && outputs.length > 0) return outputs[0].deviceId;
+        return prev;
+      });
     } catch (err) {
       console.warn('Failed to enumerate devices:', err);
     }
-  }, [selectedAudioId, selectedVideoId, selectedOutputId]);
+  }, []);
 
   // 2. Setup audio analysis for live VU meter
   const setupAudioAnalysis = useCallback((mediaStream: MediaStream) => {
@@ -90,15 +100,18 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
       }
       if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
         audioContextRef.current.close().catch(() => {});
+        audioContextRef.current = null;
       }
 
       const audioTracks = mediaStream.getAudioTracks();
-      if (audioTracks.length === 0) {
+      if (audioTracks.length === 0 || !isMicEnabledRef.current) {
         setAudioLevel(0);
         return;
       }
 
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtx) return;
 
       const audioCtx = new AudioCtx();
@@ -116,15 +129,18 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
       const dataArray = new Uint8Array(bufferLength);
 
       const checkVolume = () => {
-        if (!analyserRef.current || !streamRef.current) {
+        if (!analyserRef.current || !streamRef.current || !isMicEnabledRef.current) {
           setAudioLevel(0);
           return;
         }
 
         const currentAudioTrack = streamRef.current.getAudioTracks()[0];
-        if (!currentAudioTrack || !currentAudioTrack.enabled) {
+        if (
+          !currentAudioTrack ||
+          !currentAudioTrack.enabled ||
+          currentAudioTrack.readyState === 'ended'
+        ) {
           setAudioLevel(0);
-          animFrameRef.current = requestAnimationFrame(checkVolume);
           return;
         }
 
@@ -134,7 +150,7 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
           sum += dataArray[i];
         }
         const average = sum / bufferLength;
-        // Normalize 0..100 with boosted sensitivity
+        // Chuẩn hóa 0..100 với độ nhạy tối ưu
         const normalized = Math.min(100, Math.round((average / 128) * 100 * 1.5));
         setAudioLevel(normalized);
 
@@ -148,7 +164,45 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
     }
   }, []);
 
-  // 3. Initialize or restart media preview stream
+  // 3. Dọn dẹp toàn diện: ngắt mọi track, đóng AudioContext để giải phóng phần cứng
+  const cleanup = useCallback(() => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+    analyserRef.current = null;
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch (e) {
+          console.warn('Error stopping preview track:', e);
+        }
+      });
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setStream((prev) => {
+      if (prev) {
+        prev.getTracks().forEach((t) => {
+          try {
+            t.stop();
+          } catch {}
+        });
+      }
+      return null;
+    });
+    setAudioLevel(0);
+  }, []);
+
+  // 4. Initialize media preview stream (Chỉ xin thiết bị nào đang được bật)
   const initStream = useCallback(
     async (audioId?: string, videoId?: string) => {
       try {
@@ -158,17 +212,32 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
           return;
         }
 
-        // Clean previous tracks
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((t) => t.stop());
-          streamRef.current = null;
+        const wantMic = isMicEnabledRef.current;
+        const wantCam = isCameraEnabledRef.current;
+
+        // Nếu cả hai đều đang tắt, TUYỆT ĐỐI không gọi getUserMedia (giải phóng hoàn toàn phần cứng)
+        if (!wantMic && !wantCam) {
+          cleanup();
+          return;
         }
 
+        // Dọn dẹp tracks cũ trước khi xin mới
+        cleanup();
+
+        const effectiveAudioId = audioId || selectedAudioIdRef.current;
+        const effectiveVideoId = videoId || selectedVideoIdRef.current;
+
         const constraints: MediaStreamConstraints = {
-          audio: audioId ? { deviceId: { exact: audioId } } : true,
-          video: videoId
-            ? { deviceId: { exact: videoId }, width: { ideal: 1280 }, height: { ideal: 720 } }
-            : { width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: wantMic
+            ? effectiveAudioId
+              ? { deviceId: { exact: effectiveAudioId } }
+              : true
+            : false,
+          video: wantCam
+            ? effectiveVideoId
+              ? { deviceId: { exact: effectiveVideoId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+              : { width: { ideal: 1280 }, height: { ideal: 720 } }
+            : false,
         };
 
         let newStream: MediaStream;
@@ -176,21 +245,64 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
           newStream = await navigator.mediaDevices.getUserMedia(constraints);
         } catch (firstErr: any) {
           console.warn('Full constraints failed, falling back gracefully:', firstErr);
-          // Fallback: try separate audio or video if one device is missing
           try {
             newStream = await navigator.mediaDevices.getUserMedia({
-              audio: true,
-              video: true,
+              audio: wantMic,
+              video: wantCam,
             });
-          } catch {
-            try {
-              // Try video only
-              newStream = await navigator.mediaDevices.getUserMedia({ video: true });
-            } catch {
-              // Try audio only
-              newStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          } catch (secondErr: any) {
+            if (wantCam && wantMic) {
+              try {
+                newStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                isMicEnabledRef.current = false;
+                setIsMicEnabled(false);
+              } catch {
+                newStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                isCameraEnabledRef.current = false;
+                setIsCameraEnabled(false);
+              }
+            } else {
+              throw secondErr;
             }
           }
+        }
+
+        // BẢO VỆ TUYỆT ĐỐI: Nếu component đã unmount trong lúc chờ getUserMedia
+        if (!isMountedRef.current) {
+          if (newStream) {
+            newStream.getTracks().forEach((t) => {
+              try {
+                t.stop();
+              } catch {}
+            });
+          }
+          return;
+        }
+
+        // Nếu trong thời gian await getUserMedia, người dùng đã bấm tắt cam hoặc mic
+        if (!isCameraEnabledRef.current) {
+          newStream.getVideoTracks().forEach((t) => {
+            try {
+              t.stop();
+              newStream.removeTrack(t);
+            } catch {}
+          });
+        }
+        if (!isMicEnabledRef.current) {
+          newStream.getAudioTracks().forEach((t) => {
+            try {
+              t.stop();
+              newStream.removeTrack(t);
+            } catch {}
+          });
+        }
+
+        if (newStream.getTracks().length === 0) {
+          streamRef.current = null;
+          setStream(null);
+          setHasPermission(true);
+          setPermissionError(null);
+          return;
         }
 
         streamRef.current = newStream;
@@ -198,30 +310,28 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
         setHasPermission(true);
         setPermissionError(null);
 
-        // Apply enabled states
-        newStream.getVideoTracks().forEach((track) => {
-          track.enabled = isCameraEnabled;
-        });
-        newStream.getAudioTracks().forEach((track) => {
-          track.enabled = isMicEnabled;
-        });
-
-        // Attach to video element
-        if (videoRef.current) {
+        // Attach video element nếu camera bật
+        if (isCameraEnabledRef.current && newStream.getVideoTracks().length > 0 && videoRef.current) {
           videoRef.current.srcObject = newStream;
           videoRef.current.play().catch(() => {});
         }
 
-        // Setup audio VU meter
-        setupAudioAnalysis(newStream);
+        // Setup VU meter nếu mic bật
+        if (isMicEnabledRef.current && newStream.getAudioTracks().length > 0) {
+          setupAudioAnalysis(newStream);
+        } else {
+          setAudioLevel(0);
+        }
 
-        // Update device list with labels now that permission is granted
+        // Cập nhật danh sách thiết bị khi đã có quyền
         await updateDevices();
       } catch (err: any) {
         console.error('Failed to get media devices:', err);
         setHasPermission(false);
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-          setPermissionError('Bạn đã chặn quyền truy cập Máy ảnh hoặc Micro. Vui lòng cấp quyền trong cài đặt trình duyệt để tiếp tục.');
+          setPermissionError(
+            'Bạn đã chặn quyền truy cập Máy ảnh hoặc Micro. Vui lòng cấp quyền trong cài đặt trình duyệt để tiếp tục.',
+          );
         } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
           setPermissionError('Không tìm thấy thiết bị Microphone hoặc Camera trên máy tính của bạn.');
         } else {
@@ -229,11 +339,14 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
         }
       }
     },
-    [isCameraEnabled, isMicEnabled, setupAudioAnalysis, updateDevices],
+    [cleanup, setupAudioAnalysis, updateDevices],
   );
 
-  // 4. Initial load on mount
+  // 5. Initial load on mount (Chỉ chạy đúng 1 lần khi mở màn hình chờ)
   useEffect(() => {
+    isMountedRef.current = true;
+    let didCancel = false;
+
     const checkInitialPermissions = async () => {
       if (navigator.permissions?.query) {
         try {
@@ -241,38 +354,48 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
           const mic = await navigator.permissions.query({ name: 'microphone' as any });
 
           if (cam.state === 'granted' || mic.state === 'granted') {
-            initStream();
+            if (!didCancel) {
+              await initStream();
+            }
             return;
           }
 
           if (cam.state === 'denied' && mic.state === 'denied') {
-            setHasPermission(false);
-            setPermissionError(
-              'Bạn đã chặn quyền truy cập Máy ảnh hoặc Micro. Vui lòng cấp quyền trong cài đặt trình duyệt để tiếp tục.',
-            );
+            if (!didCancel) {
+              setHasPermission(false);
+              setPermissionError(
+                'Bạn đã chặn quyền truy cập Máy ảnh hoặc Micro. Vui lòng cấp quyền trong cài đặt trình duyệt để tiếp tục.',
+              );
+            }
             return;
           }
 
-          // State is 'prompt' -> Open Google Meet style permission prompt modal!
-          setIsPermissionPromptOpen(true);
+          // State is 'prompt' -> Hiển thị hộp thoại xin quyền chuẩn Google Meet
+          if (!didCancel) {
+            setIsPermissionPromptOpen(true);
+          }
           return;
         } catch {
-          // If query is not supported, fall through to initStream
+          // Fallback nếu permissions query không hỗ trợ
         }
       }
 
-      initStream();
+      if (!didCancel) {
+        await initStream();
+      }
     };
 
     checkInitialPermissions();
 
-    // Listen for device plug/unplug
+    // Lắng nghe cắm / rút thiết bị
     const handleDeviceChange = () => {
       updateDevices();
     };
     navigator.mediaDevices?.addEventListener('devicechange', handleDeviceChange);
 
     return () => {
+      didCancel = true;
+      isMountedRef.current = false;
       navigator.mediaDevices?.removeEventListener('devicechange', handleDeviceChange);
       cleanup();
     };
@@ -286,93 +409,217 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
 
   const dismissPermissionPrompt = useCallback(() => {
     setIsPermissionPromptOpen(false);
+    isCameraEnabledRef.current = false;
+    isMicEnabledRef.current = false;
     setIsCameraEnabled(false);
     setIsMicEnabled(false);
     setHasPermission(false);
-  }, []);
+    cleanup();
+  }, [cleanup]);
 
-  // 5. Cleanup helper
-  const cleanup = useCallback(() => {
-    if (animFrameRef.current) {
-      cancelAnimationFrame(animFrameRef.current);
-      animFrameRef.current = null;
-    }
-    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-      audioContextRef.current.close().catch(() => {});
-      audioContextRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setStream(null);
-    setAudioLevel(0);
-  }, []);
-
-  // 6. Camera toggle
-  const toggleCamera = useCallback(() => {
-    const nextState = !isCameraEnabled;
-    setIsCameraEnabled(nextState);
-    if (streamRef.current) {
-      streamRef.current.getVideoTracks().forEach((track) => {
-        track.enabled = nextState;
-      });
-    }
-  }, [isCameraEnabled]);
-
-  const setCameraEnabled = useCallback((enabled: boolean) => {
+  // 6. Camera toggle: dừng hoàn toàn track khi tắt để giải phóng camera, xin lại track mới khi bật
+  const setCameraEnabled = useCallback(async (enabled: boolean) => {
+    isCameraEnabledRef.current = enabled;
     setIsCameraEnabled(enabled);
-    if (streamRef.current) {
-      streamRef.current.getVideoTracks().forEach((track) => {
-        track.enabled = enabled;
-      });
-    }
-  }, []);
 
-  // 7. Microphone toggle
-  const toggleMicrophone = useCallback(() => {
-    const nextState = !isMicEnabled;
-    setIsMicEnabled(nextState);
-    if (streamRef.current) {
-      streamRef.current.getAudioTracks().forEach((track) => {
-        track.enabled = nextState;
-      });
-    }
-    if (!nextState) {
-      setAudioLevel(0);
-    }
-  }, [isMicEnabled]);
-
-  const setMicrophoneEnabled = useCallback((enabled: boolean) => {
-    setIsMicEnabled(enabled);
-    if (streamRef.current) {
-      streamRef.current.getAudioTracks().forEach((track) => {
-        track.enabled = enabled;
-      });
-    }
     if (!enabled) {
-      setAudioLevel(0);
+      if (streamRef.current) {
+        streamRef.current.getVideoTracks().forEach((track) => {
+          try {
+            track.stop();
+            streamRef.current?.removeTrack(track);
+          } catch {}
+        });
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+      if (streamRef.current && streamRef.current.getTracks().length === 0) {
+        streamRef.current = null;
+        setStream(null);
+      } else if (streamRef.current) {
+        setStream(new MediaStream(streamRef.current.getTracks()));
+      }
+    } else {
+      try {
+        const videoConstraints: MediaTrackConstraints = selectedVideoIdRef.current
+          ? { deviceId: { exact: selectedVideoIdRef.current }, width: { ideal: 1280 }, height: { ideal: 720 } }
+          : { width: { ideal: 1280 }, height: { ideal: 720 } };
+
+        const newVideoStream = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+        });
+
+        const newTrack = newVideoStream.getVideoTracks()[0];
+        if (newTrack) {
+          if (!streamRef.current) {
+            streamRef.current = new MediaStream();
+          }
+          streamRef.current.getVideoTracks().forEach((t) => {
+            try {
+              t.stop();
+              streamRef.current?.removeTrack(t);
+            } catch {}
+          });
+          streamRef.current.addTrack(newTrack);
+          setStream(new MediaStream(streamRef.current.getTracks()));
+
+          if (videoRef.current) {
+            videoRef.current.srcObject = streamRef.current;
+            videoRef.current.play().catch(() => {});
+          }
+        }
+      } catch (err) {
+        console.warn('Could not re-enable camera:', err);
+        isCameraEnabledRef.current = false;
+        setIsCameraEnabled(false);
+      }
     }
   }, []);
+
+  const toggleCamera = useCallback(() => {
+    setCameraEnabled(!isCameraEnabledRef.current);
+  }, [setCameraEnabled]);
+
+  // 7. Microphone toggle: dừng hoàn toàn track và AudioContext khi tắt để giải phóng mic
+  const setMicrophoneEnabled = useCallback(
+    async (enabled: boolean) => {
+      isMicEnabledRef.current = enabled;
+      setIsMicEnabled(enabled);
+
+      if (!enabled) {
+        setAudioLevel(0);
+        if (animFrameRef.current) {
+          cancelAnimationFrame(animFrameRef.current);
+          animFrameRef.current = null;
+        }
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close().catch(() => {});
+          audioContextRef.current = null;
+        }
+        analyserRef.current = null;
+
+        if (streamRef.current) {
+          streamRef.current.getAudioTracks().forEach((track) => {
+            try {
+              track.stop();
+              streamRef.current?.removeTrack(track);
+            } catch {}
+          });
+        }
+        if (streamRef.current && streamRef.current.getTracks().length === 0) {
+          streamRef.current = null;
+          setStream(null);
+        } else if (streamRef.current) {
+          setStream(new MediaStream(streamRef.current.getTracks()));
+        }
+      } else {
+        try {
+          const audioConstraints: boolean | MediaTrackConstraints = selectedAudioIdRef.current
+            ? { deviceId: { exact: selectedAudioIdRef.current } }
+            : true;
+
+          const newAudioStream = await navigator.mediaDevices.getUserMedia({
+            audio: audioConstraints,
+          });
+
+          const newTrack = newAudioStream.getAudioTracks()[0];
+          if (newTrack) {
+            if (!streamRef.current) {
+              streamRef.current = new MediaStream();
+            }
+            streamRef.current.getAudioTracks().forEach((t) => {
+              try {
+                t.stop();
+                streamRef.current?.removeTrack(t);
+              } catch {}
+            });
+            streamRef.current.addTrack(newTrack);
+            setStream(new MediaStream(streamRef.current.getTracks()));
+
+            setupAudioAnalysis(streamRef.current);
+          }
+        } catch (err) {
+          console.warn('Could not re-enable microphone:', err);
+          isMicEnabledRef.current = false;
+          setIsMicEnabled(false);
+          setAudioLevel(0);
+        }
+      }
+    },
+    [setupAudioAnalysis],
+  );
+
+  const toggleMicrophone = useCallback(() => {
+    setMicrophoneEnabled(!isMicEnabledRef.current);
+  }, [setMicrophoneEnabled]);
 
   // 8. Device changes
   const changeAudioInput = useCallback(
     async (deviceId: string) => {
+      selectedAudioIdRef.current = deviceId;
       setSelectedAudioId(deviceId);
-      await initStream(deviceId, selectedVideoId);
+      if (isMicEnabledRef.current) {
+        try {
+          const newAudioStream = await navigator.mediaDevices.getUserMedia({
+            audio: { deviceId: { exact: deviceId } },
+          });
+          const newTrack = newAudioStream.getAudioTracks()[0];
+          if (newTrack) {
+            if (!streamRef.current) {
+              streamRef.current = new MediaStream();
+            }
+            streamRef.current.getAudioTracks().forEach((t) => {
+              try {
+                t.stop();
+                streamRef.current?.removeTrack(t);
+              } catch {}
+            });
+            streamRef.current.addTrack(newTrack);
+            setStream(new MediaStream(streamRef.current.getTracks()));
+            setupAudioAnalysis(streamRef.current);
+          }
+        } catch (err) {
+          console.warn('Could not switch audio input:', err);
+        }
+      }
     },
-    [initStream, selectedVideoId],
+    [setupAudioAnalysis],
   );
 
   const changeVideoInput = useCallback(
     async (deviceId: string) => {
+      selectedVideoIdRef.current = deviceId;
       setSelectedVideoId(deviceId);
-      await initStream(selectedAudioId, deviceId);
+      if (isCameraEnabledRef.current) {
+        try {
+          const newVideoStream = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          });
+          const newTrack = newVideoStream.getVideoTracks()[0];
+          if (newTrack) {
+            if (!streamRef.current) {
+              streamRef.current = new MediaStream();
+            }
+            streamRef.current.getVideoTracks().forEach((t) => {
+              try {
+                t.stop();
+                streamRef.current?.removeTrack(t);
+              } catch {}
+            });
+            streamRef.current.addTrack(newTrack);
+            setStream(new MediaStream(streamRef.current.getTracks()));
+            if (videoRef.current) {
+              videoRef.current.srcObject = streamRef.current;
+              videoRef.current.play().catch(() => {});
+            }
+          }
+        } catch (err) {
+          console.warn('Could not switch video input:', err);
+        }
+      }
     },
-    [initStream, selectedAudioId],
+    [],
   );
 
   const changeAudioOutput = useCallback(async (deviceId: string) => {
@@ -392,7 +639,9 @@ export const useMediaDevicePreview = (): UseMediaDevicePreviewReturn => {
     setIsTestingSpeaker(true);
 
     try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtx) {
         setIsTestingSpeaker(false);
         return;

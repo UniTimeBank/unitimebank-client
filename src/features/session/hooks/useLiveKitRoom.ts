@@ -22,6 +22,8 @@ export interface UseLiveKitRoomProps {
   preferredVideoDeviceId?: string;
   onDisconnected?: () => void;
   onDataReceived?: (msg: InRoomChatMessage) => void;
+  onParticipantConnected?: (participant: RemoteParticipant) => void;
+  onParticipantDisconnected?: (participant: RemoteParticipant) => void;
 }
 
 export const useLiveKitRoom = ({
@@ -34,6 +36,8 @@ export const useLiveKitRoom = ({
   preferredVideoDeviceId,
   onDisconnected,
   onDataReceived,
+  onParticipantConnected,
+  onParticipantDisconnected,
 }: UseLiveKitRoomProps) => {
   const roomRef = useRef<Room | null>(null);
   const [room, setRoom] = useState<Room | null>(null);
@@ -100,15 +104,15 @@ export const useLiveKitRoom = ({
         setLocalParticipant(currentRoom.localParticipant);
         updateParticipants();
 
-        // Switch preferred devices if provided
-        if (preferredAudioDeviceId) {
+        // Switch preferred devices if provided AND device is enabled
+        if (preferredAudioDeviceId && initialMicEnabled) {
           try {
             await currentRoom.switchActiveDevice('audioinput', preferredAudioDeviceId);
           } catch (err) {
             console.warn('Could not switch to preferred audio device:', err);
           }
         }
-        if (preferredVideoDeviceId) {
+        if (preferredVideoDeviceId && initialCameraEnabled) {
           try {
             await currentRoom.switchActiveDevice('videoinput', preferredVideoDeviceId);
           } catch (err) {
@@ -126,12 +130,7 @@ export const useLiveKitRoom = ({
             setIsCameraEnabled(false);
           }
         } else {
-          try {
-            await currentRoom.localParticipant.setCameraEnabled(false);
-            setIsCameraEnabled(false);
-          } catch (err: any) {
-            console.warn('Could not disable camera:', err);
-          }
+          setIsCameraEnabled(false);
         }
 
         // Enable / disable microphone according to initial user choice
@@ -144,12 +143,7 @@ export const useLiveKitRoom = ({
             setIsMicEnabled(false);
           }
         } else {
-          try {
-            await currentRoom.localParticipant.setMicrophoneEnabled(false);
-            setIsMicEnabled(false);
-          } catch (err: any) {
-            console.warn('Could not disable microphone:', err);
-          }
+          setIsMicEnabled(false);
         }
 
         updateParticipants();
@@ -164,10 +158,12 @@ export const useLiveKitRoom = ({
       .on(RoomEvent.ParticipantConnected, (participant) => {
         toast.info(`${participant.name || 'Người tham gia'} đã vào phòng.`);
         updateParticipants();
+        onParticipantConnected?.(participant);
       })
       .on(RoomEvent.ParticipantDisconnected, (participant) => {
         toast.info(`${participant.name || 'Người tham gia'} đã rời phòng.`);
         updateParticipants();
+        onParticipantDisconnected?.(participant);
       })
       .on(RoomEvent.TrackMuted, () => {
         if (!isMounted) return;
@@ -263,7 +259,26 @@ export const useLiveKitRoom = ({
 
     return () => {
       isMounted = false;
-      currentRoom.disconnect();
+      try {
+        if (currentRoom.localParticipant) {
+          currentRoom.localParticipant.getTrackPublications().forEach((pub) => {
+            try {
+              if (pub.track) {
+                pub.track.stop();
+              }
+            } catch (err) {
+              console.warn('Error stopping local track on unmount:', err);
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('Error cleaning local tracks on unmount:', err);
+      }
+      try {
+        currentRoom.disconnect(true);
+      } catch (err) {
+        console.warn('Error disconnecting LiveKit room:', err);
+      }
       roomRef.current = null;
     };
   }, [wsUrl, token, autoConnect]);
@@ -288,7 +303,23 @@ export const useLiveKitRoom = ({
   const setMicrophoneEnabled = useCallback(async (enabled: boolean) => {
     if (!roomRef.current || !roomRef.current.localParticipant) return;
     try {
-      await roomRef.current.localParticipant.setMicrophoneEnabled(enabled);
+      if (enabled) {
+        await roomRef.current.localParticipant.setMicrophoneEnabled(true);
+      } else {
+        const audioPub = roomRef.current.localParticipant
+          .getTrackPublications()
+          .find((p) => p.source === Track.Source.Microphone);
+        if (audioPub && audioPub.track) {
+          try {
+            audioPub.track.mediaStreamTrack.stop();
+          } catch {}
+          try {
+            await roomRef.current.localParticipant.unpublishTrack(audioPub.track.mediaStreamTrack, true);
+          } catch {}
+        } else {
+          await roomRef.current.localParticipant.setMicrophoneEnabled(false);
+        }
+      }
       setIsMicEnabled(enabled);
     } catch (err) {
       console.error('Failed to set mic enabled:', err);
@@ -299,7 +330,23 @@ export const useLiveKitRoom = ({
   const setCameraEnabled = useCallback(async (enabled: boolean) => {
     if (!roomRef.current || !roomRef.current.localParticipant) return;
     try {
-      await roomRef.current.localParticipant.setCameraEnabled(enabled);
+      if (enabled) {
+        await roomRef.current.localParticipant.setCameraEnabled(true);
+      } else {
+        const videoPub = roomRef.current.localParticipant
+          .getTrackPublications()
+          .find((p) => p.source === Track.Source.Camera);
+        if (videoPub && videoPub.track) {
+          try {
+            videoPub.track.mediaStreamTrack.stop();
+          } catch {}
+          try {
+            await roomRef.current.localParticipant.unpublishTrack(videoPub.track.mediaStreamTrack, true);
+          } catch {}
+        } else {
+          await roomRef.current.localParticipant.setCameraEnabled(false);
+        }
+      }
       setIsCameraEnabled(enabled);
     } catch (err) {
       console.error('Failed to set camera enabled:', err);
@@ -308,14 +355,28 @@ export const useLiveKitRoom = ({
 
   // Toggle Microphone
   const toggleMicrophone = useCallback(async () => {
-    if (!roomRef.current) return;
+    if (!roomRef.current || !roomRef.current.localParticipant) return;
     try {
       const nextState = !isMicEnabled;
-      await roomRef.current.localParticipant.setMicrophoneEnabled(nextState);
-      setIsMicEnabled(nextState);
       if (nextState) {
+        await roomRef.current.localParticipant.setMicrophoneEnabled(true);
+        setIsMicEnabled(true);
         toast.success('Đã bật Micro');
       } else {
+        const audioPub = roomRef.current.localParticipant
+          .getTrackPublications()
+          .find((p) => p.source === Track.Source.Microphone);
+        if (audioPub && audioPub.track) {
+          try {
+            audioPub.track.mediaStreamTrack.stop();
+          } catch {}
+          try {
+            await roomRef.current.localParticipant.unpublishTrack(audioPub.track.mediaStreamTrack, true);
+          } catch {}
+        } else {
+          await roomRef.current.localParticipant.setMicrophoneEnabled(false);
+        }
+        setIsMicEnabled(false);
         toast.info('Đã tắt Micro');
       }
     } catch (err) {
@@ -326,14 +387,28 @@ export const useLiveKitRoom = ({
 
   // Toggle Camera
   const toggleCamera = useCallback(async () => {
-    if (!roomRef.current) return;
+    if (!roomRef.current || !roomRef.current.localParticipant) return;
     try {
       const nextState = !isCameraEnabled;
-      await roomRef.current.localParticipant.setCameraEnabled(nextState);
-      setIsCameraEnabled(nextState);
       if (nextState) {
+        await roomRef.current.localParticipant.setCameraEnabled(true);
+        setIsCameraEnabled(true);
         toast.success('Đã bật Camera');
       } else {
+        const videoPub = roomRef.current.localParticipant
+          .getTrackPublications()
+          .find((p) => p.source === Track.Source.Camera);
+        if (videoPub && videoPub.track) {
+          try {
+            videoPub.track.mediaStreamTrack.stop();
+          } catch {}
+          try {
+            await roomRef.current.localParticipant.unpublishTrack(videoPub.track.mediaStreamTrack, true);
+          } catch {}
+        } else {
+          await roomRef.current.localParticipant.setCameraEnabled(false);
+        }
+        setIsCameraEnabled(false);
         toast.info('Đã tắt Camera');
       }
     } catch (err) {
@@ -361,9 +436,33 @@ export const useLiveKitRoom = ({
   // Disconnect & Leave
   const disconnect = useCallback(() => {
     if (roomRef.current) {
-      roomRef.current.disconnect();
+      try {
+        if (roomRef.current.localParticipant) {
+          roomRef.current.localParticipant.getTrackPublications().forEach((pub) => {
+            try {
+              if (pub.track) {
+                pub.track.stop();
+              }
+            } catch (err) {
+              console.warn('Error stopping track on disconnect:', err);
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('Error cleaning local tracks before disconnect:', err);
+      }
+      try {
+        roomRef.current.disconnect(true);
+      } catch (err) {
+        console.warn('Error disconnecting room:', err);
+      }
+      roomRef.current = null;
       setRoom(null);
       setIsConnected(false);
+      setIsConnecting(false);
+      setLocalParticipant(null);
+      setRemoteParticipants([]);
+      setScreenShareTrack(null);
     }
   }, []);
 
