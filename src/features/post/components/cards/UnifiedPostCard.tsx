@@ -10,6 +10,7 @@ import {
 import { useAppSelector } from '@/shared/hooks';
 import { selectCurrentUser } from '@/core/store';
 import { formatTimeAgo } from '@/shared/utils';
+import { UserAvatar } from '@/shared/components/ui';
 
 export interface UnifiedPostCardData {
   id?: string;
@@ -116,6 +117,9 @@ export const UnifiedPostCard: React.FC<{
           <img
             src={coverUrl}
             alt={validTitle}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = DEFAULT_POST_COVER;
+            }}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/25" />
@@ -152,19 +156,7 @@ export const UnifiedPostCard: React.FC<{
           {/* Author Row */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="relative shrink-0">
-                {authorAvatar ? (
-                  <img
-                    src={authorAvatar}
-                    alt={authorName}
-                    className="w-8 h-8 rounded-full object-cover border border-slate-200"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center font-bold text-xs">
-                    {authorName?.charAt(0) || 'U'}
-                  </div>
-                )}
-              </div>
+              <UserAvatar src={authorAvatar} name={authorName} size="sm" />
 
               <div className="min-w-0 flex flex-col justify-center">
                 <h4 className="text-xs font-bold text-slate-900 truncate leading-tight">

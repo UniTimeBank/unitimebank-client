@@ -15,6 +15,7 @@ import { GROUP_POST_TAG_CONFIG } from '@/features/post/constants';
 import { formatGroupPostDate } from '@/shared/utils';
 import { GroupPostComments } from './GroupPostComments';
 import { toast } from 'react-hot-toast';
+import { UserAvatar } from '@/shared/components/ui';
 
 interface GroupPostItemProps {
   post: GroupPost;
@@ -68,13 +69,11 @@ export const GroupPostItem: React.FC<GroupPostItemProps> = ({
             className="shrink-0 group/avatar cursor-pointer"
             title={`Xem hồ sơ của ${post.authorName}`}
           >
-            <img
-              src={
-                post.authorAvatar ||
-                'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200&auto=format&fit=crop'
-              }
-              alt={post.authorName}
-              className="w-10 h-10 rounded-full object-cover border border-gray-200 group-hover/avatar:ring-2 group-hover/avatar:ring-primary-400 transition-all shadow-2xs"
+            <UserAvatar
+              src={post.authorAvatar}
+              name={post.authorName}
+              size="md"
+              className="group-hover/avatar:ring-2 group-hover/avatar:ring-primary-400 transition-all shadow-2xs"
             />
           </Link>
           <div>

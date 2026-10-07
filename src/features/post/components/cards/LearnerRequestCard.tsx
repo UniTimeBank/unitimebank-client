@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import type { LearnerRequest } from '../../types';
 import { getCategoryBadge } from '../../utils';
 import { RichTextViewer } from '../create-post/RichTextEditor';
+import { UserAvatar } from '@/shared/components/ui';
 
 interface LearnerRequestCardProps {
   request: LearnerRequest;
@@ -98,17 +99,7 @@ export const LearnerRequestCard: React.FC<LearnerRequestCardProps> = ({
         {/* Author Info */}
         <div className="flex items-center justify-between pt-4 border-t border-gray-100 mb-4">
           <div className="flex items-center gap-2.5">
-            {request.learnerAvatar ? (
-              <img
-                src={request.learnerAvatar}
-                alt={request.learnerName || 'Học viên'}
-                className="w-8 h-8 rounded-full object-cover ring-2 ring-gray-100"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary-600 to-primary-400 text-white font-bold text-xs flex items-center justify-center shadow-xs">
-                {(request.learnerName || 'H').charAt(0).toUpperCase()}
-              </div>
-            )}
+            <UserAvatar src={request.learnerAvatar} name={request.learnerName || 'Học viên'} size="sm" />
             <div>
               <div className="text-xs font-bold text-gray-800 leading-tight">
                 {request.learnerName || 'Học viên UniTime'}

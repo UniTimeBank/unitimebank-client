@@ -18,3 +18,4 @@ export * from './GroupSidebarInfo';
 export * from './TransferOwnershipModal';
 export * from './DisbandGroupModal';
 export * from './ManageGroupMembersModal';
+export * from './CommunityExploreBento';

@@ -5,4 +5,5 @@ export * from './widgets';
 export * from './details';
 export * from './browse';
 export * from './community';
+export * from './explore';
 

@@ -9,3 +9,4 @@ export * from './Checkbox';
 export * from './Tabs';
 export * from './Radio';
 export * from './Pagination';
+export * from './UserAvatar';

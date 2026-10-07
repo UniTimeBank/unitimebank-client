@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Users, Plus, Radio, Video, RotateCcw } from 'lucide-react';
+import { ArrowRight, Users, Plus, Radio, Video, RotateCcw, Clock, BookOpen, Coins } from 'lucide-react';
 import { useGetActiveGroupRoomsQuery } from '@/core/api/session';
 import { FeaturedGroupRoomCard, type GroupRoomDisplayItem } from './FeaturedGroupRoomCard';
 import { MiniGroupRoomCard } from './MiniGroupRoomCard';
@@ -150,26 +150,132 @@ export const LiveGroupRoomsBanner: React.FC<LiveGroupRoomsBannerProps> = ({
         </div>
       ) : displayRooms.length === 0 ? (
         activeRooms.length === 0 ? (
-          /* Không có phòng nào trong hệ thống */
-          <div className="py-10 sm:py-12 flex flex-col items-center justify-center text-center px-4">
-            <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center mb-3.5">
-              <Users className="w-6 h-6 text-primary-600" />
+          /* Bento Grid Onboarding Layout khi chưa có phòng nào */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            {/* Cột Trái: Thẻ Hero Giới Thiệu & Kêu Gọi Mở Phòng (7 Cols) */}
+            <div
+              onClick={() => setIsCreateModalOpen(true)}
+              className="lg:col-span-7 relative rounded-3xl overflow-hidden min-h-[340px] bg-slate-950 group cursor-pointer border border-slate-200/80 shadow-2xs hover:shadow-xl transition-all duration-500 flex flex-col justify-between p-6 sm:p-8"
+            >
+              {/* Background Cover Photo with Dark Gradient */}
+              <img
+                src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1200"
+                alt="Phòng học nhóm trực tuyến"
+                className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 group-hover:opacity-40 transition-all duration-700"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-950/40" />
+
+              {/* Top Status Badge */}
+              <div className="relative z-10 flex items-center justify-between gap-3">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 backdrop-blur-md text-emerald-300 font-bold text-[11px] uppercase tracking-wider border border-emerald-400/30">
+                  <Radio className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Sảnh học nhóm WebRTC</span>
+                </span>
+
+                <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-slate-300 text-xs font-semibold border border-white/15">
+                  Sẵn sàng mở phòng
+                </span>
+              </div>
+
+              {/* Bottom Content & CTA */}
+              <div className="relative z-10 space-y-3 mt-8">
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-tight group-hover:text-emerald-200 transition-colors">
+                  Chưa có phòng học nào đang mở
+                </h3>
+
+                <p className="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed max-w-xl">
+                  Bạn có thể là người đầu tiên tạo phòng học nhóm trực tuyến để cùng bạn bè ôn thi, giải đề hoặc chia sẻ kiến thức ngay lúc này!
+                </p>
+
+                {/* Benefits List */}
+                <div className="pt-1 flex items-center gap-4 text-xs text-emerald-300 font-semibold flex-wrap">
+                  <span className="flex items-center gap-1.5">
+                    <Video className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Video & Âm thanh HD</span>
+                  </span>
+                  <span className="text-slate-500">•</span>
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    <span>5 phút đầu học thử miễn phí</span>
+                  </span>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCreateModalOpen(true);
+                    }}
+                    className="px-5 py-2.5 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-extrabold text-xs sm:text-sm transition-all flex items-center gap-2 shadow-lg group-hover:scale-105 active:scale-95 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4 text-white" strokeWidth={3} />
+                    <span>Mở phòng học nhóm ngay</span>
+                  </button>
+                </div>
+              </div>
             </div>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-              Hiện chưa có phòng học nhóm nào mở
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md font-normal leading-relaxed">
-              Bạn có thể là người đầu tiên tạo phòng học nhóm để cùng trao đổi kiến thức với mọi người!
-            </p>
-            <div className="mt-4">
-              <button
-                type="button"
+
+            {/* Cột Phải: 2 Thẻ Giới Thiệu Tính Năng + 1 Banner Nhỏ (5 Cols) */}
+            <div className="lg:col-span-5 flex flex-col gap-3.5 justify-between">
+              {/* Thẻ 1: Tự do chọn chủ đề */}
+              <div
                 onClick={() => setIsCreateModalOpen(true)}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-700 hover:bg-primary-800 active:scale-[0.98] text-white font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-xs hover:shadow cursor-pointer"
+                className="bg-white rounded-3xl p-5 border border-slate-200/90 hover:border-primary-400 shadow-2xs hover:shadow-md transition-all duration-300 flex items-center gap-4 group cursor-pointer"
               >
-                <Plus className="w-4 h-4" />
-                <span>Mở phòng học nhóm ngay</span>
-              </button>
+                <div className="w-12 h-12 rounded-2xl bg-primary-50 border border-primary-100 flex items-center justify-center text-primary-700 shrink-0 group-hover:scale-105 transition-transform">
+                  <BookOpen className="w-6 h-6 text-primary-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
+                    Tự do lựa chọn môn học & kỹ năng
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                    Mở phòng ôn tập chuyên đề Lập trình, Ngoại ngữ, Giải tích hoặc Thuyết trình đồ án.
+                  </p>
+                </div>
+              </div>
+
+              {/* Thẻ 2: Nhận Credit khi mở lớp */}
+              <div
+                onClick={() => setIsCreateModalOpen(true)}
+                className="bg-white rounded-3xl p-5 border border-slate-200/90 hover:border-primary-400 shadow-2xs hover:shadow-md transition-all duration-300 flex items-center gap-4 group cursor-pointer"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-105 transition-transform">
+                  <Coins className="w-6 h-6 text-amber-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
+                    Tích lũy Credit khi có học viên
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                    Nhận điểm thưởng và Credit trao đổi để tham gia bất kỳ buổi học nào bạn yêu thích.
+                  </p>
+                </div>
+              </div>
+
+              {/* Banner Sảnh phòng nhóm */}
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-primary-950 to-emerald-950 p-5 text-white border border-primary-900/40 shadow-xs flex items-center justify-between gap-4">
+                <div className="relative z-10 space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-300 block">
+                    KHÔNG GIAN TƯƠNG TÁC
+                  </span>
+                  <h4 className="text-sm font-bold text-white">
+                    Học nhóm trực tuyến thời gian thực
+                  </h4>
+                  <p className="text-[11px] text-slate-300">
+                    Video call WebRTC mượt mà, hỗ trợ bảng vẽ & chia sẻ màn hình.
+                  </p>
+                </div>
+
+                <Link
+                  to="/rooms/group"
+                  className="relative z-10 px-3.5 py-2 bg-white hover:bg-slate-100 text-slate-950 font-extrabold text-xs rounded-xl transition-all shadow-md shrink-0 flex items-center gap-1.5 cursor-pointer hover:scale-105 active:scale-95"
+                >
+                  <span>Xem sảnh</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-slate-950" />
+                </Link>
+              </div>
             </div>
           </div>
         ) : (

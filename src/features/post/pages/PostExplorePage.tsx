@@ -1,12 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Search,
-  SlidersHorizontal,
   ArrowRight,
-  Compass,
-  TrendingUp,
-  X,
   BookOpen,
   RotateCcw,
 } from 'lucide-react';
@@ -15,20 +10,9 @@ import { UnifiedPostCard } from '../components/cards';
 import { SessionType, type ExploreCardItem } from '../types';
 import { mapMentorPostToCardItem, mapLearnerRequestToCardItem } from '../utils';
 import { LiveGroupRoomsBanner } from '@/features/session/components';
+import { CommunityExploreBento } from '@/features/post/components/community';
+import { ExploreSplitHero } from '../components/explore';
 import { Modal } from '@/shared/components/ui';
-
-// Danh mục filter pills chuẩn theo UniTime Bank
-const FILTER_PILLS = [
-  { label: 'Tất cả lĩnh vực', value: 'ALL' },
-  { label: 'Lập trình', value: 'PROGRAMMING' },
-  { label: 'Ngoại ngữ', value: 'LANGUAGE' },
-  { label: 'Thiết kế', value: 'DESIGN' },
-  { label: 'Học thuật', value: 'ACADEMIC' },
-  { label: 'Kinh doanh', value: 'BUSINESS' },
-  { label: 'Kỹ năng mềm', value: 'SOFT_SKILLS' },
-  { label: 'Âm nhạc', value: 'MUSIC' },
-  { label: 'Thể thao', value: 'SPORTS' },
-];
 
 export const PostExplorePage: React.FC = () => {
   // Main Tab on Explore: 'MENTOR_POSTS' vs 'LEARNER_REQUESTS'
@@ -58,7 +42,6 @@ export const PostExplorePage: React.FC = () => {
       return mentorPosts.map(mapMentorPostToCardItem);
     }
   }, [exploreTab, mentorPosts, learnerRequests]);
-
 
   // Lọc dữ liệu theo từ khóa, danh mục & bộ lọc nâng cao
   const filteredItems = useMemo(() => {
@@ -114,83 +97,16 @@ export const PostExplorePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-16">
-      {/* 1. Hero Section (Thanh tìm kiếm & Danh mục tập trung) */}
-      <section className="pt-12 sm:pt-16 pb-8 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto text-center">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-[1.18]">
-          Khám phá Không gian<br />
-          Tri thức Học thuật
-        </h1>
-
-        <p className="mt-4 text-xs sm:text-sm text-slate-500 max-w-2xl mx-auto leading-relaxed font-normal">
-          Trải nghiệm môi trường học tập rộng mở. Tìm kiếm hàng ngàn lớp học, bài giảng và tài nguyên được chia sẻ bởi cộng đồng sinh viên xuất sắc.
-        </p>
-
-        {/* Thanh Tìm Kiếm Tròn Lớn */}
-        <div className="max-w-2xl mx-auto mt-8 relative">
-          <Search className="w-5 h-5 text-slate-400 absolute left-4.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            placeholder={
-              exploreTab === 'LEARNER_REQUESTS'
-                ? 'Tìm theo môn cần học, người học, thời lượng...'
-                : 'Tìm kiếm môn học, người dạy, hoặc chủ đề...'
-            }
-            className="w-full pl-12 pr-10 py-3.5 rounded-full bg-white border border-slate-200/90 shadow-2xs text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary-500 focus:ring-3 focus:ring-primary-100 outline-none transition-all"
-          />
-          {searchKeyword && (
-            <button
-              onClick={() => setSearchKeyword('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
-        {/* Dải Pills Lĩnh Vực */}
-        <div className="w-full max-w-6xl mx-auto mt-5 px-2">
-          <div className="flex items-center justify-start lg:justify-center gap-2 overflow-x-auto scrollbar-none py-1">
-            {FILTER_PILLS.map((cat) => {
-              const isActive = selectedCategory === cat.value;
-              return (
-                <button
-                  key={cat.value}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat.value)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer border shrink-0 whitespace-nowrap ${
-                    isActive
-                      ? 'bg-primary-600 text-white border-primary-600 shadow-2xs'
-                      : 'bg-white text-slate-700 hover:border-slate-300 border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Nút Lọc Thêm Nằm Dưới */}
-          <div className="flex items-center justify-center mt-3.5">
-            <button
-              type="button"
-              onClick={() => setIsFilterModalOpen(true)}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium border flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs hover:shadow-xs active:scale-[0.98] ${
-                advancedFilter.sessionType !== 'ALL' || advancedFilter.minTrustScore > 0
-                  ? 'bg-primary-50 text-primary-800 border-primary-300 font-semibold'
-                  : 'bg-white text-slate-600 hover:text-slate-900 hover:border-slate-300 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
-              <span>Lọc thêm</span>
-              {(advancedFilter.sessionType !== 'ALL' || advancedFilter.minTrustScore > 0) && (
-                <span className="w-2 h-2 rounded-full bg-primary-600" />
-              )}
-            </button>
-          </div>
-        </div>
-      </section>
+      {/* 1. Split Hero 2 Cột Hiện đại & Sống động */}
+      <ExploreSplitHero
+        exploreTab={exploreTab}
+        searchKeyword={searchKeyword}
+        onSearchChange={setSearchKeyword}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+        advancedFilter={advancedFilter}
+        onOpenFilterModal={() => setIsFilterModalOpen(true)}
+      />
 
       {/* 2. Banner Live Sảnh Học Nhóm Trực Tuyến */}
       <LiveGroupRoomsBanner
@@ -349,96 +265,8 @@ export const PostExplorePage: React.FC = () => {
         )}
       </section>
 
-      {/* 3. Section: Chủ đề Khám phá (Bento Grid Học Thuật theo mockup) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16">
-        <div className="pb-4">
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-            Chủ đề Khám phá
-          </h2>
-          <p className="text-xs text-slate-500 mt-1 font-normal">
-            Các tài liệu học thuật nổi bật được tổng hợp trong tuần.
-          </p>
-        </div>
-
-        {/* Bento Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-2">
-          {/* Cột Trái: Card Lớn Tuyển Tập (6 Cols) */}
-          <div className="lg:col-span-6 relative rounded-3xl overflow-hidden min-h-[320px] bg-slate-900 group cursor-pointer border border-slate-200/80 shadow-xs flex flex-col justify-end p-6 sm:p-8">
-            <img
-              src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=1200"
-              alt="Học thuật"
-              className="absolute inset-0 w-full h-full object-cover opacity-35 group-hover:scale-105 group-hover:opacity-45 transition-all duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
-
-            <div className="relative z-10 space-y-3">
-              <span className="inline-block px-3 py-1 rounded-md bg-white/20 backdrop-blur-md text-white font-semibold text-[11px] uppercase tracking-wider border border-white/30">
-                Tuyển tập
-              </span>
-
-              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
-                Phương pháp Nghiên cứu Khoa học Hiện đại
-              </h3>
-
-              <p className="text-xs sm:text-sm text-slate-300 font-normal leading-relaxed max-w-lg">
-                Bộ tài liệu tổng hợp các phương pháp luận và kỹ năng thu thập dữ liệu tiên tiến dành cho sinh viên năm cuối.
-              </p>
-            </div>
-          </div>
-
-          {/* Cột Phải: 2 Card Vuông Nhỏ + 1 Banner Sự Kiện (6 Cols) */}
-          <div className="lg:col-span-6 flex flex-col gap-4 justify-between">
-            {/* 2 Card Vuông Nhỏ */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Card 1: Tư duy Thiết kế */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200/90 hover:border-primary-400 hover:shadow-md transition-all duration-200 flex flex-col justify-between h-[160px] group cursor-pointer">
-                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center group-hover:bg-primary-50 transition-colors">
-                  <Compass className="w-5 h-5 text-slate-700 group-hover:text-primary-700" />
-                </div>
-                <div>
-                  <h4 className="text-base font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
-                    Tư duy Thiết kế
-                  </h4>
-                  <p className="text-xs text-slate-400 font-normal mt-0.5">12 Tài liệu</p>
-                </div>
-              </div>
-
-              {/* Card 2: Phân tích Dữ liệu */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200/90 hover:border-primary-400 hover:shadow-md transition-all duration-200 flex flex-col justify-between h-[160px] group cursor-pointer">
-                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center group-hover:bg-primary-50 transition-colors">
-                  <TrendingUp className="w-5 h-5 text-slate-700 group-hover:text-primary-700" />
-                </div>
-                <div>
-                  <h4 className="text-base font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
-                    Phân tích Dữ liệu
-                  </h4>
-                  <p className="text-xs text-slate-400 font-normal mt-0.5">8 Bài giảng</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Banner Sự Kiện Sắp Tới */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200/90 hover:border-primary-400 hover:shadow-md transition-all duration-200 flex items-center justify-between gap-4 group cursor-pointer">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-primary-700 block">
-                  SỰ KIỆN SẮP TỚI
-                </span>
-                <h4 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-primary-700 transition-colors">
-                  Hội thảo: Tương lai của Fintech & AI trong Giáo dục
-                </h4>
-                <p className="text-xs text-slate-400 font-normal">
-                  Trực tuyến • Thứ 7, 24 Tháng 10, 2026
-                </p>
-              </div>
-
-              <div className="w-10 h-10 rounded-full bg-slate-100 group-hover:bg-primary-600 group-hover:text-white text-slate-700 flex items-center justify-center shrink-0 transition-colors shadow-2xs">
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
+      {/* 4. Section: Cộng Đồng Sinh Viên & Nhóm Học Thuật (Bento Grid Thay Thế Dữ Liệu Thực) */}
+      <CommunityExploreBento />
 
       {/* 5. Modal Bộ Lọc Thêm */}
       <Modal
@@ -539,4 +367,4 @@ export const PostExplorePage: React.FC = () => {
       </Modal>
     </div>
   );
-};
+};

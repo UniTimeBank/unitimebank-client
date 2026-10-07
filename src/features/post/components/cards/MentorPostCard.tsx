@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import type { MentorPost } from '../../types';
 import { SKILL_CATEGORY_LABELS } from '../../constants';
 import { RichTextViewer } from '../create-post/RichTextEditor';
+import { UserAvatar } from '@/shared/components/ui';
 
 interface MentorPostCardProps {
   post: MentorPost;
@@ -71,17 +72,7 @@ export const MentorPostCard: React.FC<MentorPostCardProps> = ({
           {/* Mentor Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {post.mentorAvatar ? (
-                <img
-                  src={post.mentorAvatar}
-                  alt={post.mentorName || 'Mentor'}
-                  className="w-7 h-7 rounded-full object-cover ring-2 ring-gray-100"
-                />
-              ) : (
-                <div className="w-7 h-7 rounded-full bg-primary-100 text-primary-700 font-bold text-xs flex items-center justify-center">
-                  {(post.mentorName || 'M').charAt(0).toUpperCase()}
-                </div>
-              )}
+              <UserAvatar src={post.mentorAvatar} name={post.mentorName || 'Mentor'} size="xs" />
               <span className="text-xs font-bold text-gray-800">{post.mentorName || 'Mentor'}</span>
             </div>
 
